@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function ApplyPage() {
     const router = useRouter();
@@ -49,6 +50,68 @@ export default function ApplyPage() {
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isPreFilled, setIsPreFilled] = useState(false);
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                // Fetch the latest investment for this user to pre-fill details
+                const { data: investments, error } = await supabase
+                    .from('investments')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (error) {
+                    console.error('Error fetching latest investment:', error);
+                }
+
+                if (investments && investments.length > 0) {
+                    const latest = investments[0];
+                    setFormData(prev => ({
+                        ...prev,
+                        fullName: latest.full_name || prev.fullName,
+                        fatherName: latest.father_name || prev.fatherName,
+                        dob: latest.dob || prev.dob,
+                        age: latest.age?.toString() || prev.age,
+                        gender: latest.gender || prev.gender,
+                        occupation: latest.occupation || prev.occupation,
+                        permanentAddress: latest.permanent_address || prev.permanentAddress,
+                        contactNumber: latest.contact_number || prev.contactNumber,
+                        email: latest.email || prev.email,
+                        panNumber: latest.pan_number || prev.panNumber,
+                        maritalStatus: latest.marital_status || prev.maritalStatus,
+                        aadharNumber: latest.aadhar_number || prev.aadharNumber,
+
+                        // Nominee
+                        nomineeName: latest.nominee?.name || prev.nomineeName,
+                        nomineeRelation: latest.nominee?.relation || prev.nomineeRelation,
+                        nomineeDob: latest.nominee?.dob || prev.nomineeDob,
+                        nomineeAddress: latest.nominee?.address || prev.nomineeAddress,
+
+                        // Bank
+                        bankName: latest.bank_details?.bankName || prev.bankName,
+                        branch: latest.bank_details?.branch || prev.branch,
+                        ifscCode: latest.bank_details?.ifscCode || prev.ifscCode,
+                        micrCode: latest.bank_details?.micrCode || prev.micrCode,
+                        accountType: latest.bank_details?.accountType || prev.accountType,
+                        accountNumber: latest.bank_details?.accountNumber || prev.accountNumber,
+
+                        // CDSL
+                        dematAccount: latest.demat_account || prev.dematAccount,
+                    }));
+                    setIsPreFilled(true);
+                } else {
+                    // If no investment found, just fill the email from auth
+                    setFormData(prev => ({ ...prev, email: session.user.email || '' }));
+                }
+            }
+        };
+
+        checkSession();
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -241,7 +304,14 @@ export default function ApplyPage() {
                                 <div className="space-y-6 animate-fade-in-up">
                                     <div>
                                         <h2 className="text-2xl font-bold mb-2">Personal Details</h2>
-                                        <p className="text-text-secondary">Please provide your personal information</p>
+                                        {isPreFilled ? (
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-sm font-medium inline-flex">
+                                                <Sparkles className="w-4 h-4" />
+                                                Welcome back! Details pre-filled from your profile.
+                                            </div>
+                                        ) : (
+                                            <p className="text-text-secondary">Please provide your personal information</p>
+                                        )}
                                     </div>
 
                                     <div className="grid md:grid-cols-2 gap-6">

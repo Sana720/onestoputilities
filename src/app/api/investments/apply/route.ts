@@ -1,49 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(request: NextRequest) {
     try {
         const data = await request.json();
 
-        // Sanitize contact number (only digits)
-        const sanitizedPhone = data.contactNumber.replace(/\D/g, '');
-
-        // Generate temporary password (last 6 digits of contact number)
-        const tempPassword = sanitizedPhone.slice(-6);
-
-        // Create user with Supabase Auth
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: data.email,
-            password: tempPassword,
-            email_confirm: true, // Auto-confirm email
-        });
-
-        if (authError) {
-            console.error('Auth error:', authError);
-            return NextResponse.json(
-                { error: 'Failed to create user account' },
-                { status: 400 }
-            );
-        }
-
-        // Create user record in users table
-        const { error: userError } = await supabaseAdmin
+        // Check if user already exists
+        const { data: existingUser } = await supabaseAdmin
             .from('users')
-            .insert({
-                id: authData.user.id,
+            .select('id')
+            .eq('email', data.email)
+            .single();
+
+        let userId = existingUser?.id;
+        let tempPassword = '';
+
+        if (!userId) {
+            // Create user with Supabase Auth
+            const sanitizedPhone = data.contactNumber.replace(/\D/g, '');
+            tempPassword = sanitizedPhone.slice(-6);
+
+            const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
                 email: data.email,
-                role: 'client',
-                name: data.fullName,
+                password: tempPassword,
+                email_confirm: true,
             });
 
-        if (userError) {
-            console.error('User insert error:', userError);
-            // Rollback: delete auth user if user table insert fails
-            await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-            return NextResponse.json(
-                { error: 'Failed to create user record' },
-                { status: 500 }
-            );
+            if (authError) {
+                console.error('Auth error:', authError);
+                return NextResponse.json(
+                    { error: 'Failed to create user account' },
+                    { status: 400 }
+                );
+            }
+
+            userId = authData.user.id;
+
+            // Create user record in users table
+            const { error: userError } = await supabaseAdmin
+                .from('users')
+                .insert({
+                    id: userId,
+                    email: data.email,
+                    role: 'client',
+                    name: data.fullName,
+                });
+
+            if (userError) {
+                console.error('User insert error:', userError);
+                await supabaseAdmin.auth.admin.deleteUser(userId);
+                return NextResponse.json(
+                    { error: 'Failed to create user record' },
+                    { status: 500 }
+                );
+            }
         }
 
         // Calculate lock-in dates
@@ -55,7 +65,7 @@ export async function POST(request: NextRequest) {
         const { data: investmentData, error: investmentError } = await supabaseAdmin
             .from('investments')
             .insert({
-                user_id: authData.user.id,
+                user_id: userId,
                 full_name: data.fullName,
                 father_name: data.fatherName,
                 dob: data.dob,

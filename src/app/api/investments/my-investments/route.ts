@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(request: NextRequest) {
     try {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Fetch investments for the user
-        const { data: investments, error } = await supabase
+        const { data: investments, error } = await supabaseAdmin
             .from('investments')
             .select('*')
             .eq('email', email)

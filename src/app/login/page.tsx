@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { LogIn, Mail, Lock, ArrowLeft, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -34,6 +35,9 @@ export default function LoginPage() {
                 // Store user data
                 localStorage.setItem('user', JSON.stringify(data.user));
                 localStorage.setItem('session', JSON.stringify(data.session));
+
+                // Synchronize Supabase client session
+                await supabase.auth.setSession(data.session);
 
                 // Redirect based on role
                 if (data.user.role === 'admin') {

@@ -140,6 +140,15 @@ CREATE POLICY "Anyone can insert investments (for application)"
   ON investments FOR INSERT
   WITH CHECK (true);
 
+-- FIX FOR EXISTING TABLES (Run these if you get "column not found" errors)
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS pan_number TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS marital_status TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS aadhar_number TEXT;
+
+-- Notify Supabase to refresh its schema cache after migrations
+NOTIFY pgrst, 'reload schema';
+
+
 -- Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON users TO anon, authenticated;

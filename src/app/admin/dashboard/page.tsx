@@ -427,8 +427,11 @@ export default function AdminDashboard() {
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Dividend Yield (%)</label>
                                     <input
                                         type="number"
-                                        value={editData.dividend_rate}
-                                        onChange={(e) => setEditData(prev => ({ ...prev, dividend_rate: parseFloat(e.target.value) }))}
+                                        value={isNaN(editData.dividend_rate) ? '' : editData.dividend_rate}
+                                        onChange={(e) => {
+                                            const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                            setEditData(prev => ({ ...prev, dividend_rate: val }));
+                                        }}
                                         className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
                                         step="0.1"
                                         min="0"
