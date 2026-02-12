@@ -30,9 +30,6 @@ export default function HomePage() {
 
       {/* BACKGROUND OVERLAYS - Data & Texture */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.12]">
-        <div className="absolute -top-32 right-0 w-full h-full">
-          <img src="/images/graphs/hero_growth.png" alt="Hero Graph" className="w-full h-full object-cover opacity-30" />
-        </div>
         <div className="absolute inset-0 w-full h-full -top-40 scale-110">
           <img src="/images/graphs/candlestick_hero.png" alt="Market Overlay" className="w-full h-full object-contain opacity-50" />
         </div>
