@@ -7,7 +7,7 @@ export async function POST(
 ) {
     try {
         const { id } = await params;
-        const { amount } = await request.json();
+        const { amount, bank_name, reference_no, payment_mode, status } = await request.json();
 
         // Get current investment
         const { data: investment, error: fetchError } = await supabaseAdmin
@@ -28,8 +28,11 @@ export async function POST(
         const currentDividends = investment.dividends || [];
         const newDividend = {
             amount,
+            bank_name: bank_name || 'N/A',
+            reference_no: reference_no || 'N/A',
+            payment_mode: payment_mode || 'NEFT',
             date: new Date().toISOString(),
-            status: 'pending',
+            status: status || 'paid',
         };
 
         const { data: updatedInvestment, error: updateError } = await supabaseAdmin

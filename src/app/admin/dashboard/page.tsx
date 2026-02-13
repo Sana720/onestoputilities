@@ -37,6 +37,9 @@ interface Investment {
     lock_in_end_date: string;
     dividend_rate: number;
     status: string;
+    product_name?: string;
+    broker_id?: string;
+    broker_name?: string;
     demat_credited: boolean;
     dividends: Array<{
         amount: number;
@@ -55,6 +58,14 @@ export default function AdminDashboard() {
     const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editData, setEditData] = useState({ dividend_rate: 0, status: '' });
+    const [showDividendModal, setShowDividendModal] = useState(false);
+    const [dividendData, setDividendData] = useState({
+        amount: '',
+        bank_name: '',
+        reference_no: '',
+        payment_mode: 'NEFT',
+        status: 'paid'
+    });
 
     useEffect(() => {
         const userData = localStorage.getItem('user');
@@ -124,18 +135,33 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleAddDividend = async (investmentId: string) => {
-        const amount = prompt('Enter dividend amount:');
-        if (!amount) return;
+    const handleAddDividend = (investment: Investment) => {
+        setSelectedInvestment(investment);
+        setDividendData({
+            amount: '',
+            bank_name: '',
+            reference_no: '',
+            payment_mode: 'NEFT',
+            status: 'paid'
+        });
+        setShowDividendModal(true);
+    };
+
+    const submitDividend = async () => {
+        if (!selectedInvestment || !dividendData.amount) return;
 
         try {
-            const response = await fetch(`/api/admin/investments/${investmentId}/dividend`, {
+            const response = await fetch(`/api/admin/investments/${selectedInvestment.id}/dividend`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: parseFloat(amount) }),
+                body: JSON.stringify({
+                    ...dividendData,
+                    amount: parseFloat(dividendData.amount)
+                }),
             });
 
             if (response.ok) {
+                setShowDividendModal(false);
                 fetchAllInvestments();
                 alert('Dividend added successfully');
             }
@@ -232,50 +258,50 @@ export default function AdminDashboard() {
                 </div>
             </nav>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
                 {/* Stats Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center text-[#1B8A9F]">
                                 <Briefcase className="w-5 h-5" />
                             </div>
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">AUM</span>
                         </div>
-                        <p className="text-3xl font-black text-gray-900">{formatCurrency(stats.totalInvestment)}</p>
+                        <p className="text-2xl md:text-3xl font-black text-gray-900">{formatCurrency(stats.totalInvestment)}</p>
                         <p className="text-xs text-gray-400 mt-1 font-medium italic">Total Assets Under Management</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-[#4ADE80]">
                                 <Users className="w-5 h-5" />
                             </div>
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clients</span>
                         </div>
-                        <p className="text-3xl font-black text-gray-900">{stats.totalClients}</p>
+                        <p className="text-2xl md:text-3xl font-black text-gray-900">{stats.totalClients}</p>
                         <p className="text-xs text-gray-400 mt-1 font-medium italic">Verified Investors</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-orange-500">
                                 <ShieldCheck className="w-5 h-5" />
                             </div>
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active</span>
                         </div>
-                        <p className="text-3xl font-black text-gray-900">{stats.activeInvestmentsCount}</p>
+                        <p className="text-2xl md:text-3xl font-black text-gray-900">{stats.activeInvestmentsCount}</p>
                         <p className="text-xs text-gray-400 mt-1 font-medium italic">Running Agreements</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
                                 <DollarSign className="w-5 h-5" />
                             </div>
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payouts</span>
                         </div>
-                        <p className="text-3xl font-black text-gray-900">{formatCurrency(stats.totalDividendsPaid)}</p>
+                        <p className="text-2xl md:text-3xl font-black text-gray-900">{formatCurrency(stats.totalDividendsPaid)}</p>
                         <p className="text-xs text-gray-400 mt-1 font-medium italic">Total Dividends Credited</p>
                     </div>
                 </div>
@@ -335,7 +361,8 @@ export default function AdminDashboard() {
                                     <tr key={investment.id} className="hover:bg-gray-50/50 transition-colors group">
                                         <td className="px-8 py-6">
                                             <p className="text-sm font-bold text-gray-900 leading-none">{investment.full_name}</p>
-                                            <p className="text-xs text-gray-400 mt-1.5 flex items-center">
+                                            <p className="text-[10px] text-[#1B8A9F] font-black uppercase tracking-widest mt-1.5">{investment.product_name || 'SHREEG ASSET'}</p>
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center">
                                                 <Mail className="w-3 h-3 mr-1" />
                                                 {investment.email}
                                             </p>
@@ -370,7 +397,7 @@ export default function AdminDashboard() {
                                                     <Edit className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleAddDividend(investment.id)}
+                                                    onClick={() => handleAddDividend(investment)}
                                                     className="p-2.5 bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all"
                                                 >
                                                     <DollarSign className="w-4 h-4" />
@@ -415,10 +442,32 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="space-y-6 mb-8">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Investor Name</label>
-                                <div className="p-4 bg-gray-50 rounded-xl text-sm font-bold text-gray-900 border border-gray-100">
-                                    {selectedInvestment.full_name}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Investor Name</label>
+                                    <div className="p-4 bg-gray-50 rounded-xl text-sm font-bold text-gray-900 border border-gray-100">
+                                        {selectedInvestment.full_name}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Product</label>
+                                    <div className="p-4 bg-teal-50 rounded-xl text-[10px] font-black text-[#1B8A9F] border border-teal-100 uppercase tracking-widest">
+                                        {selectedInvestment.product_name || 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Broker Attribution</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase">Broker ID</p>
+                                        <p className="text-xs font-bold text-gray-900">{selectedInvestment.broker_id || 'Direct'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase">Broker Name</p>
+                                        <p className="text-xs font-bold text-gray-900">{selectedInvestment.broker_name || 'N/A'}</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -466,6 +515,102 @@ export default function AdminDashboard() {
                                 className="w-full bg-gray-50 text-gray-500 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all"
                             >
                                 Discard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Dividend Modal */}
+            {showDividendModal && selectedInvestment && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border border-gray-100 animate-fade-in-up">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 tracking-tight">Post Dividend</h3>
+                                <p className="text-xs text-gray-500 mt-1">Crediting returns for {selectedInvestment.full_name}</p>
+                            </div>
+                            <button onClick={() => setShowDividendModal(false)} className="text-gray-400 hover:text-gray-900">
+                                <Clock className="w-5 h-5 rotate-45" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Amount (₹)</label>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={dividendData.amount}
+                                        onChange={(e) => setDividendData({ ...dividendData, amount: e.target.value })}
+                                        className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Payment Mode</label>
+                                    <select
+                                        value={dividendData.payment_mode}
+                                        onChange={(e) => setDividendData({ ...dividendData, payment_mode: e.target.value })}
+                                        className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all appearance-none"
+                                    >
+                                        <option value="NEFT">NEFT</option>
+                                        <option value="IMPS">IMPS</option>
+                                        <option value="RTGS">RTGS</option>
+                                        <option value="UPI">UPI</option>
+                                        <option value="CHECK">CHECK</option>
+                                        <option value="CASH">CASH</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Reference Number / UTR</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter transaction ref..."
+                                    value={dividendData.reference_no}
+                                    onChange={(e) => setDividendData({ ...dividendData, reference_no: e.target.value })}
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Payout Bank Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. HDFC Bank"
+                                    value={dividendData.bank_name}
+                                    onChange={(e) => setDividendData({ ...dividendData, bank_name: e.target.value })}
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Payout Status</label>
+                                <select
+                                    value={dividendData.status}
+                                    onChange={(e) => setDividendData({ ...dividendData, status: e.target.value })}
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#4ADE80] outline-none transition-all appearance-none"
+                                >
+                                    <option value="paid">Mark as Paid</option>
+                                    <option value="pending">Mark as Pending</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={submitDividend}
+                                className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all"
+                            >
+                                Confirm Credit
+                            </button>
+                            <button
+                                onClick={() => setShowDividendModal(false)}
+                                className="w-full bg-gray-50 text-gray-500 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all"
+                            >
+                                Cancel
                             </button>
                         </div>
                     </div>

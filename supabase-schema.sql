@@ -58,6 +58,11 @@ CREATE TABLE IF NOT EXISTS investments (
   marital_status TEXT,
   aadhar_number TEXT,
   
+  -- Product & Broker Details
+  product_name TEXT,
+  broker_id TEXT,
+  broker_name TEXT,
+  
   -- Dividends (stored as JSONB array)
   dividends JSONB DEFAULT '[]'::jsonb,
   
@@ -144,6 +149,9 @@ CREATE POLICY "Anyone can insert investments (for application)"
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS pan_number TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS marital_status TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS aadhar_number TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS product_name TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_id TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_name TEXT;
 
 -- Notify Supabase to refresh its schema cache after migrations
 NOTIFY pgrst, 'reload schema';

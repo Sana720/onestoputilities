@@ -47,6 +47,11 @@ export default function ApplyPage() {
         paymentReference: '',
         paymentDate: '',
         dematAccount: '',
+
+        // Product & Broker
+        productName: '',
+        brokerId: '',
+        brokerName: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -130,16 +135,25 @@ export default function ApplyPage() {
         }
 
         // Auto-calculate number of shares from investment amount
-        if (name === 'investmentAmount' && value) {
+        if (name === 'investmentAmount') {
             const amount = parseFloat(value);
             if (!isNaN(amount)) {
                 const shares = Math.floor(amount / 100);
                 setFormData(prev => ({ ...prev, numberOfShares: shares.toString() }));
+
+                // Real-time validation for minimum amount
+                if (amount < 500000) {
+                    setErrors(prev => ({ ...prev, investmentAmount: 'Minimum investment is ₹5,00,000' }));
+                } else {
+                    setErrors(prev => ({ ...prev, [name]: '' }));
+                }
+            } else {
+                setErrors(prev => ({ ...prev, [name]: '' }));
             }
         }
 
-        // Clear error for this field
-        if (errors[name]) {
+        // Clear error for this field (if not handled above)
+        if (name !== 'investmentAmount' && errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
@@ -151,14 +165,25 @@ export default function ApplyPage() {
             if (!formData.fullName) newErrors.fullName = 'Full name is required';
             if (!formData.fatherName) newErrors.fatherName = 'Father\'s name is required';
             if (!formData.dob) newErrors.dob = 'Date of birth is required';
+            else {
+                const birthDate = new Date(formData.dob);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+                if (age < 18) newErrors.dob = 'Applicant must be at least 18 years old';
+            }
             if (!formData.gender) newErrors.gender = 'Gender is required';
             if (!formData.occupation) newErrors.occupation = 'Occupation is required';
             if (!formData.permanentAddress) newErrors.permanentAddress = 'Address is required';
             if (!formData.contactNumber) newErrors.contactNumber = 'Contact number is required';
+            else if (!/^[0-9]{10}$/.test(formData.contactNumber)) newErrors.contactNumber = 'Invalid contact (enter 10 digits)';
             if (!formData.email) newErrors.email = 'Email is required';
             else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
             if (!formData.panNumber) newErrors.panNumber = 'PAN number is required';
-            else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber)) newErrors.panNumber = 'Invalid PAN format (e.g., ABCDE1234F)';
+            else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber.toUpperCase())) newErrors.panNumber = 'Invalid PAN format';
+            if (!formData.aadharNumber) newErrors.aadharNumber = 'Aadhar number is required';
+            else if (!/^[0-9]{12}$/.test(formData.aadharNumber)) newErrors.aadharNumber = 'Invalid Aadhar (enter 12 digits)';
             if (!formData.maritalStatus) newErrors.maritalStatus = 'Marital status is required';
         }
 
@@ -171,19 +196,26 @@ export default function ApplyPage() {
 
         if (step === 3) {
             if (!formData.accountNumber) newErrors.accountNumber = 'Account number is required';
+            else if (formData.accountNumber.length < 9 || formData.accountNumber.length > 18) newErrors.accountNumber = 'Invalid account number length';
             if (!formData.bankName) newErrors.bankName = 'Bank name is required';
             if (!formData.branch) newErrors.branch = 'Branch is required';
             if (!formData.ifscCode) newErrors.ifscCode = 'IFSC code is required';
+            else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode.toUpperCase())) newErrors.ifscCode = 'Invalid IFSC format';
             if (!formData.micrCode) newErrors.micrCode = 'MICR code is required';
+            else if (!/^[0-9]{9}$/.test(formData.micrCode)) newErrors.micrCode = 'MICR must be 9 digits';
             if (!formData.accountType) newErrors.accountType = 'Account type is required';
         }
 
         if (step === 4) {
             if (!formData.investmentAmount) newErrors.investmentAmount = 'Investment amount is required';
-            else if (parseFloat(formData.investmentAmount) < 100) newErrors.investmentAmount = 'Minimum investment is ₹100';
+            else if (parseFloat(formData.investmentAmount) < 500000) newErrors.investmentAmount = 'Minimum investment is ₹5,00,000';
+            if (!formData.productName) newErrors.productName = 'Product selection is required';
             if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
             if (!formData.paymentReference) newErrors.paymentReference = 'Payment reference is required';
             if (!formData.paymentDate) newErrors.paymentDate = 'Payment date is required';
+            if (formData.dematAccount && formData.dematAccount.length !== 16) newErrors.dematAccount = 'Demat account must be 16 digits';
+            if (!formData.brokerId) newErrors.brokerId = 'Broker ID is required';
+            if (!formData.brokerName) newErrors.brokerName = 'Broker Name is required';
         }
 
         setErrors(newErrors);
@@ -260,34 +292,34 @@ export default function ApplyPage() {
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 <div className="max-w-4xl mx-auto">
                     {/* Progress Steps */}
-                    <div className="mb-12">
+                    <div className="mb-8 md:mb-12">
                         <div className="flex items-center justify-between">
                             {steps.map((step, index) => (
                                 <div key={step.number} className="flex-1">
                                     <div className="flex items-center">
                                         <div className="flex flex-col items-center flex-1">
                                             <div
-                                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${currentStep >= step.number
+                                                className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${currentStep >= step.number
                                                     ? 'bg-[#1B8A9F] text-white shadow-lg'
                                                     : 'bg-gray-200 text-gray-500'
                                                     }`}
                                             >
                                                 {currentStep > step.number ? (
-                                                    <CheckCircle2 className="w-6 h-6" />
+                                                    <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" />
                                                 ) : (
-                                                    <step.icon className="w-6 h-6" />
+                                                    <step.icon className="w-5 h-5 md:w-6 md:h-6" />
                                                 )}
                                             </div>
-                                            <p className={`mt-2 text-sm font-semibold ${currentStep >= step.number ? 'text-text-primary' : 'text-text-tertiary'
+                                            <p className={`mt-2 text-[10px] md:text-sm font-semibold text-center hidden sm:block ${currentStep >= step.number ? 'text-text-primary' : 'text-text-tertiary'
                                                 }`}>
                                                 {step.title}
                                             </p>
                                         </div>
                                         {index < steps.length - 1 && (
-                                            <div className={`h-1 flex-1 mx-4 rounded transition-all duration-300 ${currentStep > step.number ? 'bg-[#1B8A9F]' : 'bg-gray-200'
+                                            <div className={`h-0.5 md:h-1 flex-1 mx-2 md:mx-4 rounded transition-all duration-300 ${currentStep > step.number ? 'bg-[#1B8A9F]' : 'bg-gray-200'
                                                 }`} />
                                         )}
                                     </div>
@@ -429,7 +461,7 @@ export default function ApplyPage() {
                                         </div>
 
                                         <div>
-                                            <label className="label">Aadhar Number (Optional)</label>
+                                            <label className="label">Aadhar Number *</label>
                                             <input
                                                 type="text"
                                                 name="aadharNumber"
@@ -440,10 +472,11 @@ export default function ApplyPage() {
                                                         setFormData(prev => ({ ...prev, aadharNumber: val }));
                                                     }
                                                 }}
-                                                className="input"
+                                                className={`input ${errors.aadharNumber ? 'input-error' : ''}`}
                                                 placeholder="12-digit Aadhar number"
                                                 maxLength={12}
                                             />
+                                            {errors.aadharNumber && <p className="text-red-500 text-sm mt-1">{errors.aadharNumber}</p>}
                                         </div>
 
                                         <div className="md:col-span-2">
@@ -465,9 +498,15 @@ export default function ApplyPage() {
                                                 type="tel"
                                                 name="contactNumber"
                                                 value={formData.contactNumber}
-                                                onChange={handleChange}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/\D/g, '');
+                                                    if (val.length <= 10) {
+                                                        setFormData(prev => ({ ...prev, contactNumber: val }));
+                                                    }
+                                                }}
                                                 className={`input ${errors.contactNumber ? 'input-error' : ''}`}
-                                                placeholder="+91 XXXXXXXXXX"
+                                                placeholder="10-digit mobile number"
+                                                maxLength={10}
                                             />
                                             {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
                                         </div>
@@ -652,6 +691,23 @@ export default function ApplyPage() {
                                     </div>
 
                                     <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="md:col-span-2">
+                                            <label className="label">Select Investment Product *</label>
+                                            <select
+                                                name="productName"
+                                                value={formData.productName}
+                                                onChange={handleChange}
+                                                className={`input ${errors.productName ? 'input-error' : ''}`}
+                                            >
+                                                <option value="">Select a product</option>
+                                                <option value="Intraday Trading">Intraday Trading (Monthly)</option>
+                                                <option value="Short-Term SIP">Short-Term SIP (Quarterly)</option>
+                                                <option value="Long-Term Holding">Long-Term Holding (Yearly)</option>
+                                                <option value="Unlisted Shares">Unlisted Shares (3-Year Lock-in)</option>
+                                            </select>
+                                            {errors.productName && <p className="text-red-500 text-sm mt-1">{errors.productName}</p>}
+                                        </div>
+
                                         <div>
                                             <label className="label">Investment Amount (₹) *</label>
                                             <input
@@ -660,10 +716,11 @@ export default function ApplyPage() {
                                                 value={formData.investmentAmount}
                                                 onChange={handleChange}
                                                 className={`input ${errors.investmentAmount ? 'input-error' : ''}`}
-                                                placeholder="Enter amount"
-                                                min="100"
-                                                step="100"
+                                                placeholder="Min ₹5,00,000"
+                                                min="500000"
+                                                step="1000"
                                             />
+                                            <p className="text-[10px] text-teal-600 font-bold mt-1 uppercase tracking-wider">Minimum investment: ₹5.00 Lakhs</p>
                                             {errors.investmentAmount && <p className="text-red-500 text-sm mt-1">{errors.investmentAmount}</p>}
                                         </div>
 
@@ -718,6 +775,7 @@ export default function ApplyPage() {
                                                 name="paymentDate"
                                                 value={formData.paymentDate}
                                                 onChange={handleChange}
+                                                min={new Date().toISOString().split('T')[0]}
                                                 className={`input ${errors.paymentDate ? 'input-error' : ''}`}
                                             />
                                             {errors.paymentDate && <p className="text-red-500 text-sm mt-1">{errors.paymentDate}</p>}
@@ -733,6 +791,44 @@ export default function ApplyPage() {
                                                 className="input"
                                                 placeholder="Enter demat account number"
                                             />
+                                        </div>
+
+                                        <div className="md:col-span-2 grid md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                            <div className="md:col-span-2">
+                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                                    <Sparkles className="w-4 h-4 text-[#1B8A9F]" />
+                                                    Broker Information
+                                                </h4>
+                                            </div>
+                                            <div>
+                                                <label className="label">Broker ID *</label>
+                                                <input
+                                                    type="text"
+                                                    name="brokerId"
+                                                    value={formData.brokerId}
+                                                    onChange={handleChange}
+                                                    className={`input ${errors.brokerId ? 'input-error' : ''}`}
+                                                    placeholder="Enter your Broker ID"
+                                                />
+                                                {errors.brokerId && <p className="text-red-500 text-sm mt-1">{errors.brokerId}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="label">Broker Name *</label>
+                                                <select
+                                                    name="brokerName"
+                                                    value={formData.brokerName}
+                                                    onChange={handleChange}
+                                                    className={`input ${errors.brokerName ? 'input-error' : ''}`}
+                                                >
+                                                    <option value="">Select broker</option>
+                                                    <option value="Direct">Direct (No Broker)</option>
+                                                    <option value="Broker A">Shreeg Authorized Broker A</option>
+                                                    <option value="Broker B">Shreeg Authorized Broker B</option>
+                                                    <option value="Broker C">Shreeg Authorized Broker C</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                {errors.brokerName && <p className="text-red-500 text-sm mt-1">{errors.brokerName}</p>}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -752,6 +848,16 @@ export default function ApplyPage() {
                                                 <span className="font-semibold">₹100</span>
                                             </div>
                                             <div className="flex justify-between border-t border-blue-200 pt-2 mt-2">
+                                                <span className="text-text-secondary font-bold text-blue-800">Maturity Date:</span>
+                                                <span className="font-bold text-blue-800">
+                                                    {formData.paymentDate ? (() => {
+                                                        const d = new Date(formData.paymentDate);
+                                                        d.setFullYear(d.getFullYear() + 3);
+                                                        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                                                    })() : 'Select payment date'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
                                                 <span className="text-text-secondary">Lock-in Period:</span>
                                                 <span className="font-semibold">3 Years</span>
                                             </div>
@@ -761,23 +867,23 @@ export default function ApplyPage() {
                             )}
 
                             {/* Navigation Buttons */}
-                            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                            <div className="flex flex-col-reverse sm:flex-row justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
                                 {currentStep > 1 && (
                                     <button
                                         type="button"
                                         onClick={handlePrevious}
-                                        className="px-6 py-3 bg-gray-100 text-gray-900 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-200 hover:border-gray-400 transition-all"
+                                        className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-900 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-200 hover:border-gray-400 transition-all"
                                     >
                                         Previous
                                     </button>
                                 )}
 
-                                <div className="ml-auto">
+                                <div className="sm:ml-auto w-full sm:w-auto">
                                     {currentStep < 4 ? (
                                         <button
                                             type="button"
                                             onClick={handleNext}
-                                            className="px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+                                            className="w-full sm:w-auto px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
                                         >
                                             Next Step
                                         </button>
@@ -785,7 +891,7 @@ export default function ApplyPage() {
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                            className="w-full sm:w-auto px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                                         >
                                             {loading ? (
                                                 <>

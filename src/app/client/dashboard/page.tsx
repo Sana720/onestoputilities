@@ -48,6 +48,9 @@ interface Investment {
     lock_in_end_date: string;
     dividend_rate: number;
     status: string;
+    product_name?: string;
+    broker_id?: string;
+    broker_name?: string;
     demat_account: string;
     demat_credited: boolean;
     demat_credit_date: string;
@@ -217,16 +220,16 @@ export default function ClientDashboard() {
                 </div>
             </nav>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
                 {/* Dashboard Header */}
-                <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <h2 className="text-3xl font-bold text-gray-900">Portfolio Overview</h2>
-                        <p className="text-gray-500 mt-1">Track your investments and dividend returns</p>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Portfolio Overview</h2>
+                        <p className="text-sm md:text-base text-gray-500 mt-1">Track your investments and dividend returns</p>
                     </div>
                     <Link
                         href="/apply"
-                        className="inline-flex items-center justify-center bg-[#1B8A9F] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#156d7d] hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                        className="inline-flex items-center justify-center bg-[#1B8A9F] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#156d7d] hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full md:w-auto"
                     >
                         New Investment
                         <ArrowUpRight className="w-4 h-4 ml-2" />
@@ -234,37 +237,37 @@ export default function ClientDashboard() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center mb-4 text-[#1B8A9F]">
                             <Briefcase className="w-5 h-5" />
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">Total Invested</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(calculateTotalInvestment())}</p>
+                        <p className="text-gray-500 text-xs md:text-sm font-medium">Total Invested</p>
+                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{formatCurrency(calculateTotalInvestment())}</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-4 text-[#4ADE80]">
                             <ArrowUpRight className="w-5 h-5" />
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">Profit Earned</p>
-                        <p className="text-2xl font-bold text-[#4ADE80] mt-1">{formatCurrency(calculateTotalDividends())}</p>
+                        <p className="text-gray-500 text-xs md:text-sm font-medium">Profit Earned</p>
+                        <p className="text-xl md:text-2xl font-bold text-[#4ADE80] mt-1">{formatCurrency(calculateTotalDividends())}</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center mb-4 text-orange-500">
                             <Clock className="w-5 h-5" />
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">Pending Gains</p>
-                        <p className="text-2xl font-bold text-orange-500 mt-1">{formatCurrency(calculatePendingDividends())}</p>
+                        <p className="text-gray-500 text-xs md:text-sm font-medium">Pending Gains</p>
+                        <p className="text-xl md:text-2xl font-bold text-orange-500 mt-1">{formatCurrency(calculatePendingDividends())}</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center mb-4 text-[#1B8A9F]">
                             <PieChart className="w-5 h-5" />
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">Active Shares</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">{investments.reduce((sum, inv) => sum + Number(inv.number_of_shares), 0)}</p>
+                        <p className="text-gray-500 text-xs md:text-sm font-medium">Active Shares</p>
+                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{investments.reduce((sum, inv) => sum + Number(inv.number_of_shares), 0)}</p>
                     </div>
                 </div>
 
@@ -298,6 +301,11 @@ export default function ClientDashboard() {
                                             <div className="space-y-4">
                                                 <div className="flex items-center space-x-3">
                                                     <h3 className="text-xl font-bold text-gray-900 uppercase tracking-tight">Investment Agreement</h3>
+                                                    {investment.product_name && (
+                                                        <span className="px-3 py-1 bg-teal-50 text-[#1B8A9F] text-[10px] font-black uppercase tracking-widest rounded-full border border-teal-100">
+                                                            {investment.product_name}
+                                                        </span>
+                                                    )}
                                                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${investment.status === 'active' ? 'bg-green-100 text-green-700' :
                                                         investment.status === 'pending' ? 'bg-orange-100 text-orange-700' :
                                                             'bg-gray-100 text-gray-700'
@@ -333,18 +341,29 @@ export default function ClientDashboard() {
                                             </div>
 
                                             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-                                                <PDFDownloadLink
-                                                    document={<InvestmentAgreement data={investment} />}
-                                                    fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
-                                                    className="inline-flex items-center justify-center bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-100 transition-colors"
-                                                >
-                                                    {({ loading }) => (
-                                                        <>
-                                                            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                                            Manifest
-                                                        </>
-                                                    )}
-                                                </PDFDownloadLink>
+                                                {['approved', 'active', 'matured', 'bought_back'].includes(investment.status) ? (
+                                                    <PDFDownloadLink
+                                                        document={<InvestmentAgreement data={investment} />}
+                                                        fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
+                                                        className="inline-flex items-center justify-center bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-100 transition-colors"
+                                                    >
+                                                        {({ loading }) => (
+                                                            <>
+                                                                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                                                Manifest
+                                                            </>
+                                                        )}
+                                                    </PDFDownloadLink>
+                                                ) : (
+                                                    <button
+                                                        disabled
+                                                        className="inline-flex items-center justify-center bg-gray-50 text-gray-400 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold cursor-not-allowed opacity-75"
+                                                        title="Agreement will be available after admin approval"
+                                                    >
+                                                        <Lock className="w-4 h-4 mr-2" />
+                                                        Processing
+                                                    </button>
+                                                )}
                                                 {getDaysRemaining(investment.lock_in_end_date) > 0 && (
                                                     <div className="text-center px-4 py-1 bg-teal-50 rounded-lg">
                                                         <p className="text-[10px] font-bold text-[#1B8A9F] uppercase tracking-tighter">Maturity In</p>
@@ -394,20 +413,31 @@ export default function ClientDashboard() {
                                             <tr className="bg-gray-50">
                                                 <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Investment</th>
                                                 <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Amount</th>
+                                                <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bank / Mode</th>
+                                                <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Transaction Ref</th>
                                                 <th className="px-8 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payout Date</th>
                                                 <th className="px-8 py-4 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {investments.flatMap(inv =>
-                                                (inv.dividends || []).map((dividend, idx) => (
+                                                (inv.dividends || []).map((dividend: any, idx) => (
                                                     <tr key={`${inv.id}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
                                                         <td className="px-8 py-5">
                                                             <p className="text-sm font-bold text-gray-900">Bond Application</p>
                                                             <p className="text-[10px] font-mono text-gray-400 mt-0.5">#{inv.id.slice(0, 8)}</p>
                                                         </td>
                                                         <td className="px-8 py-5">
-                                                            <p className="text-sm font-bold text-gray-900">{formatCurrency(dividend.amount)}</p>
+                                                            <p className="text-sm font-bold text-green-600">+{formatCurrency(dividend.amount)}</p>
+                                                        </td>
+                                                        <td className="px-8 py-5">
+                                                            <p className="text-sm font-bold text-gray-900">{dividend.bank_name || 'N/A'}</p>
+                                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{dividend.payment_mode || 'NEFT'}</p>
+                                                        </td>
+                                                        <td className="px-8 py-5">
+                                                            <p className="text-xs font-mono text-gray-500 bg-gray-50 px-2 py-1 rounded inline-block">
+                                                                {dividend.reference_no || 'Pending'}
+                                                            </p>
                                                         </td>
                                                         <td className="px-8 py-5 text-sm text-gray-600">
                                                             {formatDate(dividend.date)}
