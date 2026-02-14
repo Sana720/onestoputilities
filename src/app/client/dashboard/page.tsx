@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
+import { supabase } from '@/lib/supabase';
 
 interface Investment {
     id: string;
@@ -82,20 +83,66 @@ export default function ClientDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
 
     useEffect(() => {
-        const userData = localStorage.getItem('user');
-        if (!userData) {
-            router.push('/login');
-            return;
-        }
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
 
-        const parsedUser = JSON.parse(userData);
-        if (parsedUser.role !== 'client') {
-            router.push('/login');
-            return;
-        }
+            if (!session) {
+                const userData = localStorage.getItem('user');
+                if (!userData) {
+                    router.push('/login');
+                    return;
+                }
+                const parsedUser = JSON.parse(userData);
+                if (parsedUser.role !== 'client') {
+                    router.push('/login');
+                    return;
+                }
+                setUser(parsedUser);
+            } else {
+                const userData = session.user.user_metadata;
+                let role = userData.role;
 
-        setUser(parsedUser);
-        fetchInvestments();
+                // Fallback to localStorage if role is missing in metadata
+                if (!role) {
+                    const localData = localStorage.getItem('user');
+                    if (localData) {
+                        const parsedLocal = JSON.parse(localData);
+                        if (parsedLocal.id === session.user.id || parsedLocal.email === session.user.email) {
+                            role = parsedLocal.role;
+                        }
+                    }
+                }
+
+                if (role !== 'client') {
+                    router.push('/login');
+                    return;
+                }
+
+                const updatedUser = { ...session.user, ...userData, role };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+
+            fetchInvestments();
+        };
+
+        checkSession();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                localStorage.removeItem('user');
+                localStorage.removeItem('session');
+                router.push('/login');
+            } else {
+                const userData = session.user.user_metadata;
+                if (userData.role === 'client') {
+                    setUser({ ...session.user, ...userData });
+                    localStorage.setItem('user', JSON.stringify({ ...session.user, ...userData }));
+                }
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, [router]);
 
     const fetchInvestments = async () => {
@@ -117,7 +164,8 @@ export default function ClientDashboard() {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         localStorage.removeItem('user');
         localStorage.removeItem('session');
         router.push('/login');

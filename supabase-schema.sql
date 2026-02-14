@@ -161,3 +161,34 @@ NOTIFY pgrst, 'reload schema';
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON users TO anon, authenticated;
 GRANT ALL ON investments TO anon, authenticated;
+
+-- Create brokers table
+CREATE TABLE IF NOT EXISTS brokers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL,
+  code TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Seed real Indian brokers
+INSERT INTO brokers (name, code) VALUES
+('Direct', 'DIRECT'),
+('Zerodha', 'ZERODHA'),
+('Groww', 'GROWW'),
+('Angel One', 'ANGELONE'),
+('Upstox', 'UPSTOX'),
+('ICICI Direct', 'ICICIDIRECT'),
+('HDFC Securities', 'HDFCSEC'),
+('Kotak Securities', 'KOTAKSEC'),
+('Motilal Oswal', 'MOTILAL'),
+('Paytm Money', 'PAYTM'),
+('5paisa', '5PAISA'),
+('Dhan', 'DHAN'),
+('Arihant Capital', 'ARIHANT'),
+('Alice Blue', 'ALICEBLUE'),
+('Fyers', 'FYERS'),
+('Other', 'OTHER')
+ON CONFLICT (name) DO NOTHING;
+
+GRANT ALL ON brokers TO anon, authenticated;

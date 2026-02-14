@@ -4,18 +4,46 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { isMarketOpen } from '@/lib/market';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function Navbar() {
     const [isMarket, setIsMarket] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [userRole, setUserRole] = useState<string | null>(null);
 
     useEffect(() => {
         setIsMarket(isMarketOpen());
         const interval = setInterval(() => {
             setIsMarket(isMarketOpen());
         }, 60000);
-        return () => clearInterval(interval);
+
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                setUserRole(session.user.user_metadata.role || 'client');
+            } else {
+                const userData = localStorage.getItem('user');
+                if (userData) {
+                    setUserRole(JSON.parse(userData).role);
+                }
+            }
+        };
+
+        checkAuth();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) {
+                setUserRole(session.user.user_metadata.role || 'client');
+            } else {
+                setUserRole(null);
+            }
+        });
+
+        return () => {
+            clearInterval(interval);
+            subscription.unsubscribe();
+        };
     }, []);
 
     return (
@@ -39,12 +67,31 @@ export default function Navbar() {
 
                     {/* Desktop Actions */}
                     <div className="hidden md:flex items-center gap-3">
-                        <Link href="/login" className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-slate-900 transition-all">
-                            Login
+                        <Link
+                            href="https://ekyc.arihantcapital.com/?rmcode=9191"
+                            target="_blank"
+                            className="px-5 py-2.5 text-sm font-bold text-[#1B8A9F] hover:text-[#156d7d] transition-all bg-teal-50 rounded-full"
+                        >
+                            Open Demat
                         </Link>
-                        <Link href="/apply" className="bg-slate-900 text-white px-7 py-2.5 rounded-full text-sm font-bold hover:bg-[#1B8A9F] transition-all shadow-xl shadow-slate-200">
-                            Join Network
-                        </Link>
+                        {userRole ? (
+                            <Link
+                                href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
+                                className="inline-flex items-center gap-2 bg-[#1B8A9F] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#156d7d] transition-all shadow-lg shadow-teal-100"
+                            >
+                                <LayoutDashboard className="w-4 h-4" />
+                                My Dashboard
+                            </Link>
+                        ) : (
+                            <>
+                                <Link href="/login" className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-slate-900 transition-all">
+                                    Login
+                                </Link>
+                                <Link href="/apply" className="bg-slate-900 text-white px-7 py-2.5 rounded-full text-sm font-bold hover:bg-[#1B8A9F] transition-all shadow-xl shadow-slate-200">
+                                    Join Network
+                                </Link>
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile Menu Toggle */}
@@ -71,19 +118,40 @@ export default function Navbar() {
                     <div className="px-4 py-8 space-y-6">
                         <div className="flex flex-col gap-4">
                             <Link
-                                href="/login"
+                                href="https://ekyc.arihantcapital.com/?rmcode=9191"
+                                target="_blank"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="text-lg font-bold text-slate-900 px-4 py-2 hover:bg-slate-50 rounded-xl transition-all"
+                                className="text-lg font-bold text-[#1B8A9F] px-4 py-2 hover:bg-teal-50 rounded-xl transition-all"
                             >
-                                Login to Portal
+                                Open Demat Account
                             </Link>
-                            <Link
-                                href="/apply"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="bg-[#1B8A9F] text-white text-center px-6 py-4 rounded-2xl font-bold shadow-lg shadow-[#1B8A9F]/20 active:scale-95 transition-all"
-                            >
-                                Join Network
-                            </Link>
+                            {userRole ? (
+                                <Link
+                                    href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="bg-[#1B8A9F] text-white text-center px-6 py-4 rounded-2xl font-bold shadow-lg shadow-[#1B8A9F]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <LayoutDashboard className="w-5 h-5" />
+                                    Go to Dashboard
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link
+                                        href="/login"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="text-lg font-bold text-slate-900 px-4 py-2 hover:bg-slate-50 rounded-xl transition-all"
+                                    >
+                                        Login to Portal
+                                    </Link>
+                                    <Link
+                                        href="/apply"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="bg-[#1B8A9F] text-white text-center px-6 py-4 rounded-2xl font-bold shadow-lg shadow-[#1B8A9F]/20 active:scale-95 transition-all"
+                                    >
+                                        Join Network
+                                    </Link>
+                                </>
+                            )}
                         </div>
                         <div className="pt-6 border-t border-slate-100 flex justify-between items-center px-4">
                             <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Market Status</span>

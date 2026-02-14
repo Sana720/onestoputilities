@@ -115,7 +115,7 @@ export default function Hero() {
 
                     <div className="relative bg-white border border-slate-100 p-6 rounded-[35px] shadow-2xl overflow-hidden transition-all duration-500">
                         {/* Tab Selector */}
-                        <div className="flex p-1 bg-slate-50 rounded-2xl mb-6 gap-1 overflow-x-auto no-scrollbar">
+                        <div className="flex justify-center p-1 bg-slate-50 rounded-2xl mb-6 gap-1 overflow-x-auto no-scrollbar">
                             {Object.keys(SOLUTIONS).map((tab) => (
                                 <button
                                     key={tab}

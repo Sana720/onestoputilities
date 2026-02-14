@@ -56,6 +56,7 @@ export default function ApplyPage() {
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isPreFilled, setIsPreFilled] = useState(false);
+    const [brokers, setBrokers] = useState<any[]>([]);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -116,6 +117,20 @@ export default function ApplyPage() {
         };
 
         checkSession();
+
+        const fetchBrokers = async () => {
+            try {
+                const res = await fetch('/api/brokers');
+                const data = await res.json();
+                if (data.brokers) {
+                    setBrokers(data.brokers);
+                }
+            } catch (error) {
+                console.error('Error fetching brokers:', error);
+            }
+        };
+
+        fetchBrokers();
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -821,11 +836,20 @@ export default function ApplyPage() {
                                                     className={`input ${errors.brokerName ? 'input-error' : ''}`}
                                                 >
                                                     <option value="">Select broker</option>
-                                                    <option value="Direct">Direct (No Broker)</option>
-                                                    <option value="Broker A">Shreeg Authorized Broker A</option>
-                                                    <option value="Broker B">Shreeg Authorized Broker B</option>
-                                                    <option value="Broker C">Shreeg Authorized Broker C</option>
-                                                    <option value="Other">Other</option>
+                                                    {brokers.map((broker) => (
+                                                        <option key={broker.id} value={broker.name}>
+                                                            {broker.name === 'Direct' ? 'Direct (No Broker)' : broker.name}
+                                                        </option>
+                                                    ))}
+                                                    {brokers.length === 0 && (
+                                                        <>
+                                                            <option value="Direct">Direct (No Broker)</option>
+                                                            <option value="Zerodha">Zerodha</option>
+                                                            <option value="Groww">Groww</option>
+                                                            <option value="Angel One">Angel One</option>
+                                                            <option value="Other">Other</option>
+                                                        </>
+                                                    )}
                                                 </select>
                                                 {errors.brokerName && <p className="text-red-500 text-sm mt-1">{errors.brokerName}</p>}
                                             </div>
@@ -885,7 +909,7 @@ export default function ApplyPage() {
                                             onClick={handleNext}
                                             className="w-full sm:w-auto px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
                                         >
-                                            Next Step
+                                            Save & Next
                                         </button>
                                     ) : (
                                         <button

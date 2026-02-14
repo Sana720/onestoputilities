@@ -33,14 +33,27 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Create the user object for response
+        const responseUser = {
+            id: data.user.id,
+            email: userData.email,
+            name: userData.name,
+            role: userData.role,
+        };
+
+        // Sync role to Supabase Auth metadata if missing or different
+        if (!data.user.user_metadata?.role || data.user.user_metadata.role !== userData.role) {
+            await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
+                user_metadata: {
+                    role: userData.role,
+                    name: userData.name
+                }
+            });
+        }
+
         return NextResponse.json({
             success: true,
-            user: {
-                id: data.user.id,
-                email: userData.email,
-                name: userData.name,
-                role: userData.role,
-            },
+            user: responseUser,
             session: data.session,
         });
 

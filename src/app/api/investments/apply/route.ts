@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
                 email: data.email,
                 password: tempPassword,
                 email_confirm: true,
+                user_metadata: {
+                    role: 'client',
+                    name: data.fullName
+                }
             });
 
             if (authError) {
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
                 full_name: data.fullName,
                 father_name: data.fatherName,
                 dob: data.dob,
-                age: data.age,
+                age: parseInt(data.age) || 0,
                 gender: data.gender,
                 occupation: data.occupation,
                 permanent_address: data.permanentAddress,
@@ -92,8 +96,8 @@ export async function POST(request: NextRequest) {
                 pan_number: data.panNumber,
                 marital_status: data.maritalStatus,
                 aadhar_number: data.aadharNumber,
-                investment_amount: data.investmentAmount,
-                number_of_shares: data.numberOfShares,
+                investment_amount: parseFloat(data.investmentAmount) || 0,
+                number_of_shares: parseInt(data.numberOfShares) || 0,
                 face_value_per_share: 100,
                 payment_mode: data.paymentMode,
                 payment_reference: data.paymentReference,
@@ -112,9 +116,9 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (investmentError) {
-            console.error('Investment insert error:', investmentError);
+            console.error('Investment insert error details:', JSON.stringify(investmentError, null, 2));
             return NextResponse.json(
-                { error: 'Failed to create investment record' },
+                { error: `Failed to create investment record: ${investmentError.message}` },
                 { status: 500 }
             );
         }
