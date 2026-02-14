@@ -12,7 +12,7 @@ const SOLUTIONS = {
         capital: '₹5,00,000',
         suitableFor: 'Active traders',
         basis: 'Technical & Momentum',
-        fees: '₹5,000 or 20% profit',
+        fees: '1% of investment amount',
         icon: <Zap className="w-6 h-6" />,
         color: 'from-orange-500 to-red-500'
     },
@@ -25,7 +25,7 @@ const SOLUTIONS = {
         capital: '₹25,00,000',
         suitableFor: 'Short-term planners',
         basis: 'Systematic diversification',
-        fees: '1% or 20% profit',
+        fees: '1% of investment amount',
         icon: <BarChart3 className="w-6 h-6" />,
         color: 'from-blue-500 to-indigo-500'
     },
@@ -38,7 +38,7 @@ const SOLUTIONS = {
         capital: '₹1,00,00,000',
         suitableFor: 'Long term investors',
         basis: 'Fundamental + Rebalancing',
-        fees: '2% or 20% profit',
+        fees: '1% of investment amount',
         icon: <Clock className="w-6 h-6" />,
         color: 'from-purple-500 to-pink-500'
     },
@@ -51,7 +51,7 @@ const SOLUTIONS = {
         capital: '₹25,00,000',
         suitableFor: 'HNI / NRI investors',
         basis: 'Equity-style fixed growth',
-        fees: '₹25,000',
+        fees: '1% of investment amount',
         icon: <Shield className="w-6 h-6" />,
         color: 'from-[#1B8A9F] to-[#4ADE80]'
     }
@@ -142,11 +142,15 @@ export default function Hero() {
 
                         <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom duration-700">
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Horizon</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">
+                                    {activeTab === 'Shreeg' ? 'Maturity' : 'Horizon'}
+                                </p>
                                 <p className="text-sm font-black text-slate-900">{data.horizon}</p>
                             </div>
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Guaranteed</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">
+                                    {activeTab === 'Shreeg' ? 'Dividend' : 'Guaranteed'}
+                                </p>
                                 <p className={`text-sm font-black ${data.guaranteed === 'No' ? 'text-slate-400' : 'text-[#1B8A9F]'}`}>{data.guaranteed}</p>
                             </div>
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">

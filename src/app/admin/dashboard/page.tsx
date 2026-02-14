@@ -23,7 +23,9 @@ import {
     MoreHorizontal,
     Download,
     Mail,
-    X
+    MessageCircle,
+    X,
+    Sparkles
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
@@ -33,6 +35,7 @@ interface Investment {
     id: string;
     full_name: string;
     email: string;
+    contact_number?: string;
     investment_amount: number;
     number_of_shares: number;
     face_value_per_share: number;
@@ -81,11 +84,15 @@ export default function AdminDashboard() {
         payment_mode: 'NEFT',
         status: 'paid'
     });
-    const [activeTab, setActiveTab] = useState<'investments' | 'ledger'>('investments');
+    const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends'>('investments');
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [investmentLimit, setInvestmentLimit] = useState(20);
     const [ledgerLimit, setLedgerLimit] = useState(20);
+    const [isEditingDividend, setIsEditingDividend] = useState(false);
+    const [editDividendData, setEditDividendData] = useState<any>(null);
+    const [updatingDividend, setUpdatingDividend] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
     // Infinite Scroll Observer
     const observer = useRef<IntersectionObserver | null>(null);
@@ -264,6 +271,57 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleUpdateDividend = async () => {
+        if (!selectedTransaction || !editDividendData) return;
+
+        setUpdatingDividend(true);
+        try {
+            const response = await fetch(`/api/admin/investments/${selectedTransaction.id}/dividend`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dividendIndex: selectedTransaction.dividendIndex,
+                    dividend: editDividendData
+                }),
+            });
+
+            if (response.ok) {
+                setIsEditingDividend(false);
+                fetchAllInvestments();
+                setShowTransactionModal(false);
+                alert('Dividend updated successfully');
+            }
+        } catch (error) {
+            console.error('Error updating dividend:', error);
+            alert('Failed to update dividend');
+        } finally {
+            setUpdatingDividend(false);
+        }
+    };
+
+
+    const handleSyncDividends = async () => {
+        setSyncing(true);
+        try {
+            const response = await fetch('/api/admin/investments/generate-dividends', {
+                method: 'POST',
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Sync complete! Generated dividends for ${data.updatedCount} investments.`);
+                fetchAllInvestments();
+            } else {
+                alert(data.error || 'Failed to sync dividends');
+            }
+        } catch (error) {
+            console.error('Sync Error:', error);
+            alert('An error occurred during sync');
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+
     const filteredInvestments = investments.filter(inv => {
         const matchesSearch = (inv.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (inv.email || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -312,7 +370,7 @@ export default function AdminDashboard() {
                 date: inv.payment_date,
                 client: inv.full_name,
                 email: inv.email,
-                type: 'INFLOW',
+                type: 'CREDIT',
                 description: `Investment: ${inv.product_name || 'SHREEG ASSET'}`,
                 amount: inv.investment_amount,
                 bank: inv.bank_details?.bankName || 'N/A',
@@ -328,24 +386,23 @@ export default function AdminDashboard() {
                 status: inv.status
             });
 
-            // Add each paid dividend as outflow
-            (inv.dividends || []).forEach(div => {
-                if (div.status === 'paid') {
-                    ledger.push({
-                        id: inv.id,
-                        date: div.date,
-                        client: inv.full_name,
-                        email: inv.email,
-                        type: 'OUTFLOW',
-                        description: `Dividend Payout`,
-                        amount: div.amount,
-                        bank: div.bank_name || 'N/A',
-                        payment_mode: div.payment_mode || 'N/A',
-                        reference: div.reference_no || 'N/A',
-                        dividend_rate: inv.dividend_rate,
-                        status: div.status
-                    });
-                }
+            // Add each dividend as outflow (debit)
+            (inv.dividends || []).forEach((div, idx) => {
+                ledger.push({
+                    id: inv.id,
+                    dividendIndex: idx,
+                    date: div.date,
+                    client: inv.full_name,
+                    email: inv.email,
+                    type: 'DEBIT',
+                    description: `Dividend Payout`,
+                    amount: div.amount,
+                    bank: div.bank_name || 'N/A',
+                    payment_mode: div.payment_mode || 'N/A',
+                    reference: div.reference_no || 'N/A',
+                    dividend_rate: inv.dividend_rate,
+                    status: div.status
+                });
             });
         });
 
@@ -498,6 +555,15 @@ export default function AdminDashboard() {
                     >
                         Financial Ledger
                     </button>
+                    <button
+                        onClick={() => setActiveTab('pending_dividends')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'pending_dividends'
+                            ? 'bg-white text-[#1B8A9F] shadow-sm'
+                            : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                    >
+                        Pending Payouts
+                    </button>
                 </div>
 
                 {/* Management Section */}
@@ -506,24 +572,40 @@ export default function AdminDashboard() {
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                             <div>
                                 <h3 className="text-xl font-bold text-gray-900 tracking-tight">
-                                    {activeTab === 'investments' ? 'Investment Management' : 'Global Financial Ledger'}
+                                    {activeTab === 'investments'
+                                        ? 'Investment Management'
+                                        : activeTab === 'pending_dividends'
+                                            ? 'Pending Dividend Payouts'
+                                            : 'Global Financial Ledger'}
                                 </h3>
                                 <p className="text-sm text-gray-500 mt-1 font-medium">
                                     {activeTab === 'investments'
                                         ? 'Verify applications and manage dividend payouts'
-                                        : 'Chronological log of all inflows and outflows'}
+                                        : activeTab === 'pending_dividends'
+                                            ? 'Track and manage dividends awaiting payment'
+                                            : 'Chronological log of all debits and credits'}
                                 </p>
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                                {activeTab === 'ledger' && (
-                                    <button
-                                        onClick={downloadLedgerCSV}
-                                        className="inline-flex items-center justify-center bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition-all"
-                                    >
-                                        <Download className="w-4 h-4 mr-2" />
-                                        Export CSV
-                                    </button>
+                                {(activeTab === 'ledger' || activeTab === 'pending_dividends') && (
+                                    <>
+                                        <button
+                                            onClick={handleSyncDividends}
+                                            disabled={syncing}
+                                            className="inline-flex items-center justify-center bg-[#1B8A9F] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#156d7d] transition-all disabled:opacity-50"
+                                        >
+                                            {syncing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                                            Sync Dividends
+                                        </button>
+                                        <button
+                                            onClick={downloadLedgerCSV}
+                                            className="inline-flex items-center justify-center bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition-all"
+                                        >
+                                            <Download className="w-4 h-4 mr-2" />
+                                            Export CSV
+                                        </button>
+                                    </>
                                 )}
                                 <div className="relative">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -611,9 +693,21 @@ export default function AdminDashboard() {
                                                     <button
                                                         onClick={() => handleAddDividend(investment)}
                                                         className="p-2.5 bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all"
+                                                        title="Add Dividend"
                                                     >
                                                         <DollarSign className="w-4 h-4" />
                                                     </button>
+                                                    {investment.contact_number && (
+                                                        <a
+                                                            href={`https://wa.me/${investment.contact_number.replace(/\D/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#25D366] hover:bg-green-50 rounded-xl transition-all"
+                                                            title="WhatsApp Connection"
+                                                        >
+                                                            <MessageCircle className="w-4 h-4" />
+                                                        </a>
+                                                    )}
                                                     <PDFDownloadLink
                                                         document={<InvestmentAgreement data={investment} />}
                                                         fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
@@ -643,10 +737,14 @@ export default function AdminDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {getLedgerData().filter(item =>
-                                        item.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                        item.reference.toLowerCase().includes(searchTerm.toLowerCase())
-                                    ).slice(0, ledgerLimit).map((item, idx) => (
+                                    {getLedgerData().filter(item => {
+                                        const matchesSearch = item.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            item.reference.toLowerCase().includes(searchTerm.toLowerCase());
+                                        const matchesTab = activeTab === 'pending_dividends'
+                                            ? (item.type === 'DEBIT' && item.status === 'pending')
+                                            : (item.type === 'DEBIT' ? item.status === 'paid' : true);
+                                        return matchesSearch && matchesTab;
+                                    }).slice(0, ledgerLimit).map((item, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                                             <td className="px-8 py-6 text-sm font-medium text-gray-600">
                                                 {formatDate(item.date)}
@@ -664,7 +762,7 @@ export default function AdminDashboard() {
                                                 <p className="text-[10px] text-gray-400 font-medium">{item.email}</p>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${item.type === 'INFLOW'
+                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${item.type === 'CREDIT'
                                                     ? 'bg-green-100 text-green-700'
                                                     : 'bg-red-100 text-red-700'
                                                     }`}>
@@ -679,9 +777,9 @@ export default function AdminDashboard() {
                                                     {item.payment_mode}
                                                 </span>
                                             </td>
-                                            <td className={`px-8 py-6 text-sm font-black ${item.type === 'INFLOW' ? 'text-green-600' : 'text-red-600'
+                                            <td className={`px-8 py-6 text-sm font-black ${item.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
                                                 }`}>
-                                                {item.type === 'INFLOW' ? '+' : '-'}{formatCurrency(item.amount)}
+                                                {item.type === 'CREDIT' ? '+' : '-'}{formatCurrency(item.amount)}
                                             </td>
                                             <td className="px-8 py-6 text-right font-mono text-[10px] text-gray-400 font-bold uppercase">
                                                 {item.reference}
@@ -902,131 +1000,235 @@ export default function AdminDashboard() {
                 </p>
             </footer>
             {/* Transaction Detail Modal */}
-            {showTransactionModal && selectedTransaction && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
-                    <div className="bg-white rounded-3xl shadow-2xl p-0 max-w-2xl w-full border border-gray-100 animate-fade-in-up overflow-hidden">
-                        <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                            <div>
-                                <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest mb-2 inline-block ${selectedTransaction.type === 'INFLOW' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    {selectedTransaction.type === 'INFLOW' ? 'Investment Entry' : 'Dividend Payout'}
-                                </span>
-                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">{selectedTransaction.client}</h3>
-                                <p className="text-sm text-gray-500 font-medium">{selectedTransaction.email}</p>
-                            </div>
-                            <button onClick={() => setShowTransactionModal(false)} className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-8">
-                            <div className="grid grid-cols-2 gap-8 mb-8">
-                                <div className="space-y-6">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Transaction Date</p>
-                                        <div className="flex items-center space-x-2">
-                                            <Clock className="w-4 h-4 text-[#1B8A9F]" />
-                                            <p className="text-sm font-black text-gray-900">{formatDate(selectedTransaction.date)}</p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Amount</p>
-                                        <p className={`text-2xl font-black ${selectedTransaction.type === 'INFLOW' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {selectedTransaction.type === 'INFLOW' ? '+' : '-'}{formatCurrency(selectedTransaction.amount)}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Payment Mode</p>
-                                        <span className="px-3 py-1 bg-gray-100 text-gray-900 rounded-lg text-xs font-black uppercase tracking-wider border border-gray-200">
-                                            {selectedTransaction.payment_mode}
-                                        </span>
-                                    </div>
+            {
+                showTransactionModal && selectedTransaction && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+                        <div className="bg-white rounded-3xl shadow-2xl p-0 max-w-2xl w-full border border-gray-100 animate-fade-in-up overflow-hidden">
+                            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                <div>
+                                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest mb-2 inline-block ${selectedTransaction.type === 'CREDIT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        {selectedTransaction.type === 'CREDIT' ? 'Investment Entry' : 'Dividend Payout'}
+                                    </span>
+                                    <h3 className="text-2xl font-black text-gray-900 tracking-tight">{selectedTransaction.client}</h3>
+                                    <p className="text-sm text-gray-500 font-medium">{selectedTransaction.email}</p>
                                 </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Banking Information</p>
-                                        <div className="p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
-                                            <p className="text-xs font-black text-[#1B8A9F] uppercase mb-1">{selectedTransaction.bank}</p>
-                                            {selectedTransaction.type === 'INFLOW' && (
-                                                <>
-                                                    <p className="text-[10px] text-gray-600 font-mono">A/C: {selectedTransaction.account_number}</p>
-                                                    <p className="text-[10px] text-gray-600 font-mono">IFSC: {selectedTransaction.ifsc}</p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Reference / UTR</p>
-                                        <p className="text-xs font-mono text-gray-900 font-bold bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 break-all">
-                                            {selectedTransaction.reference}
-                                        </p>
-                                    </div>
-                                </div>
+                                <button onClick={() => { setShowTransactionModal(false); setIsEditingDividend(false); }} className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
 
-                            <div className="p-6 bg-gray-900 rounded-3xl text-white">
-                                <div className="flex items-center justify-between mb-4">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Structure Metadata</p>
-                                    <ShieldCheck className="w-4 h-4 text-teal-400" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                                    {selectedTransaction.type === 'INFLOW' ? (
-                                        <>
+                            <div className="p-8 max-h-[70vh] overflow-y-auto">
+                                {isEditingDividend ? (
+                                    <div className="space-y-6 animate-fade-in-up">
+                                        <h4 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F]">Edit Dividend Details</h4>
+                                        <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <p className="text-[9px] text-gray-400 uppercase font-bold">Investment Product</p>
-                                                <p className="text-xs font-bold text-white">{selectedTransaction.description.split(': ')[1]}</p>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Amount (₹)</label>
+                                                <input
+                                                    type="number"
+                                                    value={editDividendData.amount}
+                                                    onChange={(e) => setEditDividendData({ ...editDividendData, amount: parseFloat(e.target.value) })}
+                                                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none"
+                                                />
                                             </div>
                                             <div>
-                                                <p className="text-[9px] text-gray-400 uppercase font-bold">Equity Division</p>
-                                                <p className="text-xs font-bold text-white uppercase">{selectedTransaction.shares} Shares @ ₹{selectedTransaction.face_value}</p>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Status</label>
+                                                <select
+                                                    value={editDividendData.status}
+                                                    onChange={(e) => setEditDividendData({ ...editDividendData, status: e.target.value })}
+                                                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none"
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="paid">Paid</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Bank Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={editDividendData.bank_name}
+                                                    onChange={(e) => setEditDividendData({ ...editDividendData, bank_name: e.target.value })}
+                                                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none"
+                                                />
                                             </div>
                                             <div>
-                                                <p className="text-[9px] text-gray-400 uppercase font-bold">Lock-in Start</p>
-                                                <p className="text-xs font-bold text-white">{formatDate(selectedTransaction.lock_in_start_date)}</p>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Payment Mode</label>
+                                                <select
+                                                    value={editDividendData.payment_mode}
+                                                    onChange={(e) => setEditDividendData({ ...editDividendData, payment_mode: e.target.value })}
+                                                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none"
+                                                >
+                                                    <option value="NEFT">NEFT</option>
+                                                    <option value="IMPS">IMPS</option>
+                                                    <option value="RTGS">RTGS</option>
+                                                    <option value="UPI">UPI</option>
+                                                    <option value="CHEQUE">CHEQUE</option>
+                                                </select>
                                             </div>
-                                            <div className="flex justify-between items-center">
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Reference / UTR No.</label>
+                                            <input
+                                                type="text"
+                                                value={editDividendData.reference_no}
+                                                onChange={(e) => setEditDividendData({ ...editDividendData, reference_no: e.target.value })}
+                                                className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none"
+                                                placeholder="Enter UTR or Reference number"
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-8 mb-8">
+                                            <div className="space-y-6">
                                                 <div>
-                                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Lock-in Period</p>
-                                                    <p className="text-xs font-bold text-white">{selectedTransaction.lock_in_period} Years</p>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Transaction Date</p>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Clock className="w-4 h-4 text-[#1B8A9F]" />
+                                                        <p className="text-sm font-black text-gray-900">{formatDate(selectedTransaction.date)}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Maturity Date</p>
-                                                    <p className="text-xs font-bold text-orange-400">{formatDate(selectedTransaction.lock_in_end_date)}</p>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Amount</p>
+                                                    <p className={`text-2xl font-black ${selectedTransaction.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {selectedTransaction.type === 'CREDIT' ? '+' : '-'}{formatCurrency(selectedTransaction.amount)}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Payment Mode</p>
+                                                    <span className="px-3 py-1 bg-gray-100 text-gray-900 rounded-lg text-xs font-black uppercase tracking-wider border border-gray-200">
+                                                        {selectedTransaction.payment_mode}
+                                                    </span>
                                                 </div>
                                             </div>
+
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Banking Information</p>
+                                                    <div className="p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
+                                                        <p className="text-xs font-black text-[#1B8A9F] uppercase mb-1">{selectedTransaction.bank}</p>
+                                                        {selectedTransaction.type === 'CREDIT' && (
+                                                            <>
+                                                                <p className="text-[10px] text-gray-600 font-mono">A/C: {selectedTransaction.account_number}</p>
+                                                                <p className="text-[10px] text-gray-600 font-mono">IFSC: {selectedTransaction.ifsc}</p>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Reference / UTR</p>
+                                                    <p className="text-xs font-mono text-gray-900 font-bold bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 break-all">
+                                                        {selectedTransaction.reference}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-6 bg-gray-900 rounded-3xl text-white">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Structure Metadata</p>
+                                                <ShieldCheck className="w-4 h-4 text-teal-400" />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                                                {selectedTransaction.type === 'CREDIT' ? (
+                                                    <>
+                                                        <div>
+                                                            <p className="text-[9px] text-gray-400 uppercase font-bold">Investment Product</p>
+                                                            <p className="text-xs font-bold text-white">{selectedTransaction.description.split(': ')[1]}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] text-gray-400 uppercase font-bold">Equity Division</p>
+                                                            <p className="text-xs font-bold text-white uppercase">{selectedTransaction.shares} Shares @ ₹{selectedTransaction.face_value}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] text-gray-400 uppercase font-bold">Lock-in Start</p>
+                                                            <p className="text-xs font-bold text-white">{formatDate(selectedTransaction.lock_in_start_date)}</p>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <div>
+                                                                <p className="text-[9px] text-gray-400 uppercase font-bold">Lock-in Period</p>
+                                                                <p className="text-xs font-bold text-white">{selectedTransaction.lock_in_period} Years</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-[9px] text-gray-400 uppercase font-bold">Maturity Date</p>
+                                                                <p className="text-xs font-bold text-orange-400">{formatDate(selectedTransaction.lock_in_end_date)}</p>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div>
+                                                            <p className="text-[9px] text-gray-400 uppercase font-bold">Asset Performance</p>
+                                                            <p className="text-xs font-bold text-white">Consolidated Payout</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] text-gray-400 uppercase font-bold">Yield Rate</p>
+                                                            <p className="text-xs font-bold text-white">{selectedTransaction.dividend_rate}% Per Annum</p>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="p-8 bg-gray-50 flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    <span className={`w-2 h-2 rounded-full ${selectedTransaction.status === 'active' || selectedTransaction.status === 'paid' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
+                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">{selectedTransaction.status} Transaction</p>
+                                </div>
+                                <div className="flex space-x-3">
+                                    {selectedTransaction.type === 'DEBIT' && !isEditingDividend && (
+                                        <button
+                                            onClick={() => {
+                                                setIsEditingDividend(true);
+                                                setEditDividendData({
+                                                    amount: selectedTransaction.amount,
+                                                    bank_name: selectedTransaction.bank,
+                                                    reference_no: selectedTransaction.reference,
+                                                    payment_mode: selectedTransaction.payment_mode,
+                                                    status: selectedTransaction.status
+                                                });
+                                            }}
+                                            className="px-6 py-2.5 bg-[#1B8A9F] text-white rounded-xl text-xs font-black hover:bg-[#156d7d] transition-all uppercase tracking-widest"
+                                        >
+                                            Edit Payout
+                                        </button>
+                                    )}
+                                    {isEditingDividend ? (
+                                        <>
+                                            <button
+                                                onClick={handleUpdateDividend}
+                                                disabled={updatingDividend}
+                                                className="px-6 py-2.5 bg-green-600 text-white rounded-xl text-xs font-black hover:bg-green-700 transition-all uppercase tracking-widest flex items-center"
+                                            >
+                                                {updatingDividend ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : 'Save Changes'}
+                                            </button>
+                                            <button
+                                                onClick={() => setIsEditingDividend(false)}
+                                                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-xl text-xs font-black hover:bg-gray-300 transition-all uppercase tracking-widest"
+                                            >
+                                                Back
+                                            </button>
                                         </>
                                     ) : (
-                                        <>
-                                            <div>
-                                                <p className="text-[9px] text-gray-400 uppercase font-bold">Asset Performance</p>
-                                                <p className="text-xs font-bold text-white">Consolidated Payout</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] text-gray-400 uppercase font-bold">Yield Rate</p>
-                                                <p className="text-xs font-bold text-white">{selectedTransaction.dividend_rate}% Per Annum</p>
-                                            </div>
-                                        </>
+                                        <button
+                                            onClick={() => setShowTransactionModal(false)}
+                                            className="px-6 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-xs font-black text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all uppercase tracking-widest"
+                                        >
+                                            Dismiss
+                                        </button>
                                     )}
                                 </div>
                             </div>
                         </div>
-
-                        <div className="p-8 bg-gray-50 flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                                <span className={`w-2 h-2 rounded-full ${selectedTransaction.status === 'active' || selectedTransaction.status === 'paid' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">{selectedTransaction.status} Transaction</p>
-                            </div>
-                            <button
-                                onClick={() => setShowTransactionModal(false)}
-                                className="px-6 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-xs font-black text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all uppercase tracking-widest"
-                            >
-                                Dismiss
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
 

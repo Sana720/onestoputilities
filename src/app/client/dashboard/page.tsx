@@ -21,7 +21,9 @@ import {
     ArrowUpRight,
     Briefcase,
     ShieldCheck,
-    Mail
+    Mail,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
@@ -81,6 +83,17 @@ export default function ClientDashboard() {
     const [investments, setInvestments] = useState<Investment[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
+
+    const toggleAgreement = (id: string) => {
+        const newExpanded = new Set(expandedAgreements);
+        if (newExpanded.has(id)) {
+            newExpanded.delete(id);
+        } else {
+            newExpanded.add(id);
+        }
+        setExpandedAgreements(newExpanded);
+    };
 
     useEffect(() => {
         const checkSession = async () => {
@@ -412,7 +425,7 @@ export default function ClientDashboard() {
                                                         Processing
                                                     </button>
                                                 )}
-                                                {getDaysRemaining(investment.lock_in_end_date) > 0 && (
+                                                {investment.product_name === 'Unlisted Shares' && getDaysRemaining(investment.lock_in_end_date) > 0 && (
                                                     <div className="text-center px-4 py-1 bg-teal-50 rounded-lg">
                                                         <p className="text-[10px] font-bold text-[#1B8A9F] uppercase tracking-tighter">Maturity In</p>
                                                         <p className="text-xs font-bold text-teal-800">{getDaysRemaining(investment.lock_in_end_date)} Days</p>
@@ -512,115 +525,139 @@ export default function ClientDashboard() {
                     )}
 
                     {activeTab === 'details' && (
-                        <div className="space-y-8 animate-fade-in-up">
+                        <div className="space-y-6 animate-fade-in-up">
                             {investments.length > 0 ? (
-                                investments.map((investment, idx) => (
-                                    <div key={investment.id} className="space-y-8">
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="text-xl font-bold text-gray-900">Agreement #{idx + 1} - <span className="text-[#1B8A9F] font-mono">{investment.id.slice(0, 8)}</span></h3>
-                                        </div>
-                                        <div className="grid lg:grid-cols-2 gap-8">
-                                            {/* Personal Information */}
-                                            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                                                <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                                    <User className="w-5 h-5 mr-3 text-[#1B8A9F]" />
-                                                    Personal Information
-                                                </h4>
-                                                <div className="space-y-4">
-                                                    {[
-                                                        { label: 'Full Name', value: investment.full_name },
-                                                        { label: 'Father\'s Name', value: investment.father_name },
-                                                        { label: 'Date of Birth', value: formatDate(investment.dob) },
-                                                        { label: 'Age', value: investment.age },
-                                                        { label: 'Gender', value: investment.gender },
-                                                        { label: 'Occupation', value: investment.occupation },
-                                                        { label: 'Contact', value: investment.contact_number },
-                                                        { label: 'Email', value: investment.email },
-                                                        { label: 'Address', value: investment.permanent_address, full: true },
-                                                    ].map((item) => (
-                                                        <div key={item.label} className={`flex flex-col sm:flex-row justify-between border-b border-gray-50 pb-4 ${item.full ? 'flex-col sm:items-start' : 'items-center'}`}>
-                                                            <span className="text-sm text-gray-500">{item.label}</span>
-                                                            <span className={`text-sm font-bold text-gray-900 ${item.full ? 'mt-2' : ''}`}>{item.value}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Nominee & Bank Information */}
-                                            <div className="space-y-8">
-                                                <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                                                    <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                                        <Users className="w-5 h-5 mr-3 text-orange-500" />
-                                                        Nominee Details
-                                                    </h4>
-                                                    <div className="space-y-4">
-                                                        {[
-                                                            { label: 'Nominee Name', value: investment.nominee.name },
-                                                            { label: 'Relation', value: investment.nominee.relation },
-                                                            { label: 'Nominee DOB', value: formatDate(investment.nominee.dob) },
-                                                            { label: 'Nominee Address', value: investment.nominee.address, full: true },
-                                                        ].map((item) => (
-                                                            <div key={item.label} className={`flex flex-col sm:flex-row justify-between border-b border-gray-50 pb-4 ${item.full ? 'flex-col sm:items-start' : 'items-center'}`}>
-                                                                <span className="text-sm text-gray-500">{item.label}</span>
-                                                                <span className={`text-sm font-bold text-gray-900 ${item.full ? 'mt-2' : ''}`}>{item.value}</span>
-                                                            </div>
-                                                        ))}
+                                investments.map((investment, idx) => {
+                                    const isExpanded = expandedAgreements.has(investment.id);
+                                    return (
+                                        <div key={investment.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300">
+                                            <button
+                                                onClick={() => toggleAgreement(investment.id)}
+                                                className="w-full px-8 py-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                                            >
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-[#1B8A9F]">
+                                                        <ShieldCheck className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <h3 className="text-lg font-bold text-gray-900 leading-none">Agreement #{idx + 1}</h3>
+                                                        <p className="text-[10px] font-mono text-gray-400 mt-1.5 uppercase tracking-widest">{investment.id.slice(0, 16)}...</p>
                                                     </div>
                                                 </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <span className="hidden sm:inline-flex px-3 py-1 bg-gray-50 text-gray-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-gray-100">
+                                                        {investment.product_name || 'N/A'}
+                                                    </span>
+                                                    {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                                                </div>
+                                            </button>
 
-                                                <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                                                    <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                                        <Building2 className="w-5 h-5 mr-3 text-[#4ADE80]" />
-                                                        Bank Information
-                                                    </h4>
-                                                    <div className="space-y-4">
-                                                        {[
-                                                            { label: 'Bank Name', value: investment.bank_details.bankName },
-                                                            { label: 'Account Number', value: investment.bank_details.accountNumber },
-                                                            { label: 'Branch', value: investment.bank_details.branch },
-                                                            { label: 'IFSC Code', value: investment.bank_details.ifscCode },
-                                                            { label: 'MICR Code', value: investment.bank_details.micrCode },
-                                                        ].map((item) => (
-                                                            <div key={item.label} className="flex justify-between border-b border-gray-50 pb-4 items-center">
-                                                                <span className="text-sm text-gray-500">{item.label}</span>
-                                                                <span className="text-sm font-bold text-gray-900">{item.value}</span>
+                                            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                                                <div className="px-8 pb-8 pt-2 space-y-8">
+                                                    <div className="grid lg:grid-cols-2 gap-8">
+                                                        {/* Personal Information */}
+                                                        <div className="space-y-6">
+                                                            <h4 className="text-xs font-black text-[#1B8A9F] uppercase tracking-[0.2em] flex items-center">
+                                                                <User className="w-4 h-4 mr-2" />
+                                                                Personal Information
+                                                            </h4>
+                                                            <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
+                                                                {[
+                                                                    { label: 'Full Name', value: investment.full_name },
+                                                                    { label: 'Father\'s Name', value: investment.father_name },
+                                                                    { label: 'Date of Birth', value: formatDate(investment.dob) },
+                                                                    { label: 'Age', value: investment.age },
+                                                                    { label: 'Gender', value: investment.gender },
+                                                                    { label: 'Occupation', value: investment.occupation },
+                                                                    { label: 'Contact', value: investment.contact_number },
+                                                                    { label: 'Email', value: investment.email },
+                                                                ].map((item) => (
+                                                                    <div key={item.label} className="border-b border-gray-50 pb-2">
+                                                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
+                                                                        <p className="text-xs font-bold text-gray-900">{item.value}</p>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="sm:col-span-2 border-b border-gray-50 pb-2">
+                                                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Permanent Address</p>
+                                                                    <p className="text-xs font-bold text-gray-900">{investment.permanent_address}</p>
+                                                                </div>
                                                             </div>
-                                                        ))}
+                                                        </div>
+
+                                                        {/* Nominee & Bank Information */}
+                                                        <div className="space-y-8">
+                                                            <div className="space-y-6">
+                                                                <h4 className="text-xs font-black text-orange-500 uppercase tracking-[0.2em] flex items-center">
+                                                                    <Users className="w-4 h-4 mr-2" />
+                                                                    Nominee Details
+                                                                </h4>
+                                                                <div className="grid sm:grid-cols-2 gap-4">
+                                                                    {[
+                                                                        { label: 'Name', value: investment.nominee.name },
+                                                                        { label: 'Relation', value: investment.nominee.relation },
+                                                                        { label: 'DOB', value: formatDate(investment.nominee.dob) },
+                                                                    ].map((item) => (
+                                                                        <div key={item.label} className="border-b border-gray-50 pb-2">
+                                                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
+                                                                            <p className="text-xs font-bold text-gray-900">{item.value}</p>
+                                                                        </div>
+                                                                    ))}
+                                                                    <div className="sm:col-span-2 border-b border-gray-50 pb-2">
+                                                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nominee Address</p>
+                                                                        <p className="text-xs font-bold text-gray-900">{investment.nominee.address}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-6">
+                                                                <h4 className="text-xs font-black text-green-500 uppercase tracking-[0.2em] flex items-center">
+                                                                    <Building2 className="w-4 h-4 mr-2" />
+                                                                    Bank Information
+                                                                </h4>
+                                                                <div className="grid sm:grid-cols-2 gap-4">
+                                                                    {[
+                                                                        { label: 'Bank Name', value: investment.bank_details.bankName },
+                                                                        { label: 'A/C Number', value: investment.bank_details.accountNumber },
+                                                                        { label: 'Branch', value: investment.bank_details.branch },
+                                                                        { label: 'IFSC Code', value: investment.bank_details.ifscCode },
+                                                                    ].map((item) => (
+                                                                        <div key={item.label} className="border-b border-gray-50 pb-2">
+                                                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
+                                                                            <p className="text-xs font-bold text-gray-900">{item.value}</p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Investment Specifics */}
+                                                        <div className="lg:col-span-2 pt-6 border-t border-gray-100">
+                                                            <h4 className="text-xs font-black text-teal-600 uppercase tracking-[0.2em] mb-6 flex items-center">
+                                                                <PieChart className="w-4 h-4 mr-2" />
+                                                                Agreement Specifics
+                                                            </h4>
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
+                                                                {[
+                                                                    { label: 'Principal', value: formatCurrency(investment.investment_amount) },
+                                                                    { label: 'Shares', value: investment.number_of_shares },
+                                                                    { label: 'Face Value', value: formatCurrency(investment.face_value_per_share || 100) },
+                                                                    { label: 'Yield', value: investment.dividend_rate > 0 ? `${investment.dividend_rate}%` : 'FIXED' },
+                                                                    { label: 'Lock-in', value: `${investment.lock_in_period} Years` },
+                                                                    { label: 'Demat Status', value: investment.demat_credited ? 'Credited' : 'Pending' },
+                                                                ].map((item) => (
+                                                                    <div key={item.label}>
+                                                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight mb-1">{item.label}</p>
+                                                                        <p className="text-xs font-black text-gray-900">{item.value}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            {/* Investment Specifics */}
-                                            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 lg:col-span-2">
-                                                <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                                    <ShieldCheck className="w-5 h-5 mr-3 text-[#1B8A9F]" />
-                                                    Investment Specifics
-                                                </h4>
-                                                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                                    {[
-                                                        { label: 'Total Investment', value: formatCurrency(investment.investment_amount) },
-                                                        { label: 'Number of Shares', value: investment.number_of_shares },
-                                                        { label: 'Face Value (Per Share)', value: formatCurrency(investment.face_value_per_share || 100) },
-                                                        { label: 'Payment Mode', value: investment.payment_mode },
-                                                        { label: 'Payment Reference', value: investment.payment_reference },
-                                                        { label: 'Payment Date', value: formatDate(investment.payment_date) },
-                                                        { label: 'Lock-in Period', value: `${investment.lock_in_period} Years` },
-                                                        { label: 'Lock-in Start Date', value: formatDate(investment.lock_in_start_date) },
-                                                        { label: 'Lock-in End Date', value: formatDate(investment.lock_in_end_date) },
-                                                        { label: 'Demat Account', value: investment.demat_account || 'N/A' },
-                                                        { label: 'Demat Status', value: investment.demat_credited ? 'Credited' : 'Pending' },
-                                                    ].map((item) => (
-                                                        <div key={item.label} className="border-b border-gray-50 pb-4">
-                                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
-                                                            <p className="text-sm font-bold text-gray-900">{item.value}</p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
                                         </div>
-                                        {idx < investments.length - 1 && <hr className="border-gray-100 border-2" />}
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div className="bg-white rounded-3xl p-20 text-center border-2 border-dashed border-gray-100">
                                     <p className="text-gray-400 font-medium">No application details found.</p>
