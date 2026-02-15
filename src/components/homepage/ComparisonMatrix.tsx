@@ -1,213 +1,225 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap } from 'lucide-react';
+import { Target, TrendingUp, ShieldCheck, ArrowRight, Info } from 'lucide-react';
 
 export default function ComparisonMatrix() {
-    const [investmentAmount, setInvestmentAmount] = useState(500000);
+    const [investmentAmount, setInvestmentAmount] = useState(1000000);
 
-    // SVG Chart Calculations
+    // Chart Calculations
     const maxAmount = 10000000;
     const chartScale = investmentAmount / maxAmount;
     const shreegY = 180 - (chartScale * 150);
-    const fdY = 180 - (chartScale * 55);
+    const fdY = 180 - (chartScale * 45);
     const cpY = 180 - (chartScale * 100);
 
     const comparisonData = [
         {
             criteria: 'Annual Yield Potential',
-            fd: '7%',
-            shreeg: '18%',
-            summary: '3x higher payout architecture',
+            fd: '7.1%',
+            shreeg: '18.0%',
+            summary: 'Higher liquidity multiplier',
             highlight: true
         },
         {
-            criteria: 'Monthly Cashflow',
-            fd: `₹${Math.round((investmentAmount * 0.07) / 12).toLocaleString('en-IN')}`,
-            shreeg: `₹${Math.round((investmentAmount * 0.18) / 12).toLocaleString('en-IN')}`,
-            summary: 'Fixed payout on 1st of every month',
+            criteria: 'Payout Reliability',
+            fd: 'Quarterly/Maturity',
+            shreeg: 'Fixed Monthly',
+            summary: 'Institutional systematic credit',
             highlight: true
-        },
-        {
-            criteria: 'Risk Architecture',
-            fd: 'Bank Secured',
-            shreeg: 'Asset Seniority',
-            summary: 'Priority claim over ordinary equity',
-            highlight: false
         },
         {
             criteria: 'Capital Seniority',
-            fd: 'Retail Tier',
-            shreeg: 'Priority Tier-1',
-            summary: 'Legal priority in capital stack',
+            fd: 'Retail Unsecured',
+            shreeg: 'Tier-1 Priority',
+            summary: 'Asset seniority over equity',
             highlight: false
         },
         {
-            criteria: 'Growth Vector',
-            fd: 'Inflation Limited',
-            shreeg: 'Compounding+',
-            summary: 'Asset appreciation + fixed yield',
+            criteria: 'Inflation Alpha',
+            fd: 'Negative Real Yield',
+            shreeg: 'Real Assets Alpha',
+            summary: 'Preserves purchasing power',
             highlight: true
         },
     ];
 
     return (
-        <section className="py-16 md:py-32 bg-slate-50 selection:bg-[#1B8A9F] selection:text-white overflow-hidden relative">
-            {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-1/3 h-full bg-white skew-x-12 translate-x-1/2 pointer-events-none opacity-50"></div>
+        <section id="portfolio" className="py-24 bg-gray-50/50 relative overflow-hidden">
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 w-1/3 h-full bg-white opacity-40 skew-x-[15deg] translate-x-1/2"></div>
 
-            <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
-
-                {/* Section Header: Focused & Clean */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 md:mb-24 gap-8">
+            <div className="max-w-7xl mx-auto px-6 relative z-10">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-12">
                     <div className="max-w-2xl">
-                        <div className="flex items-center gap-3 mb-6">
-                            <span className="h-[1px] w-10 bg-[#1B8A9F]"></span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1B8A9F]">The Yield Arbitrage</span>
+                        <div className="flex items-center space-x-3 mb-6">
+                            <div className="h-px w-12 bg-[#1B8A9F]"></div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1B8A9F]">Arbitrage Advantage</span>
                         </div>
-                        <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter leading-[0.95]">
-                            Structural shift in <br />
-                            <span className="text-slate-300">capital efficiency.</span>
+                        <h2 className="text-4xl md:text-6xl font-black text-gray-900 leading-[0.95] tracking-tighter uppercase">
+                            Structural <br />
+                            Inefficiency <br />
+                            <span className="text-[#1B8A9F]">Corrected.</span>
                         </h2>
                     </div>
-                    <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-sm pb-2">
-                        Comparing traditional security with institutional-grade yield multipliers.
-                    </p>
+                    <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl max-w-sm">
+                        <p className="text-gray-500 font-medium leading-relaxed italic">
+                            "Tradition often masks underperformance. We provide the structural bridge to institutional yields that were previously inaccessible."
+                        </p>
+                    </div>
                 </div>
 
-                <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
-                    {/* Interactive Blades */}
-                    <div className="lg:col-span-7 space-y-4">
+                <div className="grid lg:grid-cols-12 gap-16 items-stretch">
+
+                    {/* Comparison Tiles */}
+                    <div className="lg:col-span-12 xl:col-span-7 space-y-4">
                         {comparisonData.map((row, i) => (
-                            <div
-                                key={i}
-                                className="group bg-white border border-slate-100 rounded-[24px] md:rounded-3xl p-5 md:p-6 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-100 hover:border-[#1B8A9F]/20 relative overflow-hidden"
-                            >
-                                <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center relative z-10 gap-6 md:gap-0">
-                                    <div className="md:col-span-6 space-y-1">
-                                        <p className="text-sm md:text-base font-black text-slate-900">{row.criteria}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{row.summary}</p>
+                            <div key={i} className="group relative bg-white rounded-[32px] p-6 border border-gray-100 transition-all duration-500 hover:shadow-2xl hover:shadow-gray-200/50 hover:border-[#1B8A9F]/20 overflow-hidden">
+                                <div className="absolute inset-y-0 left-0 w-1 bg-[#1B8A9F] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                                    <div className="md:col-span-6">
+                                        <p className="text-lg font-black text-gray-900 uppercase tracking-tight leading-none mb-1">{row.criteria}</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{row.summary}</p>
                                     </div>
-                                    <div className="w-full md:col-span-3 flex md:block items-center justify-between border-t md:border-t-0 pt-4 md:pt-0 border-slate-50">
-                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest md:mb-1">Bank FD</p>
-                                        <p className="text-base font-bold text-slate-500 italic">{row.fd}</p>
+                                    <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
+                                        <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">Standard FD</span>
+                                        <span className="text-sm font-bold text-gray-400 italic line-through">{row.fd}</span>
                                     </div>
-                                    <div className="w-full md:col-span-3 flex md:block items-center justify-between">
-                                        <p className="md:hidden text-[11px] font-black text-[#1B8A9F] uppercase tracking-widest">Shreeg Yield</p>
-                                        <div className={`inline-block px-5 py-2.5 rounded-xl transition-all duration-500 ${row.highlight
-                                            ? 'bg-[#1B8A9F] text-white font-black shadow-xl shadow-[#1B8A9F]/40 scale-100 md:scale-110'
-                                            : 'bg-slate-100 text-slate-900 font-black'
+                                    <div className="md:col-span-3">
+                                        <div className={`px-6 py-4 rounded-2xl flex items-center justify-center transition-all duration-700 ${row.highlight
+                                            ? 'bg-gray-900 text-white shadow-xl group-hover:bg-[#1B8A9F] group-hover:shadow-[0_15px_30px_rgba(27,138,159,0.3)]'
+                                            : 'bg-gray-50 text-gray-900'
                                             }`}>
-                                            {row.shreeg}
+                                            <span className="text-xl font-black uppercase tracking-tighter">{row.shreeg}</span>
                                         </div>
                                     </div>
                                 </div>
-                                {/* Subtle hover background accent */}
-                                <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#1B8A9F]/0 to-[#1B8A9F]/5 translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Live Chart Visualization & Integrated Calculator */}
-                    <div className="lg:col-span-5 space-y-6">
-                        <div className="bg-slate-900 rounded-[30px] md:rounded-[40px] p-6 md:p-8 overflow-hidden relative group">
-                            <div className="relative z-10 space-y-8">
-                                <div className="flex justify-between items-start">
-                                    <div className="space-y-1">
-                                        <h3 className="text-xl font-black text-white">Yield Optimizer.</h3>
-                                        <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">
-                                            Interactive Wealth Forecast
-                                        </p>
+                    {/* Interactive Projections */}
+                    <div className="lg:col-span-12 xl:col-span-5 h-full">
+                        <div className="bg-gray-900 rounded-[48px] p-8 h-full relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#1B8A9F]/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+
+                            <div className="relative z-10 flex flex-col h-full">
+                                <div className="flex justify-between items-start mb-8">
+                                    <div>
+                                        <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Yield Compass</h3>
+                                        <p className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest mt-1">Institutional Forecast</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Capital</p>
-                                        <p className="text-xl font-black text-[#1B8A9F]">₹{(investmentAmount / 100000).toFixed(1)}L</p>
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Active Capital</p>
+                                        <p className="text-3xl font-black text-white">₹{(investmentAmount / 100000).toFixed(0)}<span className="text-[#1B8A9F]">L</span></p>
                                     </div>
                                 </div>
 
-                                {/* Integrated Slider */}
-                                <div className="space-y-4 pt-4 border-t border-white/5 bg-white/[0.03] p-5 rounded-[24px] border border-white/5 shadow-2xl relative">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Adjust Capital</span>
-                                        <span className="text-[10px] font-black text-[#1B8A9F] bg-[#1B8A9F]/10 px-2.5 py-0.5 rounded-full border border-[#1B8A9F]/20">Live Sync</span>
+                                {/* Slider Component */}
+                                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/5 mb-8 group/slider transition-all hover:bg-white/10">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Adjust Allocation</span>
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                                            <span className="text-[9px] font-black text-blue-400 uppercase">Live Engine</span>
+                                        </div>
                                     </div>
                                     <input
                                         type="range"
-                                        min="500000"
+                                        min="1000000"
                                         max="10000000"
-                                        step="100000"
+                                        step="500000"
                                         value={investmentAmount}
                                         onChange={(e) => setInvestmentAmount(Number(e.target.value))}
-                                        className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#1B8A9F] hover:bg-white/15 transition-all"
+                                        className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#1B8A9F]"
                                     />
-                                    <div className="flex justify-between text-[8px] font-black text-white/20 uppercase tracking-widest px-1">
-                                        <span>Min 5L</span>
-                                        <span>Max 1Cr</span>
+                                    <div className="flex justify-between mt-3">
+                                        <span className="text-[9px] font-bold text-white/20">MIN 10L</span>
+                                        <span className="text-[9px] font-bold text-white/20">MAX 1CR</span>
                                     </div>
                                 </div>
 
-                                {/* Dynamic SVG Chart */}
-                                <div className="h-44 relative scale-90 sm:scale-100 origin-center">
+                                {/* Visualization */}
+                                <div className="h-40 relative mb-8">
                                     <svg className="w-full h-full overflow-visible" viewBox="0 0 400 200">
-                                        {/* Grid Lines */}
-                                        <line x1="0" y1="200" x2="400" y2="200" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                                        <line x1="0" y1="150" x2="400" y2="150" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                                        <line x1="0" y1="100" x2="400" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                                        <line x1="0" y1="50" x2="400" y2="50" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                                        {/* Value Labels */}
+                                        <g className="transition-all duration-700">
+                                            {/* Bank FD Label */}
+                                            <text
+                                                x="395"
+                                                y={fdY - 12}
+                                                textAnchor="end"
+                                                className="text-[10px] font-black fill-white/40 uppercase tracking-tighter"
+                                            >
+                                                FD ~₹{(investmentAmount * 1.7 / 10000000).toFixed(2)}Cr
+                                            </text>
 
-                                        {/* FD Path (Linear Growth) */}
+                                            {/* Shreeg Label */}
+                                            <text
+                                                x="395"
+                                                y={shreegY - 25}
+                                                textAnchor="end"
+                                                className="text-[14px] font-black fill-[#3DD2E5] tracking-tight uppercase"
+                                            >
+                                                SHREEG ₹{(investmentAmount * 2.8 / 10000000).toFixed(2)}Cr
+                                            </text>
+                                        </g>
                                         <path
                                             d={`M 0 180 L 400 ${fdY}`}
                                             fill="none"
-                                            stroke="rgba(255,255,255,0.6)"
-                                            strokeWidth="2.5"
-                                            strokeDasharray="6 4"
-                                            className="transition-all duration-500"
+                                            stroke="white"
+                                            strokeWidth="2"
+                                            strokeDasharray="10 6"
+                                            className="opacity-20 transition-all duration-700"
                                         />
-                                        <circle cx="400" cy={fdY} r="4" fill="rgba(255,255,255,0.8)" className="transition-all duration-500" />
-                                        <text x="390" y={fdY - 28} textAnchor="end" className="text-[10px] font-black fill-white/40 uppercase tracking-tighter transition-all duration-500">Bank FD Projection</text>
-                                        <text x="390" y={fdY - 12} textAnchor="end" className="text-[12px] font-black fill-white/60 transition-all duration-500">
-                                            ₹{(investmentAmount * 1.7 / 10000000).toFixed(2)}Cr
-                                        </text>
-
-                                        {/* SHREEG Path (Accelerated Growth) */}
                                         <path
                                             d={`M 0 180 Q 200 ${cpY} 400 ${shreegY}`}
                                             fill="none"
                                             stroke="#1B8A9F"
                                             strokeWidth="5"
-                                            className="transition-all duration-500"
+                                            className="transition-all duration-700"
                                         />
-
-                                        {/* Value Bubbles */}
-                                        <g className="transition-all duration-500" style={{ transform: `translate(400px, ${shreegY}px)` }}>
-                                            <rect x="-70" y="-35" width="85" height="28" rx="14" fill="#1B8A9F" className="shadow-2xl" />
-                                            <text x="-27.5" y="-17" textAnchor="middle" className="text-[12px] font-black fill-white tracking-tight">
-                                                ₹{(investmentAmount * 2.8 / 10000000).toFixed(1)}Cr
-                                            </text>
-                                            <text x="-27.5" y="-42" textAnchor="middle" className="text-[10px] font-black fill-[#1B8A9F] uppercase tracking-widest">SHREEG YIELD</text>
+                                        <g transform={`translate(400, ${shreegY})`}>
+                                            <circle r="8" fill="#1B8A9F" className="animate-pulse" />
+                                            <circle r="16" fill="#1B8A9F" className="animate-ping opacity-20" />
                                         </g>
                                     </svg>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 pt-8 border-t border-white/10">
+                                <div className="mt-auto grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
                                     <div>
-                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Total Yield (10Y)</p>
-                                        <p className="text-2xl md:text-3xl font-black text-white">~₹{(investmentAmount * 2.8 / 10000000).toFixed(1)}Cr</p>
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Growth Index</p>
+                                        <p className="text-3xl font-black text-white">₹{(investmentAmount * 2.8 / 10000000).toFixed(1)}Cr</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest mb-1">Multiplier Effect</p>
-                                        <p className="text-2xl md:text-3xl font-black text-[#1B8A9F]">2.8x</p>
+                                        <p className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest mb-1">Yield Delta</p>
+                                        <p className="text-3xl font-black text-[#1B8A9F]">2.8<span className="text-white/40">X</span></p>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Background Glow */}
-                            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#1B8A9F]/20 blur-[100px] rounded-full group-hover:bg-[#1B8A9F]/30 transition-all duration-1000"></div>
                         </div>
+                    </div>
+
+                </div>
+
+                <div className="mt-24 pt-12 border-t border-gray-100 flex flex-wrap justify-center gap-16 opacity-30 grayscale filter">
+                    {/* Simplified placeholder for institutional icons */}
+                    <div className="flex items-center space-x-3">
+                        <Target className="w-8 h-8" />
+                        <span className="text-xl font-black tracking-tighter uppercase">FII Linked</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <ShieldCheck className="w-8 h-8" />
+                        <span className="text-xl font-black tracking-tighter uppercase">Audit Clear</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <TrendingUp className="w-8 h-8" />
+                        <span className="text-xl font-black tracking-tighter uppercase">Alpha Model</span>
                     </div>
                 </div>
             </div>
         </section>
     );
 }
+

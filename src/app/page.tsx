@@ -6,6 +6,9 @@ import Features from '@/components/homepage/Features';
 import ComparisonMatrix from '@/components/homepage/ComparisonMatrix';
 import Footer from '@/components/homepage/Footer';
 
+import ResearchPortfolio from '@/components/homepage/ResearchPortfolio';
+import BrokerSection from '@/components/homepage/BrokerSection';
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white selection:bg-[#1B8A9F] selection:text-white overflow-x-hidden">
@@ -22,6 +25,8 @@ export default function HomePage() {
       <main className="relative z-10">
         <Hero />
         <ComparisonMatrix />
+        <ResearchPortfolio />
+        <BrokerSection />
         <Features />
 
       </main>

@@ -32,6 +32,7 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (res.ok) {
+                console.log('Login success, reset required:', data.user.passwordResetRequired);
                 // Store user data
                 localStorage.setItem('user', JSON.stringify(data.user));
                 localStorage.setItem('session', JSON.stringify(data.session));
@@ -146,6 +147,14 @@ export default function LoginPage() {
                                         <Eye className="h-5 w-5" />
                                     )}
                                 </button>
+                            </div>
+                            <div className="flex justify-end mt-2">
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-sm font-semibold text-[#1B8A9F] hover:text-[#4ADE80] transition-colors"
+                                >
+                                    Forgot Password?
+                                </Link>
                             </div>
                         </div>
 

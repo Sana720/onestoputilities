@@ -4,19 +4,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { isMarketOpen } from '@/lib/market';
-import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LayoutDashboard, Globe, Lock, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function Navbar() {
     const [isMarket, setIsMarket] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
         setIsMarket(isMarketOpen());
         const interval = setInterval(() => {
             setIsMarket(isMarketOpen());
         }, 60000);
+
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
 
         const checkAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
@@ -25,7 +31,11 @@ export default function Navbar() {
             } else {
                 const userData = localStorage.getItem('user');
                 if (userData) {
-                    setUserRole(JSON.parse(userData).role);
+                    try {
+                        setUserRole(JSON.parse(userData).role);
+                    } catch (e) {
+                        setUserRole(null);
+                    }
                 }
             }
         };
@@ -42,127 +52,198 @@ export default function Navbar() {
 
         return () => {
             clearInterval(interval);
+            window.removeEventListener('scroll', handleScroll);
             subscription.unsubscribe();
         };
     }, []);
 
+    const scrollToSection = (id: string) => {
+        const element = document.getElementById(id.replace('#', ''));
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     return (
-        <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-20">
+        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled
+            ? 'py-4 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm'
+            : 'py-6 bg-transparent'
+            }`}>
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="flex items-center justify-between">
+                    {/* Logo & Status Group */}
                     <div className="flex items-center space-x-6">
-                        <Link href="/">
-                            <Image src="/logo.png" alt="SHREEG Logo" width={140} height={40} className="h-8 md:h-9 w-auto" />
+                        <Link href="/" className="relative group transition-transform active:scale-95 shrink-0">
+                            <Image src="/logo.png" alt="SHREEG Logo" width={140} height={40} className="h-9 md:h-10 w-auto" />
                         </Link>
-                        <div className="hidden lg:flex items-center gap-4 border-l border-gray-200 pl-6">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] uppercase tracking-tighter font-black text-[#1B8A9F]">Live Portfolio</span>
-                                <span className={`text-xs font-bold flex items-center gap-1 ${isMarket ? 'text-green-500' : 'text-red-500'}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMarket ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                    Market {isMarket ? 'Open' : 'Closed'}
-                                </span>
+
+                        <div className="hidden lg:flex items-center space-x-4 border-l border-gray-100 pl-4 h-8">
+                            <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isMarket ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
+                                }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isMarket ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                                <span>Market {isMarket ? 'Live' : 'Closed'}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Desktop Actions */}
-                    <div className="hidden md:flex items-center gap-3">
+                    {/* Navigation - Institutional Group */}
+                    <div className="hidden md:flex items-center space-x-1 bg-gray-50/50 rounded-2xl p-1 border border-gray-100">
+                        <Link href="/" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
+                            <span>Home</span>
+                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </Link>
+                        <Link href="/about" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
+                            <span>About</span>
+                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </Link>
+                        <button onClick={() => scrollToSection('research')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
+                            <span>Research</span>
+                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </button>
+                        <button onClick={() => scrollToSection('portfolio')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
+                            <span>Yield</span>
+                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </button>
+                    </div>
+
+                    {/* Desktop Actions - Institutional Group */}
+                    <div className="hidden md:flex items-center space-x-3 border-l border-gray-100 pl-4">
                         <Link
                             href="https://ekyc.arihantcapital.com/?rmcode=9191"
                             target="_blank"
-                            className="px-5 py-2.5 text-sm font-bold text-[#1B8A9F] hover:text-[#156d7d] transition-all bg-teal-50 rounded-full"
+                            className="hidden lg:flex items-center px-5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-[#1B8A9F] hover:text-[#1B8A9F] transition-all active:scale-95 hover:shadow-sm"
                         >
                             Open Demat
                         </Link>
+
                         {userRole ? (
                             <Link
                                 href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
-                                className="inline-flex items-center gap-2 bg-[#1B8A9F] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#156d7d] transition-all shadow-lg shadow-teal-100"
+                                className="group relative px-6 py-3 bg-gray-900 text-white rounded-xl flex items-center space-x-3 overflow-hidden transition-all hover:shadow-2xl shadow-gray-200"
                             >
-                                <LayoutDashboard className="w-4 h-4" />
-                                My Dashboard
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#1B8A9F] to-[#4ADE80] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <LayoutDashboard className="w-4 h-4 relative z-10" />
+                                <span className="text-sm font-black relative z-10">Console</span>
+                                <ArrowRight className="w-4 h-4 absolute right-2 opacity-0 group-hover:opacity-100 transition-all" />
                             </Link>
                         ) : (
-                            <>
-                                <Link href="/login" className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-slate-900 transition-all">
+                            <div className="flex items-center space-x-2">
+                                <Link
+                                    href="/login"
+                                    className="px-6 py-3 text-sm font-black uppercase tracking-widest text-gray-600 hover:text-[#1B8A9F] transition-all"
+                                >
                                     Login
                                 </Link>
-                                <Link href="/apply" className="bg-slate-900 text-white px-7 py-2.5 rounded-full text-sm font-bold hover:bg-[#1B8A9F] transition-all shadow-xl shadow-slate-200">
+                                <Link
+                                    href="/apply"
+                                    className="px-7 py-3 bg-gray-900 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-[#1B8A9F] hover:shadow-2xl shadow-gray-200 transition-all active:scale-95"
+                                >
                                     Join Network
                                 </Link>
-                            </>
+                            </div>
                         )}
                     </div>
 
-                    {/* Mobile Menu Toggle */}
-                    <div className="md:hidden flex items-center gap-4">
-                        <div className="flex flex-col items-end lg:hidden">
-                            <span className={`text-[10px] font-bold flex items-center gap-1 ${isMarket ? 'text-green-500' : 'text-red-500'}`}>
-                                <span className={`w-1 h-1 rounded-full ${isMarket ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                {isMarket ? 'Live' : 'Closed'}
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 text-slate-600 hover:text-[#1B8A9F] transition-colors"
-                        >
-                            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                        </button>
-                    </div>
+                    {/* Mobile Toggle */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden p-3 bg-gray-50 border border-gray-100 rounded-2xl text-gray-600 active:scale-90 transition-all"
+                    >
+                        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden bg-white border-b border-gray-100 absolute w-full left-0 top-20 shadow-2xl animate-in slide-in-from-top duration-300">
-                    <div className="px-4 py-8 space-y-6">
-                        <div className="flex flex-col gap-4">
-                            <Link
-                                href="https://ekyc.arihantcapital.com/?rmcode=9191"
-                                target="_blank"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="text-lg font-bold text-[#1B8A9F] px-4 py-2 hover:bg-teal-50 rounded-xl transition-all"
-                            >
-                                Open Demat Account
-                            </Link>
-                            {userRole ? (
-                                <Link
-                                    href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="bg-[#1B8A9F] text-white text-center px-6 py-4 rounded-2xl font-bold shadow-lg shadow-[#1B8A9F]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+            {/* Mobile Menu */}
+            <div className={`md:hidden fixed inset-0 z-[110] bg-white transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}>
+                <div className="p-6 h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-16">
+                        <Image src="/logo.png" alt="SHREEG Logo" width={112} height={32} className="h-8 w-auto" />
+                        <button
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="p-3 bg-gray-50 rounded-2xl"
+                        >
+                            <X className="w-6 h-6 text-gray-600" />
+                        </button>
+                    </div>
+
+                    <div className="flex flex-col space-y-8">
+                        {[
+                            { name: 'Home', href: '/', type: 'link' },
+                            { name: 'About Us', href: '/about', type: 'link' },
+                            { name: 'Research Analysis', id: 'research', type: 'scroll' },
+                            { name: 'Yield Comparison', id: 'portfolio', type: 'scroll' },
+                            { name: 'Open Demat Account', href: 'https://ekyc.arihantcapital.com/?rmcode=9191', special: true, highlight: true, type: 'link' }
+                        ].map((item, i) => (
+                            item.type === 'scroll' ? (
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        setTimeout(() => scrollToSection(item.id!), 300);
+                                    }}
+                                    className="text-3xl font-black uppercase tracking-tighter text-gray-900 text-left transition-all active:scale-95"
                                 >
-                                    <LayoutDashboard className="w-5 h-5" />
-                                    Go to Dashboard
-                                </Link>
+                                    {item.name}
+                                </button>
                             ) : (
-                                <>
-                                    <Link
-                                        href="/login"
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className="text-lg font-bold text-slate-900 px-4 py-2 hover:bg-slate-50 rounded-xl transition-all"
-                                    >
-                                        Login to Portal
-                                    </Link>
-                                    <Link
-                                        href="/apply"
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className="bg-[#1B8A9F] text-white text-center px-6 py-4 rounded-2xl font-bold shadow-lg shadow-[#1B8A9F]/20 active:scale-95 transition-all"
-                                    >
-                                        Join Network
-                                    </Link>
-                                </>
-                            )}
-                        </div>
-                        <div className="pt-6 border-t border-slate-100 flex justify-between items-center px-4">
-                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Market Status</span>
-                            <span className={`text-xs font-bold flex items-center gap-2 ${isMarket ? 'text-green-500' : 'text-red-500'}`}>
-                                <span className={`w-2 h-2 rounded-full ${isMarket ? 'bg-green-500' : 'bg-red-500'} ${isMarket ? 'animate-pulse' : ''}`}></span>
-                                Market is {isMarket ? 'OPEN' : 'CLOSED'}
-                            </span>
+                                <Link
+                                    key={i}
+                                    href={item.href!}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className={`text-3xl font-black uppercase tracking-tighter transition-all active:scale-95 ${item.highlight
+                                        ? 'text-white bg-[#1B8A9F] px-6 py-4 rounded-2xl shadow-xl shadow-[#1B8A9F]/20 text-xl text-center'
+                                        : item.special ? 'text-[#1B8A9F]' : 'text-gray-900'
+                                        }`}
+                                >
+                                    {item.name}
+                                </Link>
+                            )
+                        ))}
+                    </div>
+
+                    <div className="mt-auto space-y-4 pt-12">
+                        {userRole ? (
+                            <Link
+                                href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="w-full flex items-center justify-center space-x-3 py-6 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest text-lg"
+                            >
+                                <LayoutDashboard className="w-6 h-6" />
+                                <span>Go to Console</span>
+                            </Link>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/apply"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="w-full flex items-center justify-center py-6 bg-[#1B8A9F] text-white rounded-[32px] font-black uppercase tracking-widest text-lg shadow-2xl shadow-[#1B8A9F]/30"
+                                >
+                                    Join Network
+                                </Link>
+                                <Link
+                                    href="/login"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="w-full flex items-center justify-center py-5 bg-gray-50 text-gray-900 rounded-[32px] font-black uppercase tracking-widest"
+                                >
+                                    Client Login
+                                </Link>
+                            </>
+                        )}
+                        <div className="flex items-center justify-between px-4 pt-6">
+                            <div className="flex items-center space-x-2">
+                                <Lock className="w-4 h-4 text-gray-400" />
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ISO 27001 Secure</span>
+                            </div>
+                            <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${isMarket ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                                }`}>
+                                Market {isMarket ? 'Live' : 'Closed'}
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </nav>
     );
 }

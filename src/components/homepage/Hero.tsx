@@ -62,7 +62,7 @@ export default function Hero() {
     const data = SOLUTIONS[activeTab];
 
     return (
-        <section className="relative pt-6 pb-24 lg:pt-8 lg:pb-32">
+        <section className="relative pt-24 pb-24 lg:pt-32 lg:pb-32">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:grid lg:grid-cols-12 lg:gap-8 items-center">
                 <div className="lg:col-span-7 space-y-8">
                     <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-1.5 rounded-full">

@@ -84,6 +84,14 @@ export default function ClientDashboard() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [resetData, setResetData] = useState({
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [resetLoading, setResetLoading] = useState(false);
+    const [resetError, setResetError] = useState('');
+    const [resetSuccess, setResetSuccess] = useState(false);
 
     const toggleAgreement = (id: string) => {
         const newExpanded = new Set(expandedAgreements);
@@ -111,6 +119,9 @@ export default function ClientDashboard() {
                     return;
                 }
                 setUser(parsedUser);
+                if (parsedUser.passwordResetRequired) {
+                    setShowResetModal(true);
+                }
             } else {
                 const userData = session.user.user_metadata;
                 let role = userData.role;
@@ -134,6 +145,15 @@ export default function ClientDashboard() {
                 const updatedUser = { ...session.user, ...userData, role };
                 setUser(updatedUser);
                 localStorage.setItem('user', JSON.stringify(updatedUser));
+
+                // Check for password reset requirement
+                const localUser = localStorage.getItem('user');
+                if (localUser) {
+                    const parsed = JSON.parse(localUser);
+                    if (parsed.passwordResetRequired) {
+                        setShowResetModal(true);
+                    }
+                }
             }
 
             fetchInvestments();
@@ -182,6 +202,57 @@ export default function ClientDashboard() {
         localStorage.removeItem('user');
         localStorage.removeItem('session');
         router.push('/login');
+    };
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setResetError('');
+        setResetLoading(true);
+
+        if (resetData.newPassword !== resetData.confirmPassword) {
+            setResetError('Passwords do not match');
+            setResetLoading(false);
+            return;
+        }
+
+        if (resetData.newPassword.length < 6) {
+            setResetError('Password must be at least 6 characters');
+            setResetLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/auth/update-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    newPassword: resetData.newPassword
+                }),
+            });
+
+            if (response.ok) {
+                setResetSuccess(true);
+                // Update local user data
+                const userData = JSON.parse(localStorage.getItem('user') || '{}');
+                userData.passwordResetRequired = false;
+                localStorage.setItem('user', JSON.stringify(userData));
+                setUser(userData);
+
+                setTimeout(() => {
+                    setShowResetModal(false);
+                    setResetSuccess(false);
+                    setResetData({ newPassword: '', confirmPassword: '' });
+                }, 2000);
+            } else {
+                const data = await response.json();
+                setResetError(data.error || 'Failed to update password');
+            }
+        } catch (error) {
+            setResetError('An error occurred. Please try again.');
+        } finally {
+            setResetLoading(false);
+        }
     };
 
     const calculateTotalDividends = () => {
@@ -334,7 +405,7 @@ export default function ClientDashboard() {
 
                 {/* Tabs */}
                 <div className="flex space-x-8 border-b border-gray-200 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    {['overview', 'dividends', 'details'].map((tab) => (
+                    {['overview', 'dividends', 'details', 'profile'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -665,8 +736,174 @@ export default function ClientDashboard() {
                             )}
                         </div>
                     )}
+                    {activeTab === 'profile' && (
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-white">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="w-16 h-16 bg-[#1B8A9F] rounded-2xl flex items-center justify-center text-white">
+                                            <User className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-bold text-gray-900">{user?.name}</h3>
+                                            <p className="text-gray-500">{user?.email}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-8">
+                                    <div className="grid md:grid-cols-2 gap-12">
+                                        {/* Profile Information */}
+                                        <div className="space-y-8">
+                                            <h4 className="text-sm font-bold text-[#1B8A9F] uppercase tracking-wider flex items-center">
+                                                <User className="w-4 h-4 mr-2" />
+                                                Account Details
+                                            </h4>
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Display Name</label>
+                                                    <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                        <User className="w-4 h-4 text-gray-400 mr-3" />
+                                                        <span className="text-gray-900 font-medium">{user?.name}</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
+                                                    <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                        <Mail className="w-4 h-4 text-gray-400 mr-3" />
+                                                        <span className="text-gray-900 font-medium">{user?.email}</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Account Role</label>
+                                                    <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                        <ShieldCheck className="w-4 h-4 text-[#1B8A9F] mr-3" />
+                                                        <span className="text-[#1B8A9F] font-bold uppercase tracking-wider text-xs">Verified Client</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Change Password */}
+                                        <div className="space-y-8">
+                                            <h4 className="text-sm font-bold text-orange-500 uppercase tracking-wider flex items-center">
+                                                <Lock className="w-4 h-4 mr-2" />
+                                                Security Settings
+                                            </h4>
+                                            <form onSubmit={handleResetPassword} className="space-y-6">
+                                                <div className="p-6 bg-orange-50 rounded-2xl border border-orange-100 space-y-4">
+                                                    <p className="text-sm text-orange-800 font-medium mb-2">Change your password below:</p>
+                                                    <div>
+                                                        <input
+                                                            type="password"
+                                                            required
+                                                            value={resetData.newPassword}
+                                                            onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
+                                                            placeholder="New Password"
+                                                            className="w-full p-3 bg-white border border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <input
+                                                            type="password"
+                                                            required
+                                                            value={resetData.confirmPassword}
+                                                            onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
+                                                            placeholder="Confirm New Password"
+                                                            className="w-full p-3 bg-white border border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
+                                                        />
+                                                    </div>
+
+                                                    {resetError && (
+                                                        <p className="text-xs text-red-600 font-bold">{resetError}</p>
+                                                    )}
+                                                    {resetSuccess && (
+                                                        <p className="text-xs text-green-600 font-bold">Password updated successfully!</p>
+                                                    )}
+
+                                                    <button
+                                                        type="submit"
+                                                        disabled={resetLoading}
+                                                        className="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600 transition-all disabled:opacity-50"
+                                                    >
+                                                        {resetLoading ? 'Updating...' : 'Update Password'}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Password Reset Modal */}
+            {showResetModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
+                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-8">
+                            <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
+                                <Lock className="w-8 h-8" />
+                            </div>
+                            <div className="text-center mb-8">
+                                <h3 className="text-2xl font-bold text-gray-900">Reset Your Password</h3>
+                                <p className="text-gray-500 mt-2">For security reasons, you must change your temporary password before proceeding.</p>
+                            </div>
+
+                            <form onSubmit={handleResetPassword} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">New Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={resetData.newPassword}
+                                        onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
+                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                        placeholder="Enter at least 6 characters"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Confirm New Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={resetData.confirmPassword}
+                                        onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
+                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                        placeholder="Repeat password"
+                                    />
+                                </div>
+
+                                {resetError && (
+                                    <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100">
+                                        {resetError}
+                                    </div>
+                                )}
+
+                                {resetSuccess ? (
+                                    <div className="p-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl border border-green-100 flex items-center justify-center">
+                                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                                        Password Updated Successfully
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        disabled={resetLoading}
+                                        className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-bold hover:bg-[#156d7d] shadow-lg shadow-teal-100 transition-all disabled:opacity-50 flex items-center justify-center"
+                                    >
+                                        {resetLoading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                        ) : 'Update & Continue'}
+                                    </button>
+                                )}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center border-t border-gray-200 mt-10">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">

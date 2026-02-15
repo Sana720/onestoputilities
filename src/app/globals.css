@@ -44,6 +44,16 @@
   --border-hover: #475569;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+#research,
+#portfolio,
+#brokers {
+  scroll-margin-top: 100px;
+}
+
 body {
   background-color: var(--background);
   color: var(--text-primary);
@@ -166,6 +176,38 @@ body {
 
 .delay-300 {
   animation-delay: 300ms;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
 }
 
 /* Scrollbar Styling */

@@ -11,6 +11,7 @@ import {
     DollarSign,
     CheckCircle2,
     Clock,
+    Lock,
     Search,
     Filter,
     Edit,
@@ -73,8 +74,10 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [productFilter, setProductFilter] = useState('all');
     const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [editData, setEditData] = useState({ dividend_rate: 0, status: '' });
     const [showDividendModal, setShowDividendModal] = useState(false);
     const [dividendData, setDividendData] = useState({
@@ -115,7 +118,7 @@ export default function AdminDashboard() {
     useEffect(() => {
         setInvestmentLimit(20);
         setLedgerLimit(20);
-    }, [activeTab, searchTerm, statusFilter]);
+    }, [activeTab, searchTerm, statusFilter, productFilter]);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -271,6 +274,7 @@ export default function AdminDashboard() {
         }
     };
 
+
     const handleUpdateDividend = async () => {
         if (!selectedTransaction || !editDividendData) return;
 
@@ -322,11 +326,16 @@ export default function AdminDashboard() {
     };
 
 
+
+    const products = Array.from(new Set(investments.map(inv => inv.product_name || 'SHREEG ASSET')));
+
     const filteredInvestments = investments.filter(inv => {
         const matchesSearch = (inv.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (inv.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+            (inv.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (inv.product_name || 'SHREEG ASSET').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        const matchesProduct = productFilter === 'all' || (inv.product_name || 'SHREEG ASSET') === productFilter;
+        return matchesSearch && matchesStatus && matchesProduct;
     });
 
     const calculateStats = () => {
@@ -406,8 +415,18 @@ export default function AdminDashboard() {
             });
         });
 
+        // Filter based on active tab
+        const filteredLedger = ledger.filter(item => {
+            if (activeTab === 'pending_dividends') {
+                return (item.type === 'DEBIT' && item.status === 'pending');
+            } else if (activeTab === 'ledger') {
+                return (item.type === 'DEBIT' ? item.status === 'paid' : true);
+            }
+            return true;
+        });
+
         // Sort by date descending
-        return ledger.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return filteredLedger.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     };
 
     const downloadLedgerCSV = () => {
@@ -618,20 +637,35 @@ export default function AdminDashboard() {
                                     />
                                 </div>
                                 {activeTab === 'investments' && (
-                                    <div className="relative">
-                                        <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <select
-                                            value={statusFilter}
-                                            onChange={(e) => setStatusFilter(e.target.value)}
-                                            className="bg-gray-50 border-none rounded-xl pl-12 pr-10 py-3 text-sm focus:ring-2 focus:ring-teal-100 transition-all appearance-none w-full"
-                                        >
-                                            <option value="all">All States</option>
-                                            <option value="pending">Pending Review</option>
-                                            <option value="approved">Approved</option>
-                                            <option value="active">Active/Bonded</option>
-                                            <option value="matured">Matured</option>
-                                        </select>
-                                    </div>
+                                    <>
+                                        <div className="relative">
+                                            <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            <select
+                                                value={productFilter}
+                                                onChange={(e) => setProductFilter(e.target.value)}
+                                                className="bg-gray-50 border-none rounded-xl pl-12 pr-10 py-3 text-sm focus:ring-2 focus:ring-teal-100 transition-all appearance-none w-full"
+                                            >
+                                                <option value="all">All Products</option>
+                                                {products.map(p => (
+                                                    <option key={p} value={p}>{p}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="relative">
+                                            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            <select
+                                                value={statusFilter}
+                                                onChange={(e) => setStatusFilter(e.target.value)}
+                                                className="bg-gray-50 border-none rounded-xl pl-12 pr-10 py-3 text-sm focus:ring-2 focus:ring-teal-100 transition-all appearance-none w-full"
+                                            >
+                                                <option value="all">All States</option>
+                                                <option value="pending">Pending Review</option>
+                                                <option value="approved">Approved</option>
+                                                <option value="active">Active/Bonded</option>
+                                                <option value="matured">Matured</option>
+                                            </select>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -654,7 +688,15 @@ export default function AdminDashboard() {
                                     {filteredInvestments.slice(0, investmentLimit).map((investment) => (
                                         <tr key={investment.id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-8 py-6">
-                                                <p className="text-sm font-bold text-gray-900 leading-none">{investment.full_name}</p>
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedInvestment(investment);
+                                                        setShowViewModal(true);
+                                                    }}
+                                                    className="text-sm font-bold text-gray-900 leading-none hover:text-[#1B8A9F] transition-colors text-left"
+                                                >
+                                                    {investment.full_name}
+                                                </button>
                                                 <p className="text-[10px] text-[#1B8A9F] font-black uppercase tracking-widest mt-1.5">{investment.product_name || 'SHREEG ASSET'}</p>
                                                 <p className="text-xs text-gray-400 mt-1 flex items-center">
                                                     <Mail className="w-3 h-3 mr-1" />
@@ -804,6 +846,158 @@ export default function AdminDashboard() {
             </div>
 
             {/* Edit Modal */}
+            {/* Investor Details Modal */}
+            {showViewModal && selectedInvestment && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl p-0 max-w-2xl w-full border border-gray-100 animate-fade-in-up overflow-hidden max-h-[90vh] flex flex-col">
+                        {/* Header */}
+                        <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                            <div>
+                                <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">Investor Profile</h3>
+                                <p className="text-[10px] text-[#1B8A9F] font-bold uppercase tracking-[0.2em] mt-1">Comprehensive Portfolio View</p>
+                            </div>
+                            <button onClick={() => setShowViewModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+                                <X className="w-6 h-6 text-gray-400" />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-8 overflow-y-auto custom-scrollbar space-y-8">
+                            {/* Personal Info */}
+                            <section>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                    <div className="w-1.5 h-1.5 bg-[#1B8A9F] rounded-full mr-2"></div>
+                                    Personal & Contact Information
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Full Legal Name</p>
+                                        <p className="text-sm font-black text-gray-900">{selectedInvestment.full_name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Email Address</p>
+                                        <p className="text-sm font-bold text-[#1B8A9F]">{selectedInvestment.email}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Contact Number</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.contact_number || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Registration Date</p>
+                                        <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.payment_date)}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Investment Details */}
+                            <section>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></div>
+                                    Investment & Position
+                                </h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 bg-white border-2 border-green-50 rounded-2xl p-6">
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Principal Amount</p>
+                                        <p className="text-sm font-black text-green-600">{formatCurrency(selectedInvestment.investment_amount)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Units (Shares)</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.number_of_shares}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Face Value / Unit</p>
+                                        <p className="text-sm font-bold text-gray-900">₹{selectedInvestment.face_value_per_share}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Yield Rate</p>
+                                        <p className="text-sm font-black text-teal-600">{selectedInvestment.dividend_rate}% <span className="text-[9px] font-medium text-gray-400 ml-1">PA</span></p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Lock-in Period</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.lock_in_period} Months</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Maturity Date</p>
+                                        <p className="text-sm font-bold text-orange-600">{formatDate(selectedInvestment.lock_in_end_date)}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Bank Details */}
+                            <section>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></div>
+                                    Settlement Account details
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-blue-50/30 rounded-2xl p-6 border border-blue-50">
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Bank Name</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.bankName || 'N/A'}</p>
+                                    </div>
+                                    <div className="md:col-span-1">
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Account Number</p>
+                                        <p className="text-sm font-mono font-bold text-gray-900">{selectedInvestment.bank_details?.accountNumber || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">IFSC Code</p>
+                                        <p className="text-sm font-bold text-gray-900 uppercase">{selectedInvestment.bank_details?.ifscCode || 'N/A'}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Nominee Details */}
+                            {selectedInvestment.nominee && (
+                                <section>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></div>
+                                        Nominee / Beneficiary Details
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-purple-50/30 rounded-2xl p-6 border border-purple-50">
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee Name</p>
+                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.fullName || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Relationship</p>
+                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.relationship || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Contact</p>
+                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.contactNumber || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-between sticky bottom-0 z-10">
+                            <div className="flex items-center space-x-2">
+                                <span className={`w-2 h-2 rounded-full ${selectedInvestment.status === 'active' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
+                                <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">{selectedInvestment.status}</span>
+                            </div>
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={() => {
+                                        setShowViewModal(false);
+                                        handleEditInvestment(selectedInvestment);
+                                    }}
+                                    className="px-6 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-[10px] font-black text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all uppercase tracking-widest"
+                                >
+                                    Quick Edit
+                                </button>
+                                <button
+                                    onClick={() => setShowViewModal(false)}
+                                    className="px-6 py-2.5 bg-[#1B8A9F] rounded-xl text-[10px] font-black text-white hover:bg-[#156d7d] transition-all uppercase tracking-widest shadow-lg shadow-teal-100"
+                                >
+                                    Dismiss Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {
                 showEditModal && selectedInvestment && (
                     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
@@ -1228,6 +1422,7 @@ export default function AdminDashboard() {
                     </div>
                 )
             }
+
         </div >
     );
 }

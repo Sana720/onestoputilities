@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         // Get user role from users table using admin client to bypass RLS
         const { data: userData, error: userError } = await supabaseAdmin
             .from('users')
-            .select('role, name, email')
+            .select('role, name, email, password_reset_required')
             .eq('id', data.user.id)
             .single();
 
@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
             email: userData.email,
             name: userData.name,
             role: userData.role,
+            passwordResetRequired: userData.password_reset_required
         };
 
         // Sync role to Supabase Auth metadata if missing or different
