@@ -125,7 +125,7 @@ export default function ResearchPortfolio() {
                         {analysisPillars.map((pillar, idx) => {
                             const total = analysisPillars.length;
                             const angle = -180 + (idx * (180 / (total - 1)));
-                            const radius = 380;
+                            const radius = 430;
                             const x = Math.cos(angle * (Math.PI / 180)) * radius;
                             const y = Math.sin(angle * (Math.PI / 180)) * radius + 50;
 
