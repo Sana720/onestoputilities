@@ -23,7 +23,10 @@ import {
     ShieldCheck,
     Mail,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Edit2,
+    KeyRound,
+    Eye
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
@@ -75,6 +78,9 @@ interface Investment {
         ifscCode: string;
         micrCode: string;
     };
+    pan_url?: string;
+    aadhar_url?: string;
+    bank_cheque_url?: string;
 }
 
 export default function ClientDashboard() {
@@ -92,6 +98,11 @@ export default function ClientDashboard() {
     const [resetLoading, setResetLoading] = useState(false);
     const [resetError, setResetError] = useState('');
     const [resetSuccess, setResetSuccess] = useState(false);
+
+    // Profile Edit State
+    const [isEditing, setIsEditing] = useState(false);
+    const [updateLoading, setUpdateLoading] = useState(false);
+    const [profileData, setProfileData] = useState<any>(null);
 
     const toggleAgreement = (id: string) => {
         const newExpanded = new Set(expandedAgreements);
@@ -189,6 +200,36 @@ export default function ClientDashboard() {
 
             if (response.ok) {
                 setInvestments(data.investments);
+                // Initialize profile data from the most recent investment
+                if (data.investments.length > 0 && !profileData) {
+                    const inv = data.investments[0];
+                    setProfileData({
+                        full_name: inv.full_name || '',
+                        father_name: inv.father_name || '',
+                        dob: inv.dob || '',
+                        gender: inv.gender || 'Male',
+                        occupation: inv.occupation || '',
+                        permanent_address: inv.permanent_address || '',
+                        contact_number: inv.contact_number || '',
+                        pan_number: inv.pan_number || '',
+                        aadhar_number: inv.aadhar_number || '',
+                        nominee: {
+                            name: inv.nominee?.name || '',
+                            relation: inv.nominee?.relation || inv.nominee?.relationship || '',
+                            dob: inv.nominee?.dob || '',
+                            address: inv.nominee?.address || ''
+                        },
+                        pan_url: inv.pan_url || '',
+                        aadhar_url: inv.aadhar_url || '',
+                        bank_details: {
+                            accountHolderName: inv.bank_details?.accountHolderName || inv.full_name || '',
+                            bankName: inv.bank_details?.bankName || '',
+                            accountNumber: inv.bank_details?.accountNumber || '',
+                            ifscCode: inv.bank_details?.ifscCode || '',
+                            branch: inv.bank_details?.branch || ''
+                        }
+                    });
+                }
             }
         } catch (error) {
             console.error('Error fetching investments:', error);
@@ -202,6 +243,37 @@ export default function ClientDashboard() {
         localStorage.removeItem('user');
         localStorage.removeItem('session');
         router.push('/login');
+    };
+
+    const handleProfileUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setUpdateLoading(true);
+
+        try {
+            const response = await fetch('/api/client/profile/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: user.email,
+                    ...profileData
+                }),
+            });
+
+            if (response.ok) {
+                setIsEditing(false);
+                // Refresh investments to show updated info
+                await fetchInvestments();
+                alert('Profile updated successfully!');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to update profile');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert('An error occurred while updating profile');
+        } finally {
+            setUpdateLoading(false);
+        }
     };
 
     const handleResetPassword = async (e: React.FormEvent) => {
@@ -724,6 +796,87 @@ export default function ClientDashboard() {
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    {/* Physical Documents */}
+                                                    <div className="lg:col-span-2 pt-6 border-t border-gray-100">
+                                                        <h4 className="text-xs font-black text-red-500 uppercase tracking-[0.2em] mb-4 flex items-center">
+                                                            <Building2 className="w-4 h-4 mr-2" />
+                                                            Uploaded Documents
+                                                        </h4>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                            {investment.pan_url ? (
+                                                                <a
+                                                                    href={investment.pan_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center p-3 bg-gray-50 border border-gray-100 rounded-xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
+                                                                >
+                                                                    <div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center mr-3 group-hover:text-[#1B8A9F]">
+                                                                        <Download className="w-4 h-4" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">PAN Card</p>
+                                                                        <p className="text-[10px] font-black text-gray-900 group-hover:text-[#1B8A9F]">View / Download</p>
+                                                                    </div>
+                                                                </a>
+                                                            ) : (
+                                                                <div className="flex items-center p-3 bg-gray-50/50 border border-gray-100 border-dashed rounded-xl opacity-60">
+                                                                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                                                                        <Lock className="w-4 h-4 text-gray-300" />
+                                                                    </div>
+                                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">PAN Not Uploaded</p>
+                                                                </div>
+                                                            )}
+
+                                                            {investment.aadhar_url ? (
+                                                                <a
+                                                                    href={investment.aadhar_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center p-3 bg-gray-50 border border-gray-100 rounded-xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
+                                                                >
+                                                                    <div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center mr-3 group-hover:text-[#1B8A9F]">
+                                                                        <Download className="w-4 h-4" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Aadhaar Card</p>
+                                                                        <p className="text-[10px] font-black text-gray-900 group-hover:text-[#1B8A9F]">View / Download</p>
+                                                                    </div>
+                                                                </a>
+                                                            ) : (
+                                                                <div className="flex items-center p-3 bg-gray-50/50 border border-gray-100 border-dashed rounded-xl opacity-60">
+                                                                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                                                                        <Lock className="w-4 h-4 text-gray-300" />
+                                                                    </div>
+                                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Aadhaar Not Uploaded</p>
+                                                                </div>
+                                                            )}
+
+                                                            {investment.bank_cheque_url ? (
+                                                                <a
+                                                                    href={investment.bank_cheque_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center p-3 bg-gray-50 border border-gray-100 rounded-xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
+                                                                >
+                                                                    <div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center mr-3 group-hover:text-[#1B8A9F]">
+                                                                        <Download className="w-4 h-4" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Cancelled Cheque</p>
+                                                                        <p className="text-[10px] font-black text-gray-900 group-hover:text-[#1B8A9F]">View / Download</p>
+                                                                    </div>
+                                                                </a>
+                                                            ) : (
+                                                                <div className="flex items-center p-3 bg-gray-50/50 border border-gray-100 border-dashed rounded-xl opacity-60">
+                                                                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                                                                        <Lock className="w-4 h-4 text-gray-300" />
+                                                                    </div>
+                                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Cheque Not Uploaded</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -739,99 +892,378 @@ export default function ClientDashboard() {
                     {activeTab === 'profile' && (
                         <div className="max-w-4xl mx-auto">
                             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-white">
+                                <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-white flex justify-between items-center">
                                     <div className="flex items-center space-x-4">
                                         <div className="w-16 h-16 bg-[#1B8A9F] rounded-2xl flex items-center justify-center text-white">
                                             <User className="w-8 h-8" />
                                         </div>
                                         <div>
-                                            <h3 className="text-2xl font-bold text-gray-900">{user?.name}</h3>
+                                            <h3 className="text-2xl font-bold text-gray-900">{profileData?.full_name || user?.name}</h3>
                                             <p className="text-gray-500">{user?.email}</p>
                                         </div>
                                     </div>
+                                    {!isEditing && (
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center shadow-sm"
+                                        >
+                                            <Edit2 className="w-4 h-4 mr-2 text-[#1B8A9F]" />
+                                            Edit Profile
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="p-8">
-                                    <div className="grid md:grid-cols-2 gap-12">
-                                        {/* Profile Information */}
-                                        <div className="space-y-8">
-                                            <h4 className="text-sm font-bold text-[#1B8A9F] uppercase tracking-wider flex items-center">
-                                                <User className="w-4 h-4 mr-2" />
-                                                Account Details
-                                            </h4>
+                                    {isEditing ? (
+                                        <form onSubmit={handleProfileUpdate} className="space-y-12">
+                                            {/* Personal Information */}
                                             <div className="space-y-6">
-                                                <div>
-                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Display Name</label>
-                                                    <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                                        <User className="w-4 h-4 text-gray-400 mr-3" />
-                                                        <span className="text-gray-900 font-medium">{user?.name}</span>
+                                                <h4 className="text-sm font-bold text-[#1B8A9F] uppercase tracking-wider flex items-center bg-teal-50/50 p-3 rounded-xl">
+                                                    <User className="w-4 h-4 mr-2" />
+                                                    Personal Information
+                                                </h4>
+                                                <div className="grid md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.full_name ?? ''}
+                                                            onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Father's Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.father_name ?? ''}
+                                                            onChange={(e) => setProfileData({ ...profileData, father_name: e.target.value })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Date of Birth</label>
+                                                        <input
+                                                            type="date"
+                                                            value={profileData?.dob ?? ''}
+                                                            onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Gender</label>
+                                                        <select
+                                                            value={profileData?.gender ?? 'Male'}
+                                                            onChange={(e) => setProfileData({ ...profileData, gender: e.target.value })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                            required
+                                                        >
+                                                            <option value="Male">Male</option>
+                                                            <option value="Female">Female</option>
+                                                            <option value="Other">Other</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Occupation</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.occupation ?? ''}
+                                                            onChange={(e) => setProfileData({ ...profileData, occupation: e.target.value })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Contact Number</label>
+                                                        <input
+                                                            type="tel"
+                                                            value={profileData?.contact_number ?? ''}
+                                                            onChange={(e) => setProfileData({ ...profileData, contact_number: e.target.value })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">PAN Number (Read-only)</label>
+                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed flex items-center">
+                                                            <ShieldCheck className="w-4 h-4 mr-2 text-teal-600/50" />
+                                                            {profileData?.pan_number || 'Not Provided'}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Aadhaar Number (Read-only)</label>
+                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed flex items-center">
+                                                            <ShieldCheck className="w-4 h-4 mr-2 text-teal-600/50" />
+                                                            {profileData?.aadhar_number || 'Not Provided'}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
-                                                    <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                                        <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                                                        <span className="text-gray-900 font-medium">{user?.email}</span>
+                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Permanent Address</label>
+                                                    <textarea
+                                                        value={profileData?.permanent_address ?? ''}
+                                                        onChange={(e) => setProfileData({ ...profileData, permanent_address: e.target.value })}
+                                                        className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all min-h-[100px]"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Nominee Details */}
+                                            <div className="space-y-6">
+                                                <h4 className="text-sm font-bold text-purple-600 uppercase tracking-wider flex items-center bg-purple-50/50 p-3 rounded-xl">
+                                                    <Users className="w-4 h-4 mr-2" />
+                                                    Nominee Details
+                                                </h4>
+                                                <div className="grid md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Nominee Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.nominee?.name ?? ''}
+                                                            onChange={(e) => setProfileData({
+                                                                ...profileData,
+                                                                nominee: { ...profileData.nominee, name: e.target.value }
+                                                            })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Relationship</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.nominee?.relation ?? ''}
+                                                            onChange={(e) => setProfileData({
+                                                                ...profileData,
+                                                                nominee: { ...profileData.nominee, relation: e.target.value }
+                                                            })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-400 outline-none transition-all"
+                                                            required
+                                                        />
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Account Role</label>
-                                                    <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                                        <ShieldCheck className="w-4 h-4 text-[#1B8A9F] mr-3" />
-                                                        <span className="text-[#1B8A9F] font-bold uppercase tracking-wider text-xs">Verified Client</span>
+                                            </div>
+
+                                            {/* Bank Details */}
+                                            <div className="space-y-6">
+                                                <h4 className="text-sm font-bold text-blue-600 uppercase tracking-wider flex items-center bg-blue-50/50 p-3 rounded-xl">
+                                                    <Building2 className="w-4 h-4 mr-2" />
+                                                    Bank Information
+                                                </h4>
+                                                <div className="grid md:grid-cols-2 gap-6">
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Account Holder Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.bank_details?.accountHolderName ?? ''}
+                                                            onChange={(e) => setProfileData({
+                                                                ...profileData,
+                                                                bank_details: { ...profileData.bank_details, accountHolderName: e.target.value }
+                                                            })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Bank Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.bank_details?.bankName ?? ''}
+                                                            onChange={(e) => setProfileData({
+                                                                ...profileData,
+                                                                bank_details: { ...profileData.bank_details, bankName: e.target.value }
+                                                            })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Account Number</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.bank_details?.accountNumber ?? ''}
+                                                            onChange={(e) => setProfileData({
+                                                                ...profileData,
+                                                                bank_details: { ...profileData.bank_details, accountNumber: e.target.value }
+                                                            })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">IFSC Code</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.bank_details?.ifscCode ?? ''}
+                                                            onChange={(e) => setProfileData({
+                                                                ...profileData,
+                                                                bank_details: { ...profileData.bank_details, ifscCode: e.target.value }
+                                                            })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Branch Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={profileData?.bank_details?.branch ?? ''}
+                                                            onChange={(e) => setProfileData({
+                                                                ...profileData,
+                                                                bank_details: { ...profileData.bank_details, branch: e.target.value }
+                                                            })}
+                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all"
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex space-x-4 pt-6 border-t border-gray-100">
+                                                <button
+                                                    type="submit"
+                                                    disabled={updateLoading}
+                                                    className="flex-1 bg-[#1B8A9F] text-white p-4 rounded-xl font-bold hover:bg-[#167182] transition-all disabled:opacity-50 shadow-md shadow-teal-100 flex items-center justify-center"
+                                                >
+                                                    {updateLoading ? (
+                                                        <>
+                                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                                                            Saving Changes...
+                                                        </>
+                                                    ) : 'Save Profile Changes'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsEditing(false)}
+                                                    className="px-8 py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    ) : (
+                                        <div className="grid md:grid-cols-2 gap-12">
+                                            {/* Profile Information */}
+                                            <div className="space-y-8">
+                                                <h4 className="text-sm font-bold text-[#1B8A9F] uppercase tracking-wider flex items-center">
+                                                    <User className="w-4 h-4 mr-2" />
+                                                    Account Details
+                                                </h4>
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                                                        <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                            <User className="w-4 h-4 text-gray-400 mr-3" />
+                                                            <span className="text-gray-900 font-medium">{profileData?.full_name || user?.name}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
+                                                        <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                            <Mail className="w-4 h-4 text-gray-400 mr-3" />
+                                                            <span className="text-gray-900 font-medium">{user?.email}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Gender</label>
+                                                            <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-medium text-sm">
+                                                                {profileData?.gender || '—'}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Occupation</label>
+                                                            <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-medium text-sm">
+                                                                {profileData?.occupation || '—'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">PAN Number</label>
+                                                            <div className="flex items-center space-x-2">
+                                                                <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-medium text-sm">
+                                                                    {profileData?.pan_number || '—'}
+                                                                </div>
+                                                                {profileData?.pan_url && (
+                                                                    <a
+                                                                        href={profileData.pan_url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="p-3 bg-teal-50 text-[#1B8A9F] rounded-lg border border-teal-100 hover:bg-teal-100 transition-all shadow-sm"
+                                                                        title="View PAN Card"
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Aadhaar Number</label>
+                                                            <div className="flex items-center space-x-2">
+                                                                <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-medium text-sm">
+                                                                    {profileData?.aadhar_number || '—'}
+                                                                </div>
+                                                                {profileData?.aadhar_url && (
+                                                                    <a
+                                                                        href={profileData.aadhar_url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="p-3 bg-teal-50 text-[#1B8A9F] rounded-lg border border-teal-100 hover:bg-teal-100 transition-all shadow-sm"
+                                                                        title="View Aadhaar Card"
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Account Role</label>
+                                                        <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                            <ShieldCheck className="w-4 h-4 text-[#1B8A9F] mr-3" />
+                                                            <span className="text-[#1B8A9F] font-bold uppercase tracking-wider text-xs">Verified Client</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Security Settings & Meta Info */}
+                                            <div className="space-y-8">
+                                                <h4 className="text-sm font-bold text-orange-500 uppercase tracking-wider flex items-center">
+                                                    <Lock className="w-4 h-4 mr-2" />
+                                                    Security Settings
+                                                </h4>
+                                                <div className="space-y-6">
+                                                    <div className="p-6 bg-orange-50 rounded-2xl border border-orange-100">
+                                                        <p className="text-sm text-orange-800 font-medium mb-4">Want to secure your account better?</p>
+                                                        <button
+                                                            onClick={() => setShowResetModal(true)}
+                                                            className="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600 transition-all flex items-center justify-center"
+                                                        >
+                                                            <KeyRound className="w-4 h-4 mr-2" />
+                                                            Change Password
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Client Status</p>
+                                                        <div className="flex items-center text-green-600 mb-2">
+                                                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                                                            <span className="text-sm font-bold">Active Portfolio</span>
+                                                        </div>
+                                                        <p className="text-xs text-gray-500 leading-relaxed">
+                                                            Your account is fully verified. You can update your profile details to keep your investment records accurate.
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {/* Change Password */}
-                                        <div className="space-y-8">
-                                            <h4 className="text-sm font-bold text-orange-500 uppercase tracking-wider flex items-center">
-                                                <Lock className="w-4 h-4 mr-2" />
-                                                Security Settings
-                                            </h4>
-                                            <form onSubmit={handleResetPassword} className="space-y-6">
-                                                <div className="p-6 bg-orange-50 rounded-2xl border border-orange-100 space-y-4">
-                                                    <p className="text-sm text-orange-800 font-medium mb-2">Change your password below:</p>
-                                                    <div>
-                                                        <input
-                                                            type="password"
-                                                            required
-                                                            value={resetData.newPassword}
-                                                            onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
-                                                            placeholder="New Password"
-                                                            className="w-full p-3 bg-white border border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <input
-                                                            type="password"
-                                                            required
-                                                            value={resetData.confirmPassword}
-                                                            onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
-                                                            placeholder="Confirm New Password"
-                                                            className="w-full p-3 bg-white border border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-                                                        />
-                                                    </div>
-
-                                                    {resetError && (
-                                                        <p className="text-xs text-red-600 font-bold">{resetError}</p>
-                                                    )}
-                                                    {resetSuccess && (
-                                                        <p className="text-xs text-green-600 font-bold">Password updated successfully!</p>
-                                                    )}
-
-                                                    <button
-                                                        type="submit"
-                                                        disabled={resetLoading}
-                                                        className="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600 transition-all disabled:opacity-50"
-                                                    >
-                                                        {resetLoading ? 'Updating...' : 'Update Password'}
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -840,76 +1272,78 @@ export default function ClientDashboard() {
             </div>
 
             {/* Password Reset Modal */}
-            {showResetModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-8">
-                            <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
-                                <Lock className="w-8 h-8" />
-                            </div>
-                            <div className="text-center mb-8">
-                                <h3 className="text-2xl font-bold text-gray-900">Reset Your Password</h3>
-                                <p className="text-gray-500 mt-2">For security reasons, you must change your temporary password before proceeding.</p>
-                            </div>
-
-                            <form onSubmit={handleResetPassword} className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">New Password</label>
-                                    <input
-                                        type="password"
-                                        required
-                                        value={resetData.newPassword}
-                                        onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
-                                        placeholder="Enter at least 6 characters"
-                                    />
+            {
+                showResetModal && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
+                        <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                            <div className="p-8">
+                                <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
+                                    <Lock className="w-8 h-8" />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Confirm New Password</label>
-                                    <input
-                                        type="password"
-                                        required
-                                        value={resetData.confirmPassword}
-                                        onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
-                                        placeholder="Repeat password"
-                                    />
+                                <div className="text-center mb-8">
+                                    <h3 className="text-2xl font-bold text-gray-900">Reset Your Password</h3>
+                                    <p className="text-gray-500 mt-2">For security reasons, you must change your temporary password before proceeding.</p>
                                 </div>
 
-                                {resetError && (
-                                    <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100">
-                                        {resetError}
+                                <form onSubmit={handleResetPassword} className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">New Password</label>
+                                        <input
+                                            type="password"
+                                            required
+                                            value={resetData.newPassword}
+                                            onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
+                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                            placeholder="Enter at least 6 characters"
+                                        />
                                     </div>
-                                )}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Confirm New Password</label>
+                                        <input
+                                            type="password"
+                                            required
+                                            value={resetData.confirmPassword}
+                                            onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
+                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                            placeholder="Repeat password"
+                                        />
+                                    </div>
 
-                                {resetSuccess ? (
-                                    <div className="p-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl border border-green-100 flex items-center justify-center">
-                                        <CheckCircle2 className="w-5 h-5 mr-2" />
-                                        Password Updated Successfully
-                                    </div>
-                                ) : (
-                                    <button
-                                        type="submit"
-                                        disabled={resetLoading}
-                                        className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-bold hover:bg-[#156d7d] shadow-lg shadow-teal-100 transition-all disabled:opacity-50 flex items-center justify-center"
-                                    >
-                                        {resetLoading ? (
-                                            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                        ) : 'Update & Continue'}
-                                    </button>
-                                )}
-                            </form>
+                                    {resetError && (
+                                        <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100">
+                                            {resetError}
+                                        </div>
+                                    )}
+
+                                    {resetSuccess ? (
+                                        <div className="p-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl border border-green-100 flex items-center justify-center">
+                                            <CheckCircle2 className="w-5 h-5 mr-2" />
+                                            Password Updated Successfully
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="submit"
+                                            disabled={resetLoading}
+                                            className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-bold hover:bg-[#156d7d] shadow-lg shadow-teal-100 transition-all disabled:opacity-50 flex items-center justify-center"
+                                        >
+                                            {resetLoading ? (
+                                                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                            ) : 'Update & Continue'}
+                                        </button>
+                                    )}
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center border-t border-gray-200 mt-10">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
                     © {new Date().getFullYear()} SHREEG Expert Wealth Advisory Limited • Secure Client Portal
                 </p>
             </footer>
-        </div>
+        </div >
     );
 }

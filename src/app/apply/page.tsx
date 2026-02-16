@@ -45,13 +45,23 @@ export default function ApplyPage() {
         numberOfShares: '',
         paymentMode: '',
         paymentReference: '',
-        paymentDate: '',
+        paymentDate: new Date().toISOString().split('T')[0],
         dematAccount: '',
 
         // Product & Broker
         productName: '',
         brokerId: '',
         brokerName: '',
+    });
+
+    const [files, setFiles] = useState<{
+        panFile: File | null;
+        aadharFile: File | null;
+        bankChequeFile: File | null;
+    }>({
+        panFile: null,
+        aadharFile: null,
+        bankChequeFile: null,
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -173,6 +183,52 @@ export default function ApplyPage() {
         }
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'panFile' | 'aadharFile' | 'bankChequeFile') => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setErrors(prev => ({ ...prev, [field]: 'File size must be less than 5MB' }));
+                return;
+            }
+            setFiles(prev => ({ ...prev, [field]: file }));
+            setErrors(prev => ({ ...prev, [field]: '' }));
+        }
+    };
+
+    const uploadFile = async (file: File, path: string): Promise<string | null> => {
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const fullPath = `${path}/${fileName}`;
+
+            const { data, error } = await supabase.storage
+                .from('documents')
+                .upload(fullPath, file);
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('documents')
+                .getPublicUrl(fullPath);
+
+            return publicUrl;
+        } catch (error) {
+            console.error(`Error uploading ${path}:`, error);
+            return null;
+        }
+    };
+
+    const formatIndianNumber = (num: string | number) => {
+        const x = num.toString();
+        const lastThree = x.substring(x.length - 3);
+        const otherNumbers = x.substring(0, x.length - 3);
+        if (otherNumbers !== '') {
+            return otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
+        }
+        return lastThree;
+    };
+
     const validateStep = (step: number): boolean => {
         const newErrors: Record<string, string> = {};
 
@@ -257,10 +313,33 @@ export default function ApplyPage() {
         setLoading(true);
 
         try {
+            // Upload documents first
+            let panUrl = '';
+            let aadharUrl = '';
+            let bankChequeUrl = '';
+
+            if (files.panFile) {
+                const url = await uploadFile(files.panFile, 'pan-cards');
+                if (url) panUrl = url;
+            }
+            if (files.aadharFile) {
+                const url = await uploadFile(files.aadharFile, 'aadhar-cards');
+                if (url) aadharUrl = url;
+            }
+            if (files.bankChequeFile) {
+                const url = await uploadFile(files.bankChequeFile, 'bank-cheques');
+                if (url) bankChequeUrl = url;
+            }
+
             const response = await fetch('/api/investments/apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    panUrl,
+                    aadharUrl,
+                    bankChequeUrl
+                }),
             });
 
             const data = await response.json();
@@ -476,6 +555,18 @@ export default function ApplyPage() {
                                         </div>
 
                                         <div>
+                                            <label className="label">Upload PAN Card (Photo/PDF)</label>
+                                            <input
+                                                type="file"
+                                                accept=".jpg,.jpeg,.png,.pdf"
+                                                onChange={(e) => handleFileChange(e, 'panFile')}
+                                                className={`input py-1.5 ${errors.panFile ? 'input-error' : ''}`}
+                                            />
+                                            {files.panFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.panFile.name}</p>}
+                                            {errors.panFile && <p className="text-red-500 text-sm mt-1">{errors.panFile}</p>}
+                                        </div>
+
+                                        <div>
                                             <label className="label">Aadhar Number *</label>
                                             <input
                                                 type="text"
@@ -492,6 +583,18 @@ export default function ApplyPage() {
                                                 maxLength={12}
                                             />
                                             {errors.aadharNumber && <p className="text-red-500 text-sm mt-1">{errors.aadharNumber}</p>}
+                                        </div>
+
+                                        <div>
+                                            <label className="label">Upload Aadhaar Card (Photo/PDF)</label>
+                                            <input
+                                                type="file"
+                                                accept=".jpg,.jpeg,.png,.pdf"
+                                                onChange={(e) => handleFileChange(e, 'aadharFile')}
+                                                className={`input py-1.5 ${errors.aadharFile ? 'input-error' : ''}`}
+                                            />
+                                            {files.aadharFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.aadharFile.name}</p>}
+                                            {errors.aadharFile && <p className="text-red-500 text-sm mt-1">{errors.aadharFile}</p>}
                                         </div>
 
                                         <div className="md:col-span-2">
@@ -693,6 +796,19 @@ export default function ApplyPage() {
                                             </select>
                                             {errors.accountType && <p className="text-red-500 text-sm mt-1">{errors.accountType}</p>}
                                         </div>
+
+                                        <div className="md:col-span-2">
+                                            <label className="label">Upload Cancelled Cheque / Passbook Copy</label>
+                                            <input
+                                                type="file"
+                                                accept=".jpg,.jpeg,.png,.pdf"
+                                                onChange={(e) => handleFileChange(e, 'bankChequeFile')}
+                                                className={`input py-1.5 ${errors.bankChequeFile ? 'input-error' : ''}`}
+                                            />
+                                            <p className="text-[10px] text-gray-500 mt-1 italic">Used for bank account verification and dividend settlements.</p>
+                                            {files.bankChequeFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.bankChequeFile.name}</p>}
+                                            {errors.bankChequeFile && <p className="text-red-500 text-sm mt-1">{errors.bankChequeFile}</p>}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -735,6 +851,11 @@ export default function ApplyPage() {
                                                 min="500000"
                                                 step="1000"
                                             />
+                                            {formData.investmentAmount && (
+                                                <p className="text-sm font-bold text-[#1B8A9F] mt-1">
+                                                    ₹{formatIndianNumber(formData.investmentAmount)}
+                                                </p>
+                                            )}
                                             <p className="text-[10px] text-teal-600 font-bold mt-1 uppercase tracking-wider">Minimum investment: ₹5.00 Lakhs</p>
                                             {errors.investmentAmount && <p className="text-red-500 text-sm mt-1">{errors.investmentAmount}</p>}
                                         </div>
@@ -861,7 +982,7 @@ export default function ApplyPage() {
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-text-secondary">Investment Amount:</span>
-                                                <span className="font-semibold">₹{formData.investmentAmount || '0'}</span>
+                                                <span className="font-semibold">₹{formData.investmentAmount ? formatIndianNumber(formData.investmentAmount) : '0'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-text-secondary">Number of Shares:</span>

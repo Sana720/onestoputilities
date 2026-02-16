@@ -36,9 +36,9 @@ export default function ComparisonMatrix() {
             highlight: false
         },
         {
-            criteria: 'Taxation',
-            fd: '10% (TDS)',
-            shreeg: '10% (TDS)',
+            criteria: 'Taxation (TDS)',
+            fd: '10%',
+            shreeg: '10%',
             summary: 'Applicable tax on gains',
             highlight: false
         },
@@ -98,13 +98,8 @@ export default function ComparisonMatrix() {
                                     <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
                                         <span className="text-lg font-black text-gray-400">{row.fd}</span>
                                     </div>
-                                    <div className="md:col-span-3">
-                                        <div className={`w-full px-6 py-4 rounded-2xl flex items-center justify-center transition-all duration-700 ${row.highlight
-                                            ? 'bg-gray-900 text-white shadow-xl group-hover:bg-[#1B8A9F] group-hover:shadow-[0_15px_30px_rgba(27,138,159,0.3)]'
-                                            : 'bg-gray-50 text-gray-900'
-                                            }`}>
-                                            <span className="text-xl font-black uppercase tracking-tighter">{row.shreeg}</span>
-                                        </div>
+                                    <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
+                                        <span className="text-lg font-black text-gray-900 group-hover:text-[#1B8A9F] transition-colors">{row.shreeg}</span>
                                     </div>
                                 </div>
                             </div>

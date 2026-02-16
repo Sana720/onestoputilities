@@ -35,8 +35,17 @@ import { supabase } from '@/lib/supabase';
 interface Investment {
     id: string;
     full_name: string;
+    father_name?: string;
+    dob?: string;
+    gender?: string;
+    occupation?: string;
+    permanent_address?: string;
     email: string;
     contact_number?: string;
+    pan_number?: string;
+    aadhar_number?: string;
+    marital_status?: string;
+    age?: number;
     investment_amount: number;
     number_of_shares: number;
     face_value_per_share: number;
@@ -56,6 +65,8 @@ interface Investment {
         bankName: string;
         accountNumber: string;
         ifscCode: string;
+        accountHolderName?: string;
+        branch?: string;
     };
     dividends: Array<{
         amount: number;
@@ -65,6 +76,9 @@ interface Investment {
         payment_mode?: string;
         bank_name?: string;
     }>;
+    pan_url?: string;
+    aadhar_url?: string;
+    bank_cheque_url?: string;
 }
 
 export default function AdminDashboard() {
@@ -875,6 +889,18 @@ export default function AdminDashboard() {
                                         <p className="text-sm font-black text-gray-900">{selectedInvestment.full_name}</p>
                                     </div>
                                     <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Father's Name</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.father_name || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Date of Birth</p>
+                                        <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.dob || '')}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Gender / Age</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.gender || 'N/A'} {selectedInvestment.age ? `(${selectedInvestment.age} yrs)` : ''}</p>
+                                    </div>
+                                    <div>
                                         <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Email Address</p>
                                         <p className="text-sm font-bold text-[#1B8A9F]">{selectedInvestment.email}</p>
                                     </div>
@@ -883,8 +909,16 @@ export default function AdminDashboard() {
                                         <p className="text-sm font-bold text-gray-900">{selectedInvestment.contact_number || 'N/A'}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Registration Date</p>
-                                        <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.payment_date)}</p>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">PAN Number</p>
+                                        <p className="text-sm font-bold text-gray-900 uppercase font-mono">{selectedInvestment.pan_number || 'Not Provided'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Aadhaar Number</p>
+                                        <p className="text-sm font-bold text-gray-900 font-mono">{selectedInvestment.aadhar_number || 'Not Provided'}</p>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Permanent Address</p>
+                                        <p className="text-sm font-medium text-gray-700">{selectedInvestment.permanent_address || 'N/A'}</p>
                                     </div>
                                 </div>
                             </section>
@@ -955,19 +989,86 @@ export default function AdminDashboard() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-purple-50/30 rounded-2xl p-6 border border-purple-50">
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee Name</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.fullName || 'N/A'}</p>
+                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.name || selectedInvestment.nominee.fullName || 'N/A'}</p>
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Relationship</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.relationship || 'N/A'}</p>
+                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.relation || selectedInvestment.nominee.relationship || 'N/A'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Contact</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.contactNumber || 'N/A'}</p>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee DOB</p>
+                                            <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.nominee.dob || '')}</p>
+                                        </div>
+                                        <div className="md:col-span-3">
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee Address</p>
+                                            <p className="text-sm font-medium text-gray-700">{selectedInvestment.nominee.address || 'N/A'}</p>
                                         </div>
                                     </div>
                                 </section>
                             )}
+
+                            {/* Documents */}
+                            <section>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></div>
+                                    Physical Document Verifications
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    {selectedInvestment.pan_url ? (
+                                        <a
+                                            href={selectedInvestment.pan_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
+                                        >
+                                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
+                                                <Eye className="w-5 h-5" />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase text-gray-400 group-hover:text-[#1B8A9F]">View PAN Card</p>
+                                        </a>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl opacity-50">
+                                            <p className="text-[10px] font-black uppercase text-gray-400">PAN Not Uploaded</p>
+                                        </div>
+                                    )}
+
+                                    {selectedInvestment.aadhar_url ? (
+                                        <a
+                                            href={selectedInvestment.aadhar_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
+                                        >
+                                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
+                                                <Eye className="w-5 h-5" />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase text-gray-400 group-hover:text-[#1B8A9F]">View Aadhaar</p>
+                                        </a>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl opacity-50">
+                                            <p className="text-[10px] font-black uppercase text-gray-400">Aadhaar Not Uploaded</p>
+                                        </div>
+                                    )}
+
+                                    {selectedInvestment.bank_cheque_url ? (
+                                        <a
+                                            href={selectedInvestment.bank_cheque_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
+                                        >
+                                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
+                                                <Eye className="w-5 h-5" />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase text-gray-400 group-hover:text-[#1B8A9F]">View Cheque</p>
+                                        </a>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl opacity-50">
+                                            <p className="text-[10px] font-black uppercase text-gray-400">Cheque Not Uploaded</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
                         </div>
 
                         {/* Footer */}
@@ -1036,6 +1137,33 @@ export default function AdminDashboard() {
                                             <p className="text-[9px] font-bold text-gray-400 uppercase">Broker Name</p>
                                             <p className="text-xs font-bold text-gray-900">{selectedInvestment!.broker_name || 'N/A'}</p>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
+                                    <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] mb-3 flex items-center">
+                                        <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+                                        Verification Documents
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedInvestment.pan_url && (
+                                            <a href={selectedInvestment.pan_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-bold text-red-600 hover:bg-red-50 transition-all flex items-center">
+                                                <Eye className="w-3 h-3 mr-1" /> PAN
+                                            </a>
+                                        )}
+                                        {selectedInvestment.aadhar_url && (
+                                            <a href={selectedInvestment.aadhar_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-bold text-red-600 hover:bg-red-50 transition-all flex items-center">
+                                                <Eye className="w-3 h-3 mr-1" /> Aadhaar
+                                            </a>
+                                        )}
+                                        {selectedInvestment.bank_cheque_url && (
+                                            <a href={selectedInvestment.bank_cheque_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-bold text-red-600 hover:bg-red-50 transition-all flex items-center">
+                                                <Eye className="w-3 h-3 mr-1" /> Cheque
+                                            </a>
+                                        )}
+                                        {!selectedInvestment.pan_url && !selectedInvestment.aadhar_url && !selectedInvestment.bank_cheque_url && (
+                                            <p className="text-[10px] text-red-400 font-bold italic">No documents uploaded for verification</p>
+                                        )}
                                     </div>
                                 </div>
 

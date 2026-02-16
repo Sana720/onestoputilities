@@ -132,12 +132,11 @@ export default function Navbar() {
                             {userRole ? (
                                 <Link
                                     href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
-                                    className="group relative px-6 py-3 bg-gray-900 text-white rounded-xl flex items-center space-x-3 overflow-hidden transition-all hover:shadow-2xl shadow-gray-200"
+                                    className="group relative px-6 py-3 bg-[#1B8A9F] text-white rounded-xl flex items-center space-x-3 overflow-hidden transition-all hover:bg-[#156d7d] hover:shadow-xl shadow-teal-100"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#1B8A9F] to-[#4ADE80] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                     <LayoutDashboard className="w-4 h-4 relative z-10" />
-                                    <span className="text-sm font-black relative z-10">Console</span>
-                                    <ArrowRight className="w-4 h-4 absolute right-2 opacity-0 group-hover:opacity-100 transition-all" />
+                                    <span className="text-sm font-black relative z-10">Dashboard</span>
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </Link>
                             ) : (
                                 <div className="flex items-center space-x-2">
@@ -223,10 +222,10 @@ export default function Navbar() {
                             <Link
                                 href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="w-full flex items-center justify-center space-x-3 py-2.5 bg-gray-900 text-white rounded-lg font-bold uppercase tracking-widest text-xs"
+                                className="w-full flex items-center justify-center space-x-3 py-3 bg-[#1B8A9F] text-white rounded-xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-teal-100/20"
                             >
-                                <LayoutDashboard className="w-6 h-6" />
-                                <span>Go to Console</span>
+                                <LayoutDashboard className="w-5 h-5" />
+                                <span>Go to Dashboard</span>
                             </Link>
                         ) : (
                             <>

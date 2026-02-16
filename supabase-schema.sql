@@ -58,6 +58,9 @@ CREATE TABLE IF NOT EXISTS investments (
   pan_number TEXT,
   marital_status TEXT,
   aadhar_number TEXT,
+  pan_url TEXT,
+  aadhar_url TEXT,
+  bank_cheque_url TEXT,
   
   -- Product & Broker Details
   product_name TEXT,
@@ -150,6 +153,9 @@ CREATE POLICY "Anyone can insert investments (for application)"
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS pan_number TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS marital_status TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS aadhar_number TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS pan_url TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS aadhar_url TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS bank_cheque_url TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS product_name TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_id TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_name TEXT;
@@ -193,3 +199,34 @@ INSERT INTO brokers (name, code) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 GRANT ALL ON brokers TO anon, authenticated;
+
+-- ==========================================
+-- STORAGE SETUP
+-- ==========================================
+
+-- Create a bucket for documents if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('documents', 'documents', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow public access to read files in the documents bucket
+CREATE POLICY "Public Access"
+ON storage.objects FOR SELECT
+USING ( bucket_id = 'documents' );
+
+-- Allow authenticated users to upload files to the documents bucket
+CREATE POLICY "Authenticated Upload"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK ( bucket_id = 'documents' );
+
+-- Allow users to update/delete their own uploads (optional/standard)
+CREATE POLICY "User Update Access"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING ( bucket_id = 'documents' );
+
+CREATE POLICY "User Delete Access"
+ON storage.objects FOR DELETE
+TO authenticated
+USING ( bucket_id = 'documents' );
