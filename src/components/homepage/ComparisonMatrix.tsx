@@ -16,16 +16,16 @@ export default function ComparisonMatrix() {
     const comparisonData = [
         {
             criteria: 'Annual Yield Potential',
-            fd: '7.1%',
-            shreeg: '18.0%',
-            summary: 'Higher liquidity multiplier',
+            fd: `₹${((investmentAmount * 0.071) / 100000).toFixed(2)}L`,
+            shreeg: `₹${((investmentAmount * 0.18) / 100000).toFixed(2)}L`,
+            summary: 'Institutional yield parity',
             highlight: true
         },
         {
-            criteria: 'Payout Reliability',
-            fd: 'Quarterly/Maturity',
-            shreeg: 'Fixed Monthly',
-            summary: 'Institutional systematic credit',
+            criteria: 'Monthly Payout',
+            fd: `₹${Math.round((investmentAmount * 0.071) / 12).toLocaleString('en-IN')}`,
+            shreeg: `₹${Math.round((investmentAmount * 0.18) / 12).toLocaleString('en-IN')}`,
+            summary: 'Predictable cash flow model',
             highlight: true
         },
         {
@@ -37,8 +37,8 @@ export default function ComparisonMatrix() {
         },
         {
             criteria: 'Inflation Alpha',
-            fd: 'Negative Real Yield',
-            shreeg: 'Real Assets Alpha',
+            fd: 'Negative Growth',
+            shreeg: `+₹${((investmentAmount * 0.11) / 100000).toFixed(1)}L Net`,
             summary: 'Preserves purchasing power',
             highlight: true
         },
