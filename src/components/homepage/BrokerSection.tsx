@@ -15,16 +15,16 @@ import {
 import Image from 'next/image';
 
 const brokers = [
-    { name: 'Groww', logo: 'https://storage.googleapis.com/groww-assets/logos/groww_logo_square.png' },
-    { name: 'Zerodha', logo: 'https://zerodha.com/static/images/logo.svg' },
-    { name: 'Upstox', logo: 'https://upstox.com/app/themes/upstox/dist/images/logo/upstox-logo.svg' },
-    { name: 'Angel One', logo: 'https://www.angelone.in/wp-content/uploads/2021/10/angel-one-logo.svg' },
-    { name: 'HDFC Securities', logo: 'https://www.hdfcsec.com/Content/Images/logo.png' },
-    { name: 'ICICI Direct', logo: 'https://www.icicidirect.com/Content/images/logo.png' },
-    { name: 'Kotak Securities', logo: 'https://www.kotaksecurities.com/content/dam/kotak-securities/common/ks-logo.svg' },
-    { name: 'Motilal Oswal', logo: 'https://www.motilaloswal.com/assets/images/logo.png' },
-    { name: 'Sharekhan', logo: 'https://www.sharekhan.com/content/dam/sharekhan/common/Sharekhan-Logo-New.svg' },
-    { name: 'Shoonya', logo: 'https://shoonya.com/wp-content/uploads/2022/10/shoonya-logo-new.svg' },
+    { name: 'Groww', logo: '/brokers/groww.png' },
+    { name: 'Zerodha', logo: '/brokers/zerodha.svg' },
+    { name: 'Upstox', logo: '/brokers/upstox.svg' },
+    { name: 'Angel One', logo: '/brokers/angelone.png' },
+    { name: 'HDFC Securities', logo: '/brokers/hdfc.png' },
+    { name: 'ICICI Direct', logo: '/brokers/icici.png' },
+    { name: 'Kotak Securities', logo: '/brokers/kotak.svg' },
+    { name: 'Motilal Oswal', logo: '/brokers/motilal.svg' },
+    { name: 'Sharekhan', logo: '/brokers/sharekhan.svg' },
+    { name: 'Shoonya', logo: '/brokers/shoonya.svg' },
 ];
 
 const steps = [
@@ -85,12 +85,13 @@ export default function BrokerSection() {
                                 <div className="h-32 bg-gray-50/50 backdrop-blur-sm border border-gray-100 rounded-[32px] p-8 flex items-center justify-center transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl group-hover:bg-white group-hover:border-[#1B8A9F]/20 overflow-hidden">
                                     {/* Logo Placeholder / Image */}
                                     <div className="relative w-full h-full flex items-center justify-center grayscale group-hover:grayscale-0 transition-all duration-700">
-                                        <div className="text-center scale-90 group-hover:scale-105 transition-transform duration-500">
-                                            <p className="text-lg font-black text-gray-800 tracking-tighter uppercase italic">{broker.name}</p>
-                                            <div className="flex justify-center mt-1">
-                                                <div className="h-0.5 w-6 bg-[#1B8A9F]/20 group-hover:w-12 group-hover:bg-[#1B8A9F] transition-all duration-500"></div>
-                                            </div>
-                                        </div>
+                                        <Image
+                                            src={broker.logo}
+                                            alt={broker.name}
+                                            width={120}
+                                            height={40}
+                                            className="object-contain max-h-12 scale-90 group-hover:scale-105 transition-transform duration-500"
+                                        />
                                     </div>
 
                                     {/* Corner Badge */}
