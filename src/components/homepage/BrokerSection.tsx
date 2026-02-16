@@ -168,7 +168,7 @@ export default function BrokerSection() {
                             <div className="flex flex-wrap gap-4">
                                 <div className="px-6 py-3 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center space-x-3">
                                     <ShieldCheck className="w-5 h-5 text-[#4ADE80]" />
-                                    <span className="text-xs font-bold text-white uppercase tracking-widest">ISO 27001 Certified</span>
+                                    <span className="text-xs font-bold text-white uppercase tracking-widest">10 years + holding company</span>
                                 </div>
                                 <div className="px-6 py-3 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center space-x-3">
                                     <CheckCircle2 className="w-5 h-5 text-[#4ADE80]" />

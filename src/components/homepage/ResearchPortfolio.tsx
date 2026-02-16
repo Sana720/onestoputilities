@@ -144,7 +144,7 @@ export default function ResearchPortfolio() {
                                             <div className="absolute bottom-0 left-0 w-full h-1 transition-all duration-500" style={{ backgroundColor: pillar.color }}></div>
                                         </div>
 
-                                        <div className="mt-4 text-center opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0 max-w-[120px]">
+                                        <div className="mt-4 text-center opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0 max-w-[120px]">
                                             <h5 className="text-[11px] font-black text-gray-900 uppercase leading-none mb-1">{pillar.title}</h5>
                                             <p className="text-[9px] font-bold text-gray-400">{pillar.desc}</p>
                                         </div>
@@ -153,23 +153,6 @@ export default function ResearchPortfolio() {
                             );
                         })}
 
-                        {/* Desktop labels that are always visible - ENHANCED VISIBILITY */}
-                        {analysisPillars.map((pillar, idx) => {
-                            const total = analysisPillars.length;
-                            const angle = -180 + (idx * (180 / (total - 1)));
-                            const radius = 460;
-                            const x = Math.cos(angle * (Math.PI / 180)) * radius;
-                            const y = Math.sin(angle * (Math.PI / 180)) * radius + 50;
-                            return (
-                                <div
-                                    key={`label-${idx}`}
-                                    className="absolute hidden lg:block pointer-events-none"
-                                    style={{ transform: `translate(${x}px, ${y}px)` }}
-                                >
-                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{pillar.title}</span>
-                                </div>
-                            )
-                        })}
                     </div>
 
                     {/* Mobile View for Pillars */}
@@ -209,7 +192,7 @@ export default function ResearchPortfolio() {
                                             <div className="p-3 bg-blue-50 rounded-2xl">
                                                 <PieChartIcon className="w-6 h-6 text-blue-500" />
                                             </div>
-                                            <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">By Sector</h4>
+                                            <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Shreeg fund - Sectors Diversification</h4>
                                         </div>
                                         <p className="text-gray-400 text-sm font-medium mb-8 leading-relaxed">
                                             Our sector allocation is data-driven, prioritizing high-liquidity large-cap stocks while maintaining exposure to blue-chip dividends and defensive ETFs.
@@ -277,7 +260,7 @@ export default function ResearchPortfolio() {
                                         <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
                                             <Briefcase className="w-6 h-6 text-[#4ADE80]" />
                                         </div>
-                                        <h4 className="text-2xl font-black uppercase tracking-tighter">By Fund Allocation</h4>
+                                        <h4 className="text-2xl font-black uppercase tracking-tighter">SHREEG FUND</h4>
                                     </div>
 
                                     <div className="space-y-4">

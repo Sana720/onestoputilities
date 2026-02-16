@@ -234,7 +234,7 @@ export default function Navbar() {
                         <div className="flex items-center justify-between px-4 pt-6">
                             <div className="flex items-center space-x-2">
                                 <Lock className="w-4 h-4 text-gray-400" />
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ISO 27001 Secure</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">10 years + holding company</span>
                             </div>
                             <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${isMarket ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
                                 }`}>

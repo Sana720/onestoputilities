@@ -108,7 +108,7 @@ export default function AboutPage() {
                                 <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100 group hover:bg-white hover:shadow-xl transition-all">
                                     <Gem className="w-8 h-8 text-[#1B8A9F] mb-4 group-hover:scale-110 transition-transform" />
                                     <h5 className="text-md font-black text-gray-900 mb-1">Elite Standard</h5>
-                                    <p className="text-xs text-gray-400 font-semibold leading-relaxed">ISO 27001 certified vaulting for every single digital asset.</p>
+                                    <p className="text-xs text-gray-400 font-semibold leading-relaxed">10 years + holding company vaulting for every single digital asset.</p>
                                 </div>
                                 <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100 group hover:bg-white hover:shadow-xl transition-all">
                                     <Target className="w-8 h-8 text-[#1B8A9F] mb-4 group-hover:scale-110 transition-transform" />

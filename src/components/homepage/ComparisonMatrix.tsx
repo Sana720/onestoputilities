@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Target, TrendingUp, ShieldCheck, ArrowRight, Info } from 'lucide-react';
 
 export default function ComparisonMatrix() {
-    const [investmentAmount, setInvestmentAmount] = useState(1000000);
+    const [investmentAmount, setInvestmentAmount] = useState(500000);
 
     // Chart Calculations
     const maxAmount = 10000000;
@@ -15,32 +15,32 @@ export default function ComparisonMatrix() {
 
     const comparisonData = [
         {
-            criteria: 'Annual Yield Potential',
+            criteria: 'Annual Returns',
             fd: `₹${((investmentAmount * 0.071) / 100000).toFixed(2)}L`,
             shreeg: `₹${((investmentAmount * 0.18) / 100000).toFixed(2)}L`,
-            summary: 'Institutional yield parity',
+            summary: 'Net Annualized returns',
             highlight: true
         },
         {
-            criteria: 'Monthly Payout',
-            fd: `₹${Math.round((investmentAmount * 0.071) / 12).toLocaleString('en-IN')}`,
-            shreeg: `₹${Math.round((investmentAmount * 0.18) / 12).toLocaleString('en-IN')}`,
-            summary: 'Predictable cash flow model',
-            highlight: true
-        },
-        {
-            criteria: 'Capital Seniority',
-            fd: 'Retail Unsecured',
-            shreeg: 'Tier-1 Priority',
-            summary: 'Asset seniority over equity',
+            criteria: 'Minimum Investment',
+            fd: '₹1,000/-',
+            shreeg: '₹5,00,000/-',
+            summary: 'Entry barrier for investors',
             highlight: false
         },
         {
-            criteria: 'Inflation Alpha',
-            fd: 'Negative Growth',
-            shreeg: `+₹${((investmentAmount * 0.11) / 100000).toFixed(1)}L Net`,
-            summary: 'Preserves purchasing power',
-            highlight: true
+            criteria: 'Capital Security',
+            fd: 'Very High',
+            shreeg: 'High',
+            summary: 'Risk assessment profile',
+            highlight: false
+        },
+        {
+            criteria: 'Taxation',
+            fd: '10%',
+            shreeg: '10%',
+            summary: 'Applicable tax on gains',
+            highlight: false
         },
     ];
 
@@ -74,6 +74,19 @@ export default function ComparisonMatrix() {
 
                     {/* Comparison Tiles */}
                     <div className="lg:col-span-12 xl:col-span-7 space-y-4">
+                        {/* Table Header */}
+                        <div className="hidden md:grid grid-cols-12 gap-6 px-12 mb-2">
+                            <div className="md:col-span-6">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Comparison Factor</span>
+                            </div>
+                            <div className="md:col-span-3">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Standard FD</span>
+                            </div>
+                            <div className="md:col-span-3 text-center">
+                                <span className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-[0.3em]">SHREEG</span>
+                            </div>
+                        </div>
+
                         {comparisonData.map((row, i) => (
                             <div key={i} className="group relative bg-white rounded-[32px] p-6 border border-gray-100 transition-all duration-500 hover:shadow-2xl hover:shadow-gray-200/50 hover:border-[#1B8A9F]/20 overflow-hidden">
                                 <div className="absolute inset-y-0 left-0 w-1 bg-[#1B8A9F] opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -83,11 +96,10 @@ export default function ComparisonMatrix() {
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{row.summary}</p>
                                     </div>
                                     <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
-                                        <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-1">Standard FD</span>
-                                        <span className="text-sm font-bold text-gray-400 italic line-through">{row.fd}</span>
+                                        <span className="text-lg font-black text-gray-400">{row.fd}</span>
                                     </div>
                                     <div className="md:col-span-3">
-                                        <div className={`px-6 py-4 rounded-2xl flex items-center justify-center transition-all duration-700 ${row.highlight
+                                        <div className={`w-full px-6 py-4 rounded-2xl flex items-center justify-center transition-all duration-700 ${row.highlight
                                             ? 'bg-gray-900 text-white shadow-xl group-hover:bg-[#1B8A9F] group-hover:shadow-[0_15px_30px_rgba(27,138,159,0.3)]'
                                             : 'bg-gray-50 text-gray-900'
                                             }`}>
@@ -127,7 +139,7 @@ export default function ComparisonMatrix() {
                                     </div>
                                     <input
                                         type="range"
-                                        min="1000000"
+                                        min="500000"
                                         max="10000000"
                                         step="500000"
                                         value={investmentAmount}
@@ -135,7 +147,7 @@ export default function ComparisonMatrix() {
                                         className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#1B8A9F]"
                                     />
                                     <div className="flex justify-between mt-3">
-                                        <span className="text-[9px] font-bold text-white/20">MIN 10L</span>
+                                        <span className="text-[9px] font-bold text-white/20">MIN 5L</span>
                                         <span className="text-[9px] font-bold text-white/20">MAX 1CR</span>
                                     </div>
                                 </div>

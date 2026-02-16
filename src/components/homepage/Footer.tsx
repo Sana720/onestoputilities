@@ -25,7 +25,7 @@ export default function Footer() {
                         <div className="flex flex-wrap gap-4">
                             <div className="flex items-center space-x-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
                                 <Shield className="w-4 h-4 text-[#1B8A9F]" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">ISO 27001 Secure</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">10 years + holding company</span>
                             </div>
                             <div className="flex items-center space-x-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
                                 <Lock className="w-4 h-4 text-[#1B8A9F]" />

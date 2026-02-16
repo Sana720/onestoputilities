@@ -10,31 +10,42 @@ import {
     Lock,
     Cpu,
     Fingerprint,
-    Network
+    Network,
+    PieChart,
+    TrendingUp,
+    Scale
 } from 'lucide-react';
 
 const coreFeatures = [
     {
-        title: 'Institutional Grade Security',
-        desc: 'Every bond issuance is secured by asset-backed structures, providing a primary claim on the capital stack—legally superior to ordinary equity shareholders.',
-        icon: Shield,
-        tags: ['Asset Backed', 'Tier-1 Priority'],
+        title: 'Sector Diversification',
+        desc: 'Multi-sector allocation strategy designed to mitigate systemic risk and capture growth across resilient economic verticals.',
+        icon: PieChart,
+        tags: ['Risk Mitigation', 'Cross-Sector'],
         color: 'text-teal-600',
         bg: 'bg-teal-50'
     },
     {
-        title: 'Sovereign Digital Custody',
-        desc: 'Integration with CDSL ensures that all holdings are credited directly to your Demat account, providing a transparent, auditable, and immutable digital record.',
-        icon: Fingerprint,
-        tags: ['CDSL Verified', 'Zero Custody Risk'],
+        title: 'Research & Strategies based Investment',
+        desc: 'Institutional-grade methodology combining quantitative data with qualitative insights to build alpha-generating portfolios.',
+        icon: TrendingUp,
+        tags: ['Algo-driven', 'Alpha Selection'],
         color: 'text-blue-600',
         bg: 'bg-blue-50'
     },
     {
-        title: 'Automated Wealth Transition',
-        desc: 'Advanced nominee registration protocols ensure that your investment legacy is seamlessly transitioned across generations with zero legal friction.',
-        icon: Network,
-        tags: ['Smart Nomination', 'Legacy Secure'],
+        title: 'Entry & Exit powers',
+        desc: 'Precision market participation with structural protocols for optimal capital deployment and liquidity management.',
+        icon: Zap,
+        tags: ['Timed Execution', 'Liquidity Focus'],
+        color: 'text-orange-600',
+        bg: 'bg-orange-50'
+    },
+    {
+        title: 'Quantity & Capital balancing',
+        desc: 'Advanced position sizing and dynamic capital allocation to ensure portfolio resilience and long-term sustainability.',
+        icon: Scale,
+        tags: ['Capital Preservation', 'Dynamic Sizing'],
         color: 'text-purple-600',
         bg: 'bg-purple-50'
     }
@@ -49,13 +60,13 @@ export default function Features() {
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-24 gap-12">
                     <div className="max-w-2xl">
                         <div className="flex items-center space-x-3 mb-6">
-                            <Lock className="w-4 h-4 text-[#1B8A9F]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1B8A9F]">Security Architecture</span>
+                            <Cpu className="w-4 h-4 text-[#1B8A9F]" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1B8A9F]">SHREEG FUND ARCHITECTURE</span>
                         </div>
                         <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tighter leading-[0.9] uppercase">
-                            Institutional <br />
-                            Integrity. <br />
-                            <span className="text-gray-900">Retail Flow.</span>
+                            Four key points <br />
+                            with <br />
+                            <span className="text-[#1B8A9F]">SHREEG Fund</span>
                         </h2>
                     </div>
                     <p className="max-w-xs text-gray-500 font-medium text-lg leading-relaxed italic">
@@ -110,20 +121,20 @@ export default function Features() {
                 </div>
 
                 {/* Grid Features */}
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-8">
                     {coreFeatures.map((f, i) => (
                         <div key={i} className="group h-full">
-                            <div className="h-full bg-white rounded-[48px] p-10 border border-gray-50 shadow-xl shadow-gray-100/50 hover:shadow-2xl hover:shadow-teal-100/30 hover:-translate-y-4 transition-all duration-700 flex flex-col">
-                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-10 transition-transform duration-500 group-hover:scale-110 ${f.bg} ${f.color}`}>
-                                    <f.icon className="w-8 h-8" />
+                            <div className="h-full bg-white rounded-[40px] p-8 border border-gray-50 shadow-xl shadow-gray-100/30 hover:shadow-2xl hover:shadow-teal-100/20 hover:-translate-y-2 transition-all duration-500 flex flex-col">
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-transform duration-500 group-hover:scale-110 ${f.bg} ${f.color}`}>
+                                    <f.icon className="w-7 h-7" />
                                 </div>
-                                <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter leading-tight mb-6">{f.title}</h4>
-                                <p className="text-gray-500 font-medium leading-relaxed mb-10 flex-grow">
+                                <h4 className="text-xl font-black text-gray-900 uppercase tracking-tighter leading-tight mb-4">{f.title}</h4>
+                                <p className="text-sm text-gray-400 font-medium leading-relaxed mb-8 flex-grow">
                                     {f.desc}
                                 </p>
-                                <div className="pt-8 border-t border-gray-50 flex flex-wrap gap-2">
+                                <div className="pt-6 border-t border-gray-50 flex flex-wrap gap-2">
                                     {f.tags.map((tag, ti) => (
-                                        <span key={ti} className="px-3 py-1 bg-gray-50 text-[9px] font-black uppercase tracking-widest text-gray-400 rounded-lg">
+                                        <span key={ti} className="px-2.5 py-1 bg-gray-50 text-[8px] font-black uppercase tracking-widest text-gray-400 rounded-lg">
                                             {tag}
                                         </span>
                                     ))}
@@ -135,7 +146,7 @@ export default function Features() {
 
                 {/* Bottom Trust Icons */}
                 <div className="mt-40 pt-20 border-t border-gray-50 flex flex-wrap justify-center lg:justify-between items-center gap-12 opacity-30">
-                    {['Fully Auditable', 'SEBI Participant', 'ISO 27001 Certified', 'T+2 Standard', 'NPS Registered'].map((text, i) => (
+                    {['Fully Auditable', 'SEBI Participant', '10 years + holding company', 'T+2 Standard', 'NPS Registered'].map((text, i) => (
                         <span key={i} className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-900 whitespace-nowrap">{text}</span>
                     ))}
                 </div>
