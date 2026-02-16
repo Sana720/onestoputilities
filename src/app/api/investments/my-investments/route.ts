@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         // Fetch investments for the user
         const { data: investments, error } = await supabaseAdmin
             .from('investments')
-            .select('*')
+            .select('*, users(kyc_verified)')
             .eq('email', email)
             .order('created_at', { ascending: false });
 

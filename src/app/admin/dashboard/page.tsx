@@ -79,6 +79,10 @@ interface Investment {
     pan_url?: string;
     aadhar_url?: string;
     bank_cheque_url?: string;
+    users?: {
+        kyc_verified: boolean;
+    };
+    user_id: string;
 }
 
 export default function AdminDashboard() {
@@ -101,6 +105,39 @@ export default function AdminDashboard() {
         payment_mode: 'NEFT',
         status: 'paid'
     });
+    const [kycLoading, setKycLoading] = useState(false);
+
+    const handleVerifyKYC = async (userId: string, verified: boolean) => {
+        if (!confirm(`Are you sure you want to ${verified ? 'verify' : 'unverify'} this client's KYC?`)) return;
+
+        setKycLoading(true);
+        try {
+            const response = await fetch('/api/admin/kyc/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, verified }),
+            });
+
+            if (response.ok) {
+                // Update local state
+                setInvestments(prev => prev.map(inv =>
+                    inv.user_id === userId ? { ...inv, users: { kyc_verified: verified } } : inv
+                ));
+                if (selectedInvestment && selectedInvestment.user_id === userId) {
+                    setSelectedInvestment({ ...selectedInvestment, users: { kyc_verified: verified } });
+                }
+                alert(`KYC ${verified ? 'verified' : 'unverified'} successfully!`);
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to update KYC status');
+            }
+        } catch (error) {
+            console.error('Error verifying KYC:', error);
+            alert('An error occurred while verifying KYC');
+        } finally {
+            setKycLoading(false);
+        }
+    };
     const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends'>('investments');
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
@@ -866,9 +903,19 @@ export default function AdminDashboard() {
                     <div className="bg-white rounded-3xl shadow-2xl p-0 max-w-2xl w-full border border-gray-100 animate-fade-in-up overflow-hidden max-h-[90vh] flex flex-col">
                         {/* Header */}
                         <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                            <div>
-                                <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">Investor Profile</h3>
-                                <p className="text-[10px] text-[#1B8A9F] font-bold uppercase tracking-[0.2em] mt-1">Comprehensive Portfolio View</p>
+                            <div className="flex items-center space-x-4">
+                                <div>
+                                    <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">Investor Profile</h3>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                        <p className="text-[10px] text-[#1B8A9F] font-bold uppercase tracking-[0.2em]">Comprehensive Portfolio View</p>
+                                        {selectedInvestment.users?.kyc_verified && (
+                                            <span className="flex items-center px-2 py-0.5 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-green-100">
+                                                <ShieldCheck className="w-3 h-3 mr-1" />
+                                                KYC Verified
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                             <button onClick={() => setShowViewModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
                                 <X className="w-6 h-6 text-gray-400" />
@@ -1077,7 +1124,26 @@ export default function AdminDashboard() {
                                 <span className={`w-2 h-2 rounded-full ${selectedInvestment.status === 'active' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
                                 <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">{selectedInvestment.status}</span>
                             </div>
-                            <div className="flex space-x-3">
+                            <div className="flex items-center space-x-4">
+                                {selectedInvestment.users?.kyc_verified ? (
+                                    <button
+                                        onClick={() => handleVerifyKYC(selectedInvestment.user_id, false)}
+                                        disabled={kycLoading}
+                                        className="px-6 py-2.5 bg-red-50 border-2 border-red-100 rounded-xl text-[10px] font-black text-red-600 hover:bg-red-100 transition-all uppercase tracking-widest flex items-center"
+                                    >
+                                        {kycLoading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <X className="w-3 h-3 mr-2" />}
+                                        Unverify KYC
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => handleVerifyKYC(selectedInvestment.user_id, true)}
+                                        disabled={kycLoading}
+                                        className="px-6 py-2.5 bg-green-50 border-2 border-green-100 rounded-xl text-[10px] font-black text-green-600 hover:bg-green-100 transition-all uppercase tracking-widest flex items-center"
+                                    >
+                                        {kycLoading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <ShieldCheck className="w-3 h-3 mr-2" />}
+                                        Verify KYC
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => {
                                         setShowViewModal(false);

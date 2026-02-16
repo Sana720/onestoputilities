@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL CHECK (role IN ('admin', 'client')),
   name TEXT NOT NULL,
   password_reset_required BOOLEAN DEFAULT TRUE,
+  kyc_verified BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -159,6 +160,7 @@ ALTER TABLE investments ADD COLUMN IF NOT EXISTS bank_cheque_url TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS product_name TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_id TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_verified BOOLEAN DEFAULT FALSE;
 
 -- Notify Supabase to refresh its schema cache after migrations
 NOTIFY pgrst, 'reload schema';

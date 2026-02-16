@@ -227,7 +227,8 @@ export default function ClientDashboard() {
                             accountNumber: inv.bank_details?.accountNumber || '',
                             ifscCode: inv.bank_details?.ifscCode || '',
                             branch: inv.bank_details?.branch || ''
-                        }
+                        },
+                        kyc_verified: inv.users?.kyc_verified || false
                     });
                 }
             }
@@ -924,14 +925,21 @@ export default function ClientDashboard() {
                                                 </h4>
                                                 <div className="grid md:grid-cols-2 gap-6">
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
-                                                        <input
-                                                            type="text"
-                                                            value={profileData?.full_name ?? ''}
-                                                            onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                                                            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
-                                                            required
-                                                        />
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name {profileData?.kyc_verified && '(Verified - Locked)'}</label>
+                                                        {profileData?.kyc_verified ? (
+                                                            <div className="w-full p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-bold flex items-center cursor-not-allowed">
+                                                                <ShieldCheck className="w-4 h-4 mr-2 text-teal-600/50" />
+                                                                {profileData?.full_name}
+                                                            </div>
+                                                        ) : (
+                                                            <input
+                                                                type="text"
+                                                                value={profileData?.full_name ?? ''}
+                                                                onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                                                                className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                                required
+                                                            />
+                                                        )}
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Father's Name</label>
@@ -987,16 +995,16 @@ export default function ClientDashboard() {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">PAN Number (Read-only)</label>
-                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed flex items-center">
-                                                            <ShieldCheck className="w-4 h-4 mr-2 text-teal-600/50" />
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">PAN Number {profileData?.kyc_verified && '(Verified)'}</label>
+                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-bold cursor-not-allowed flex items-center">
+                                                            <ShieldCheck className={`w-4 h-4 mr-2 ${profileData?.kyc_verified ? 'text-teal-600' : 'text-teal-600/50'}`} />
                                                             {profileData?.pan_number || 'Not Provided'}
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Aadhaar Number (Read-only)</label>
-                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed flex items-center">
-                                                            <ShieldCheck className="w-4 h-4 mr-2 text-teal-600/50" />
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Aadhaar Number {profileData?.kyc_verified && '(Verified)'}</label>
+                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-bold cursor-not-allowed flex items-center">
+                                                            <ShieldCheck className={`w-4 h-4 mr-2 ${profileData?.kyc_verified ? 'text-teal-600' : 'text-teal-600/50'}`} />
                                                             {profileData?.aadhar_number || 'Not Provided'}
                                                         </div>
                                                     </div>
@@ -1184,18 +1192,24 @@ export default function ClientDashboard() {
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                                         <div>
-                                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">PAN Number</label>
+                                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">PAN Card Number</label>
                                                             <div className="flex items-center space-x-2">
-                                                                <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-medium text-sm">
+                                                                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-bold text-sm flex-1 font-mono uppercase">
                                                                     {profileData?.pan_number || '—'}
                                                                 </div>
+                                                                {profileData?.kyc_verified && (
+                                                                    <div className="flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                                        <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                                                                        Verified
+                                                                    </div>
+                                                                )}
                                                                 {profileData?.pan_url && (
                                                                     <a
                                                                         href={profileData.pan_url}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
-                                                                        className="p-3 bg-teal-50 text-[#1B8A9F] rounded-lg border border-teal-100 hover:bg-teal-100 transition-all shadow-sm"
-                                                                        title="View PAN Card"
+                                                                        className="p-3 bg-[#1B8A9F]/10 text-[#1B8A9F] rounded-lg border border-[#1B8A9F]/20 hover:bg-[#1B8A9F]/20 transition-all group"
+                                                                        title="View Document"
                                                                     >
                                                                         <Eye className="w-4 h-4" />
                                                                     </a>
@@ -1205,16 +1219,22 @@ export default function ClientDashboard() {
                                                         <div>
                                                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Aadhaar Number</label>
                                                             <div className="flex items-center space-x-2">
-                                                                <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-medium text-sm">
+                                                                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-gray-900 font-bold text-sm flex-1 font-mono">
                                                                     {profileData?.aadhar_number || '—'}
                                                                 </div>
+                                                                {profileData?.kyc_verified && (
+                                                                    <div className="flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                                        <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                                                                        Verified
+                                                                    </div>
+                                                                )}
                                                                 {profileData?.aadhar_url && (
                                                                     <a
                                                                         href={profileData.aadhar_url}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
-                                                                        className="p-3 bg-teal-50 text-[#1B8A9F] rounded-lg border border-teal-100 hover:bg-teal-100 transition-all shadow-sm"
-                                                                        title="View Aadhaar Card"
+                                                                        className="p-3 bg-[#1B8A9F]/10 text-[#1B8A9F] rounded-lg border border-[#1B8A9F]/20 hover:bg-[#1B8A9F]/20 transition-all group"
+                                                                        title="View Document"
                                                                     >
                                                                         <Eye className="w-4 h-4" />
                                                                     </a>

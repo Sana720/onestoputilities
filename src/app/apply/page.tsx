@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function ApplyPage() {
@@ -52,6 +52,10 @@ export default function ApplyPage() {
         productName: '',
         brokerId: '',
         brokerName: '',
+        panUrl: '',
+        aadharUrl: '',
+        bankChequeUrl: '',
+        kycVerified: false,
     });
 
     const [files, setFiles] = useState<{
@@ -75,7 +79,7 @@ export default function ApplyPage() {
                 // Fetch the latest investment for this user to pre-fill details
                 const { data: investments, error } = await supabase
                     .from('investments')
-                    .select('*')
+                    .select('*, users(kyc_verified)')
                     .eq('user_id', session.user.id)
                     .order('created_at', { ascending: false })
                     .limit(1);
@@ -117,6 +121,12 @@ export default function ApplyPage() {
 
                         // CDSL
                         dematAccount: latest.demat_account || prev.dematAccount,
+
+                        // KYC Persistence
+                        panUrl: latest.pan_url || '',
+                        aadharUrl: latest.aadhar_url || '',
+                        bankChequeUrl: '',
+                        kycVerified: latest.users?.kyc_verified || false
                     }));
                     setIsPreFilled(true);
                 } else {
@@ -284,6 +294,9 @@ export default function ApplyPage() {
             if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
             if (!formData.paymentReference) newErrors.paymentReference = 'Payment reference is required';
             if (!formData.paymentDate) newErrors.paymentDate = 'Payment date is required';
+            if (formData.paymentMode === 'Cheque' && !files.bankChequeFile) {
+                newErrors.bankChequeFile = 'Cheque upload is required for cheque payments';
+            }
             if (formData.dematAccount && formData.dematAccount.length !== 16) newErrors.dematAccount = 'Demat account must be 16 digits';
             if (!formData.brokerId) newErrors.brokerId = 'Broker ID is required';
             if (!formData.brokerName) newErrors.brokerName = 'Broker Name is required';
@@ -336,9 +349,9 @@ export default function ApplyPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
-                    panUrl,
-                    aadharUrl,
-                    bankChequeUrl
+                    panUrl: panUrl || formData.panUrl,
+                    aadharUrl: aadharUrl || formData.aadharUrl,
+                    bankChequeUrl: bankChequeUrl || formData.bankChequeUrl
                 }),
             });
 
@@ -429,8 +442,13 @@ export default function ApplyPage() {
                             {currentStep === 1 && (
                                 <div className="space-y-6 animate-fade-in-up">
                                     <div>
-                                        <h2 className="text-2xl font-bold mb-2">Personal Details</h2>
-                                        {isPreFilled ? (
+                                        <h2 className="text-2xl font-bold mb-2">Step 1: Profile Information</h2>
+                                        {formData.kycVerified ? (
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium inline-flex border border-green-100">
+                                                <ShieldCheck className="w-4 h-4" />
+                                                KYC Verified. Your personal details are secured.
+                                            </div>
+                                        ) : isPreFilled ? (
                                             <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-sm font-medium inline-flex">
                                                 <Sparkles className="w-4 h-4" />
                                                 Welcome back! Details pre-filled from your profile.
@@ -440,206 +458,339 @@ export default function ApplyPage() {
                                         )}
                                     </div>
 
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="label">Full Name *</label>
-                                            <input
-                                                type="text"
-                                                name="fullName"
-                                                value={formData.fullName}
-                                                onChange={handleChange}
-                                                className={`input ${errors.fullName ? 'input-error' : ''}`}
-                                                placeholder="Enter your full name"
-                                            />
-                                            {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+                                    {/* Personal Information Section */}
+                                    <div className="pt-4">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="h-px flex-1 bg-gray-100"></div>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F] flex items-center gap-2">
+                                                <User className="w-4 h-4" />
+                                                Personal Information
+                                            </h3>
+                                            <div className="h-px flex-1 bg-gray-100"></div>
                                         </div>
 
-                                        <div>
-                                            <label className="label">Father's Name *</label>
-                                            <input
-                                                type="text"
-                                                name="fatherName"
-                                                value={formData.fatherName}
-                                                onChange={handleChange}
-                                                className={`input ${errors.fatherName ? 'input-error' : ''}`}
-                                                placeholder="Enter father's name"
-                                            />
-                                            {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>}
-                                        </div>
+                                        <div className="grid md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="label">Full Name *</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        name="fullName"
+                                                        value={formData.fullName}
+                                                        onChange={handleChange}
+                                                        readOnly={formData.kycVerified}
+                                                        className={`input ${errors.fullName ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24' : ''}`}
+                                                        placeholder="Enter your full name"
+                                                    />
+                                                    {formData.kycVerified && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                            <ShieldCheck className="w-3 h-3 mr-1" />
+                                                            Verified
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Date of Birth *</label>
-                                            <input
-                                                type="date"
-                                                name="dob"
-                                                value={formData.dob}
-                                                onChange={handleChange}
-                                                className={`input ${errors.dob ? 'input-error' : ''}`}
-                                            />
-                                            {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
-                                        </div>
+                                            <div>
+                                                <label className="label">Father's Name *</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        name="fatherName"
+                                                        value={formData.fatherName}
+                                                        onChange={handleChange}
+                                                        readOnly={formData.kycVerified}
+                                                        className={`input ${errors.fatherName ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24' : ''}`}
+                                                        placeholder="Enter father's name"
+                                                    />
+                                                    {formData.kycVerified && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                            <ShieldCheck className="w-3 h-3 mr-1" />
+                                                            Verified
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Age</label>
-                                            <input
-                                                type="number"
-                                                name="age"
-                                                value={formData.age}
-                                                readOnly
-                                                className="input bg-gray-50"
-                                                placeholder="Auto-calculated"
-                                            />
-                                        </div>
+                                            <div>
+                                                <label className="label">Date of Birth *</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="date"
+                                                        name="dob"
+                                                        value={formData.dob}
+                                                        onChange={handleChange}
+                                                        readOnly={formData.kycVerified}
+                                                        className={`input ${errors.dob ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24' : ''}`}
+                                                    />
+                                                    {formData.kycVerified && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                            <ShieldCheck className="w-3 h-3 mr-1" />
+                                                            Verified
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Gender *</label>
-                                            <select
-                                                name="gender"
-                                                value={formData.gender}
-                                                onChange={handleChange}
-                                                className={`input ${errors.gender ? 'input-error' : ''}`}
-                                            >
-                                                <option value="">Select gender</option>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                            {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
-                                        </div>
+                                            <div>
+                                                <label className="label">Age</label>
+                                                <input
+                                                    type="number"
+                                                    name="age"
+                                                    value={formData.age}
+                                                    readOnly
+                                                    className="input bg-gray-50"
+                                                    placeholder="Auto-calculated"
+                                                />
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Occupation *</label>
-                                            <input
-                                                type="text"
-                                                name="occupation"
-                                                value={formData.occupation}
-                                                onChange={handleChange}
-                                                className={`input ${errors.occupation ? 'input-error' : ''}`}
-                                                placeholder="Enter your occupation"
-                                            />
-                                            {errors.occupation && <p className="text-red-500 text-sm mt-1">{errors.occupation}</p>}
-                                        </div>
+                                            <div>
+                                                <label className="label">Gender *</label>
+                                                <div className="relative">
+                                                    <select
+                                                        name="gender"
+                                                        value={formData.gender}
+                                                        onChange={handleChange}
+                                                        disabled={formData.kycVerified}
+                                                        className={`input ${errors.gender ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24 appearance-none' : ''}`}
+                                                    >
+                                                        <option value="">Select gender</option>
+                                                        <option value="Male">Male</option>
+                                                        <option value="Female">Female</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                    {formData.kycVerified && (
+                                                        <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                            <ShieldCheck className="w-3 h-3 mr-1" />
+                                                            Verified
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Marital Status *</label>
-                                            <select
-                                                name="maritalStatus"
-                                                value={formData.maritalStatus}
-                                                onChange={handleChange}
-                                                className={`input ${errors.maritalStatus ? 'input-error' : ''}`}
-                                            >
-                                                <option value="">Select status</option>
-                                                <option value="Single">Single</option>
-                                                <option value="Married">Married</option>
-                                                <option value="Divorced">Divorced</option>
-                                                <option value="Widowed">Widowed</option>
-                                            </select>
-                                            {errors.maritalStatus && <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>}
-                                        </div>
+                                            <div>
+                                                <label className="label">Occupation *</label>
+                                                <input
+                                                    type="text"
+                                                    name="occupation"
+                                                    value={formData.occupation}
+                                                    onChange={handleChange}
+                                                    className={`input ${errors.occupation ? 'input-error' : ''}`}
+                                                    placeholder="Enter your occupation"
+                                                />
+                                                {errors.occupation && <p className="text-red-500 text-sm mt-1">{errors.occupation}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">PAN Number *</label>
-                                            <input
-                                                type="text"
-                                                name="panNumber"
-                                                value={formData.panNumber}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.toUpperCase();
-                                                    setFormData(prev => ({ ...prev, panNumber: val }));
-                                                }}
-                                                className={`input ${errors.panNumber ? 'input-error' : ''}`}
-                                                placeholder="ABCDE1234F"
-                                                maxLength={10}
-                                            />
-                                            {errors.panNumber && <p className="text-red-500 text-sm mt-1">{errors.panNumber}</p>}
-                                        </div>
+                                            <div>
+                                                <label className="label">Marital Status *</label>
+                                                <select
+                                                    name="maritalStatus"
+                                                    value={formData.maritalStatus}
+                                                    onChange={handleChange}
+                                                    className={`input ${errors.maritalStatus ? 'input-error' : ''}`}
+                                                >
+                                                    <option value="">Select status</option>
+                                                    <option value="Single">Single</option>
+                                                    <option value="Married">Married</option>
+                                                    <option value="Divorced">Divorced</option>
+                                                    <option value="Widowed">Widowed</option>
+                                                </select>
+                                                {errors.maritalStatus && <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Upload PAN Card (Photo/PDF)</label>
-                                            <input
-                                                type="file"
-                                                accept=".jpg,.jpeg,.png,.pdf"
-                                                onChange={(e) => handleFileChange(e, 'panFile')}
-                                                className={`input py-1.5 ${errors.panFile ? 'input-error' : ''}`}
-                                            />
-                                            {files.panFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.panFile.name}</p>}
-                                            {errors.panFile && <p className="text-red-500 text-sm mt-1">{errors.panFile}</p>}
-                                        </div>
+                                            <div className="md:col-span-2">
+                                                <label className="label">Permanent Address *</label>
+                                                <textarea
+                                                    name="permanentAddress"
+                                                    value={formData.permanentAddress}
+                                                    onChange={handleChange}
+                                                    rows={3}
+                                                    className={`input ${errors.permanentAddress ? 'input-error' : ''}`}
+                                                    placeholder="Enter your complete address"
+                                                ></textarea>
+                                                {errors.permanentAddress && <p className="text-red-500 text-sm mt-1">{errors.permanentAddress}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Aadhar Number *</label>
-                                            <input
-                                                type="text"
-                                                name="aadharNumber"
-                                                value={formData.aadharNumber}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/\D/g, '');
-                                                    if (val.length <= 12) {
-                                                        setFormData(prev => ({ ...prev, aadharNumber: val }));
-                                                    }
-                                                }}
-                                                className={`input ${errors.aadharNumber ? 'input-error' : ''}`}
-                                                placeholder="12-digit Aadhar number"
-                                                maxLength={12}
-                                            />
-                                            {errors.aadharNumber && <p className="text-red-500 text-sm mt-1">{errors.aadharNumber}</p>}
-                                        </div>
+                                            <div>
+                                                <label className="label">Contact Number *</label>
+                                                <input
+                                                    type="tel"
+                                                    name="contactNumber"
+                                                    value={formData.contactNumber}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\D/g, '');
+                                                        if (val.length <= 10) {
+                                                            setFormData(prev => ({ ...prev, contactNumber: val }));
+                                                        }
+                                                    }}
+                                                    className={`input ${errors.contactNumber ? 'input-error' : ''}`}
+                                                    placeholder="10-digit mobile number"
+                                                    maxLength={10}
+                                                />
+                                                {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Upload Aadhaar Card (Photo/PDF)</label>
-                                            <input
-                                                type="file"
-                                                accept=".jpg,.jpeg,.png,.pdf"
-                                                onChange={(e) => handleFileChange(e, 'aadharFile')}
-                                                className={`input py-1.5 ${errors.aadharFile ? 'input-error' : ''}`}
-                                            />
-                                            {files.aadharFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.aadharFile.name}</p>}
-                                            {errors.aadharFile && <p className="text-red-500 text-sm mt-1">{errors.aadharFile}</p>}
+                                            <div>
+                                                <label className="label">Email Address *</label>
+                                                <input
+                                                    type="email"
+                                                    name="email"
+                                                    value={formData.email}
+                                                    onChange={handleChange}
+                                                    className={`input ${errors.email ? 'input-error' : ''}`}
+                                                    placeholder="your.email@example.com"
+                                                />
+                                                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                                            </div>
                                         </div>
+                                    </div>
 
-                                        <div className="md:col-span-2">
-                                            <label className="label">Permanent Address *</label>
-                                            <textarea
-                                                name="permanentAddress"
-                                                value={formData.permanentAddress}
-                                                onChange={handleChange}
-                                                rows={3}
-                                                className={`input ${errors.permanentAddress ? 'input-error' : ''}`}
-                                                placeholder="Enter your complete address"
-                                            />
-                                            {errors.permanentAddress && <p className="text-red-500 text-sm mt-1">{errors.permanentAddress}</p>}
+                                    {/* Identity Verification (KYC) Section */}
+                                    <div className="pt-8">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="h-px flex-1 bg-gray-100"></div>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F] flex items-center gap-2">
+                                                <ShieldCheck className="w-4 h-4" />
+                                                Identity Verification (KYC)
+                                            </h3>
+                                            <div className="h-px flex-1 bg-gray-100"></div>
                                         </div>
+                                        <div className="grid md:grid-cols-2 gap-6 pb-4">
+                                            <div>
+                                                <label className="label">PAN Number *</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        name="panNumber"
+                                                        value={formData.panNumber}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.toUpperCase();
+                                                            setFormData(prev => ({ ...prev, panNumber: val }));
+                                                        }}
+                                                        readOnly={formData.kycVerified}
+                                                        className={`input ${errors.panNumber ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24 font-mono' : 'font-mono'}`}
+                                                        placeholder="ABCDE1234F"
+                                                        maxLength={10}
+                                                    />
+                                                    {formData.kycVerified && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                            <ShieldCheck className="w-3 h-3 mr-1" />
+                                                            Verified
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {errors.panNumber && <p className="text-red-500 text-sm mt-1">{errors.panNumber}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Contact Number *</label>
-                                            <input
-                                                type="tel"
-                                                name="contactNumber"
-                                                value={formData.contactNumber}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/\D/g, '');
-                                                    if (val.length <= 10) {
-                                                        setFormData(prev => ({ ...prev, contactNumber: val }));
-                                                    }
-                                                }}
-                                                className={`input ${errors.contactNumber ? 'input-error' : ''}`}
-                                                placeholder="10-digit mobile number"
-                                                maxLength={10}
-                                            />
-                                            {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
-                                        </div>
+                                            <div>
+                                                <label className="label">PAN Card (Photo/PDF) {formData.panUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
+                                                {formData.kycVerified && formData.panUrl ? (
+                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                            <ShieldCheck className="w-5 h-5 text-green-600" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-semibold text-gray-900">Previously Verified PAN</p>
+                                                            <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => window.open(formData.panUrl, '_blank')}
+                                                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            View
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <input
+                                                            type="file"
+                                                            accept=".jpg,.jpeg,.png,.pdf"
+                                                            onChange={(e) => handleFileChange(e, 'panFile')}
+                                                            className={`input py-1.5 ${errors.panFile ? 'input-error' : ''} ${formData.panUrl && !files.panFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
+                                                        />
+                                                        {formData.panUrl && !files.panFile && (
+                                                            <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
+                                                                <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
+                                                            </p>
+                                                        )}
+                                                        {files.panFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.panFile.name}</p>}
+                                                        {errors.panFile && <p className="text-red-500 text-sm mt-1">{errors.panFile}</p>}
+                                                    </>
+                                                )}
+                                            </div>
 
-                                        <div>
-                                            <label className="label">Email Address *</label>
-                                            <input
-                                                type="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleChange}
-                                                className={`input ${errors.email ? 'input-error' : ''}`}
-                                                placeholder="your.email@example.com"
-                                            />
-                                            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                                            <div>
+                                                <label className="label">Aadhar Number *</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        name="aadharNumber"
+                                                        value={formData.aadharNumber}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/\D/g, '');
+                                                            if (val.length <= 12) {
+                                                                setFormData(prev => ({ ...prev, aadharNumber: val }));
+                                                            }
+                                                        }}
+                                                        readOnly={formData.kycVerified}
+                                                        className={`input ${errors.aadharNumber ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24 font-mono' : 'font-mono'}`}
+                                                        placeholder="12-digit Aadhar number"
+                                                        maxLength={12}
+                                                    />
+                                                    {formData.kycVerified && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                            <ShieldCheck className="w-3 h-3 mr-1" />
+                                                            Verified
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {errors.aadharNumber && <p className="text-red-500 text-sm mt-1">{errors.aadharNumber}</p>}
+                                            </div>
+
+                                            <div>
+                                                <label className="label">Aadhaar Card (Photo/PDF) {formData.aadharUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
+                                                {formData.kycVerified && formData.aadharUrl ? (
+                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                            <ShieldCheck className="w-5 h-5 text-green-600" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-semibold text-gray-900">Previously Verified Aadhaar</p>
+                                                            <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => window.open(formData.aadharUrl, '_blank')}
+                                                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            View
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <input
+                                                            type="file"
+                                                            accept=".jpg,.jpeg,.png,.pdf"
+                                                            onChange={(e) => handleFileChange(e, 'aadharFile')}
+                                                            className={`input py-1.5 ${errors.aadharFile ? 'input-error' : ''} ${formData.aadharUrl && !files.aadharFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
+                                                        />
+                                                        {formData.aadharUrl && !files.aadharFile && (
+                                                            <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
+                                                                <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
+                                                            </p>
+                                                        )}
+                                                        {files.aadharFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.aadharFile.name}</p>}
+                                                        {errors.aadharFile && <p className="text-red-500 text-sm mt-1">{errors.aadharFile}</p>}
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -701,7 +852,7 @@ export default function ApplyPage() {
                                                 rows={3}
                                                 className={`input ${errors.nomineeAddress ? 'input-error' : ''}`}
                                                 placeholder="Enter nominee's complete address"
-                                            />
+                                            ></textarea>
                                             {errors.nomineeAddress && <p className="text-red-500 text-sm mt-1">{errors.nomineeAddress}</p>}
                                         </div>
                                     </div>
@@ -797,18 +948,6 @@ export default function ApplyPage() {
                                             {errors.accountType && <p className="text-red-500 text-sm mt-1">{errors.accountType}</p>}
                                         </div>
 
-                                        <div className="md:col-span-2">
-                                            <label className="label">Upload Cancelled Cheque / Passbook Copy</label>
-                                            <input
-                                                type="file"
-                                                accept=".jpg,.jpeg,.png,.pdf"
-                                                onChange={(e) => handleFileChange(e, 'bankChequeFile')}
-                                                className={`input py-1.5 ${errors.bankChequeFile ? 'input-error' : ''}`}
-                                            />
-                                            <p className="text-[10px] text-gray-500 mt-1 italic">Used for bank account verification and dividend settlements.</p>
-                                            {files.bankChequeFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.bankChequeFile.name}</p>}
-                                            {errors.bankChequeFile && <p className="text-red-500 text-sm mt-1">{errors.bankChequeFile}</p>}
-                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -903,6 +1042,21 @@ export default function ApplyPage() {
                                             />
                                             {errors.paymentReference && <p className="text-red-500 text-sm mt-1">{errors.paymentReference}</p>}
                                         </div>
+
+                                        {formData.paymentMode === 'Cheque' && (
+                                            <div className="md:col-span-2">
+                                                <label className="label">Upload Cheque *</label>
+                                                <input
+                                                    type="file"
+                                                    accept=".jpg,.jpeg,.png,.pdf"
+                                                    onChange={(e) => handleFileChange(e, 'bankChequeFile')}
+                                                    className={`input py-1.5 ${errors.bankChequeFile ? 'input-error' : ''}`}
+                                                />
+                                                <p className="text-[10px] text-gray-500 mt-1 italic">Please upload a clear image or PDF of your cheque.</p>
+                                                {files.bankChequeFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.bankChequeFile.name}</p>}
+                                                {errors.bankChequeFile && <p className="text-red-500 text-sm mt-1">{errors.bankChequeFile}</p>}
+                                            </div>
+                                        )}
 
                                         <div>
                                             <label className="label">Payment Date *</label>

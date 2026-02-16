@@ -1,0 +1,103 @@
+379:        <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-green-50">
+381:            <div className="bg-white border-b border-gray-200 shadow-sm">
+382:                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+383:                    <div className="flex items-center justify-between">
+399:            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+400:                <div className="max-w-4xl mx-auto">
+402:                    <div className="mb-8 md:mb-12">
+403:                        <div className="flex items-center justify-between">
+405:                                <div key={step.number} className="flex-1">
+406:                                    <div className="flex items-center">
+407:                                        <div className="flex flex-col items-center flex-1">
+408:                                            <div
+426:                                            <div className={`h-0.5 md:h-1 flex-1 mx-2 md:mx-4 rounded transition-all duration-300 ${currentStep > step.number ? 'bg-[#1B8A9F]' : 'bg-gray-200'
+436:                    <div className="card p-8">
+440:                                <div className="space-y-6 animate-fade-in-up">
+441:                                    <div>
+444:                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium inline-flex border border-green-100">
+449:                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-sm font-medium inline-flex">
+459:                                    <div className="pt-4">
+460:                                        <div className="flex items-center gap-4 mb-6">
+461:                                            <div className="h-px flex-1 bg-gray-100"></div>
+466:                                            <div className="h-px flex-1 bg-gray-100"></div>
+469:                                        <div className="grid md:grid-cols-2 gap-6">
+470:                                            <div>
+472:                                                <div className="relative">
+483:                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+492:                                            <div>
+494:                                                <div className="relative">
+505:                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+514:                                            <div>
+516:                                                <div className="relative">
+526:                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+535:                                            <div>
+547:                                            <div>
+549:                                                <div className="relative">
+563:                                                        <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+572:                                            <div>
+585:                                            <div>
+602:                                            <div className="md:col-span-2">
+615:                                            <div>
+634:                                            <div>
+650:                                    <div className="pt-8">
+651:                                        <div className="flex items-center gap-4 mb-6">
+652:                                            <div className="h-px flex-1 bg-gray-100"></div>
+657:                                            <div className="h-px flex-1 bg-gray-100"></div>
+659:                                        <div className="grid md:grid-cols-2 gap-6 pb-4">
+660:                                            <div>
+662:                                                <div className="relative">
+677:                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+686:                                            <div>
+689:                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+690:                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
+693:                                                        <div className="flex-1">
+725:                                            <div>
+727:                                                <div className="relative">
+744:                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+753:                                            <div>
+756:                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+757:                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
+760:                                                        <div className="flex-1">
+798:                                <div className="space-y-6 animate-fade-in-up">
+799:                                    <div>
+804:                                    <div className="grid md:grid-cols-2 gap-6">
+805:                                        <div>
+818:                                        <div>
+831:                                        <div>
+843:                                        <div className="md:col-span-2">
+861:                                <div className="space-y-6 animate-fade-in-up">
+862:                                    <div>
+867:                                    <div className="grid md:grid-cols-2 gap-6">
+868:                                        <div className="md:col-span-2">
+881:                                        <div>
+894:                                        <div>
+907:                                        <div>
+920:                                        <div>
+933:                                        <div>
+948:                                        <div className="md:col-span-2">
+951:                                                <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+952:                                                    <div className="p-2 bg-white rounded-lg shadow-sm">
+955:                                                    <div className="flex-1">
+993:                                <div className="space-y-6 animate-fade-in-up">
+994:                                    <div>
+999:                                    <div className="grid md:grid-cols-2 gap-6">
+1000:                                        <div className="md:col-span-2">
+1017:                                        <div>
+1038:                                        <div>
+1051:                                        <div>
+1069:                                        <div>
+1082:                                        <div>
+1095:                                        <div>
+1107:                                        <div className="md:col-span-2 grid md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
+1108:                                            <div className="md:col-span-2">
+1114:                                            <div>
+1126:                                            <div>
+1155:                                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+1157:                                        <div className="space-y-2 text-sm">
+1158:                                            <div className="flex justify-between">
+1162:                                            <div className="flex justify-between">
+1166:                                            <div className="flex justify-between">
+1170:                                            <div className="flex justify-between border-t border-blue-200 pt-2 mt-2">
+1180:                                            <div className="flex justify-between">
+1190:                            <div className="flex flex-col-reverse sm:flex-row justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
+1201:                                <div className="sm:ml-auto w-full sm:w-auto">

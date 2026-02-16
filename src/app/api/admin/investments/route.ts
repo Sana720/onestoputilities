@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
         // In production, verify admin authentication here
         const { data: investments, error } = await supabaseAdmin
             .from('investments')
-            .select('*')
+            .select('*, users(kyc_verified)')
             .order('created_at', { ascending: false });
 
         if (error) {

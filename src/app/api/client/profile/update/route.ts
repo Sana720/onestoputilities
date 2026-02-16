@@ -16,8 +16,22 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
+        // Check if user is kyc_verified
+        const { data: user, error: fetchError } = await supabase
+            .from('users')
+            .select('kyc_verified')
+            .eq('email', email)
+            .single();
+
+        if (fetchError) {
+            console.error('Error fetching user status:', fetchError);
+        }
+
+        const isKycVerified = user?.kyc_verified || false;
+
         // 1. Update the users table (name)
-        if (profileData.full_name) {
+        // Only update name if NOT kyc_verified
+        if (profileData.full_name && !isKycVerified) {
             const { error: userError } = await supabase
                 .from('users')
                 .update({ name: profileData.full_name })
@@ -25,24 +39,32 @@ export async function POST(req: Request) {
 
             if (userError) {
                 console.error('User update error:', userError);
-                // Continue anyway as name update is secondary to investment record update
             }
+        }
+
+        // Prepare the update object
+        const updateData: any = {
+            father_name: profileData.father_name,
+            dob: profileData.dob,
+            gender: profileData.gender,
+            occupation: profileData.occupation,
+            permanent_address: profileData.permanent_address,
+            contact_number: profileData.contact_number,
+            nominee: profileData.nominee,
+            bank_details: profileData.bank_details
+        };
+
+        // Only include kyc-sensitive fields if NOT verified
+        if (!isKycVerified) {
+            updateData.full_name = profileData.full_name;
+            updateData.pan_number = profileData.pan_number;
+            updateData.aadhar_number = profileData.aadhar_number;
         }
 
         // 2. Update all investment records for this client
         const { error: investmentError } = await supabase
             .from('investments')
-            .update({
-                full_name: profileData.full_name,
-                father_name: profileData.father_name,
-                dob: profileData.dob,
-                gender: profileData.gender,
-                occupation: profileData.occupation,
-                permanent_address: profileData.permanent_address,
-                contact_number: profileData.contact_number,
-                nominee: profileData.nominee,
-                bank_details: profileData.bank_details
-            })
+            .update(updateData)
             .eq('email', email);
 
         if (investmentError) {
