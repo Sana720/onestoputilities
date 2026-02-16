@@ -3,15 +3,15 @@ import { Page, Text, View, Document, StyleSheet, Font, Svg, Path, Line, Image } 
 
 const styles = StyleSheet.create({
     page: {
-        padding: 30,
+        padding: 20,
         fontFamily: 'Helvetica',
         fontSize: 9,
         color: '#000',
     },
     headerWrapper: {
-        paddingBottom: 5,
-        marginBottom: 10,
-        borderBottom: '1pt solid #000',
+        paddingBottom: 2,
+        marginBottom: 6,
+        borderBottom: '0.5pt solid #000',
     },
     headerTop: {
         flexDirection: 'row',
@@ -28,21 +28,21 @@ const styles = StyleSheet.create({
         lineHeight: 1.3,
     },
     logoContainer: {
-        width: 100,
+        width: 80,
         alignItems: 'flex-end',
     },
     mainTitle: {
         fontSize: 10,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginVertical: 10,
+        marginVertical: 6,
         textTransform: 'uppercase',
     },
     subTitleBox: {
         border: '0.5pt solid #000',
         alignSelf: 'center',
-        padding: '2 15',
-        marginBottom: 15,
+        padding: '2 12',
+        marginBottom: 10,
     },
     subTitle: {
         fontSize: 9,
@@ -51,23 +51,23 @@ const styles = StyleSheet.create({
     contentRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     salutation: {
-        marginTop: 10,
-        marginBottom: 8,
+        marginTop: 6,
+        marginBottom: 4,
         fontWeight: 'bold',
     },
     paragraph: {
-        marginBottom: 6,
-        lineHeight: 1.4,
+        marginBottom: 2,
+        lineHeight: 1.2,
         textAlign: 'justify',
     },
     table: {
         width: '100%',
         borderWidth: 0.5,
         borderColor: '#000',
-        marginVertical: 8,
+        marginVertical: 4,
     },
     tableRow: {
         flexDirection: 'row',
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#000',
     },
     tableCell: {
-        padding: 4,
+        padding: 3,
         borderRightWidth: 0.5,
         borderRightColor: '#000',
         flex: 1,
@@ -89,8 +89,8 @@ const styles = StyleSheet.create({
     sectionHeading: {
         fontSize: 10,
         fontWeight: 'bold',
-        marginTop: 12,
-        marginBottom: 6,
+        marginTop: 6,
+        marginBottom: 2,
     },
     signatureSection: {
         flexDirection: 'row',
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
     signatureBox: {
         flex: 1,
         border: '0.5pt solid #000',
-        padding: 5,
-        minHeight: 80,
+        padding: 4,
+        minHeight: 50,
     },
     declarationText: {
         padding: 2,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
         fontSize: 8,
         fontWeight: 'bold',
         marginBottom: 2,
-        marginTop: 10,
+        marginTop: 6,
     }
 });
 
@@ -267,8 +267,8 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     <View style={[styles.signatureBox, { borderRightWidth: 0 }]}><Text>Specimen Signature - First Holder</Text></View>
                     <View style={styles.signatureBox}><Text>Specimen Signature - Second Holder (Nominee)</Text></View>
                 </View>
-                <Text style={[styles.mainTitle, { marginTop: 20 }]}>PREFERENCE BOND SHAREHOLDING AGREEMENT</Text>
-                <Text style={{ textAlign: 'center', marginBottom: 10 }}>Sr. No:{generateSerialNumber()}</Text>
+                <Text style={[styles.mainTitle, { marginTop: 10 }]}>PREFERENCE BOND SHAREHOLDING AGREEMENT</Text>
+                <Text style={{ textAlign: 'center', marginBottom: 8 }}>Sr. No:{generateSerialNumber()}</Text>
                 <Text style={styles.paragraph}>
                     THIS AGREEMENT made this <Text style={styles.bold}>{new Date().getDate()}TH day of {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}</Text> Place : <Text style={styles.bold}>Kolkata</Text>
                 </Text>
@@ -288,8 +288,8 @@ export const InvestmentAgreement = ({ data }: Props) => {
             {/* PAGE 3: PERFORMANCE BOND SHAREHOLDER TERMS */}
             <Page size="A4" style={styles.page}>
                 <HeaderSnippet />
-                <Text style={[styles.paragraph, { marginTop: 10 }]}>(D) The parties desire to record the terms and conditions of their Agreement in writing.</Text>
-                <Text style={[styles.bold, { marginTop: 10, marginBottom: 10 }]}>NOW IT IS HEREBY AGREED BY AND BETWEEN THE PARTIES HERETO AS FOLLOWS:</Text>
+                <Text style={[styles.paragraph, { marginTop: 6 }]}>(D) The parties desire to record the terms and conditions of their Agreement in writing.</Text>
+                <Text style={[styles.bold, { marginTop: 8, marginBottom: 8 }]}>NOW IT IS HEREBY AGREED BY AND BETWEEN THE PARTIES HERETO AS FOLLOWS:</Text>
                 <Text style={styles.sectionHeading}>1. Preference bond Shareholder</Text>
                 <Text style={styles.paragraph}>
                     As a Preference bond Bond shareholder, <Text style={styles.bold}>{data.full_name}</Text> would have a preferred claim on the company's assets and dividends over common shareholders. However, Preference bond shareholders typically do not have voting rights in the company unless otherwise specified. <Text style={styles.bold}>The key benefit is that, in the event of profit distribution, Preference bond shareholders receive dividends before common shareholders, and these dividends are often at a fixed rate.</Text>
@@ -302,7 +302,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 <Text style={styles.paragraph}>
                     (a) <Text style={styles.bold}>{data.full_name}</Text> intends to invest a capital amount of Rs. {formatCurrency(data.investment_amount)}/- ({numberInWords(data.investment_amount)}) in the Company, an existing company limited by shares under the Companies Act, 2013.
                 </Text>
-                <View style={{ marginTop: 15 }}>
+                <View style={{ marginTop: 4 }}>
                     <Text style={styles.bold}>Transactional Details of Received Capital in Company Bank Accounts:</Text>
                     <Text style={[styles.headerInfo, { marginBottom: 5 }]}>The following is a breakdown of the capital received in the company's bank accounts according to the respective dates:</Text>
                     <View style={styles.table}>
@@ -382,7 +382,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 <Text style={styles.paragraph}>
                     If any provision of this Agreement conflicts with the Companies Act, 2013 or any amendments therein, the Companies Act, 2013 will prevail.
                 </Text>
-                <Text style={[styles.bold, { marginTop: 20 }]}>IN WITNESS WHEREOF, the parties hereto have executed this Agreement as of the date first above written.</Text>
+                <Text style={[styles.bold, { marginTop: 8 }]}>IN WITNESS WHEREOF, the parties hereto have executed this Agreement as of the date first above written.</Text>
             </Page>
 
             {/* PAGE 6: FINAL SIGNATURES */}
@@ -409,8 +409,8 @@ export const InvestmentAgreement = ({ data }: Props) => {
                         </View>
                     </View>
                 </View>
-                <View style={[styles.table, { marginTop: 20 }]}>
-                    <View style={[styles.tableRow, { minHeight: 80 }]}>
+                <View style={[styles.table, { marginTop: 8 }]}>
+                    <View style={[styles.tableRow, { minHeight: 50 }]}>
                         <View style={styles.tableCell}>
                             <Text>Shareholding Applicant</Text>
                             <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text>
@@ -421,7 +421,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                         </View>
                     </View>
                 </View>
-                <View style={{ marginTop: 100, borderTopWidth: 0.5, paddingTop: 10 }}>
+                <View style={{ marginTop: 40, borderTopWidth: 0.5, paddingTop: 10 }}>
                     <Text style={{ textAlign: 'center', fontSize: 8, color: '#666' }}>Computer generated document. Digitally approved by SHREEG EXPERT WEALTH ADVISORY LTD.</Text>
                 </View>
             </Page>
