@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     description: "Manage your preference bond investments and track your portfolio",
     type: "website",
   },
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({
@@ -27,9 +30,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         {children}
       </body>

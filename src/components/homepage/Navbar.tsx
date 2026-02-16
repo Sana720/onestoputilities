@@ -57,6 +57,18 @@ export default function Navbar() {
         };
     }, []);
 
+    // Body scroll lock
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileMenuOpen]);
+
     const scrollToSection = (id: string) => {
         const element = document.getElementById(id.replace('#', ''));
         if (element) {
@@ -65,101 +77,104 @@ export default function Navbar() {
     };
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled
-            ? 'py-4 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm'
-            : 'py-6 bg-transparent'
-            }`}>
-            <div className="max-w-7xl mx-auto px-6">
-                <div className="flex items-center justify-between">
-                    {/* Logo & Status Group */}
-                    <div className="flex items-center space-x-6">
-                        <Link href="/" className="relative group transition-transform active:scale-95 shrink-0">
-                            <Image src="/logo.png" alt="SHREEG Logo" width={140} height={40} className="h-9 md:h-10 w-auto" />
-                        </Link>
+        <>
+            <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled
+                ? 'py-4 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm'
+                : 'py-6 bg-transparent'
+                }`}>
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="flex items-center justify-between">
+                        {/* Logo & Status Group */}
+                        <div className="flex items-center space-x-6">
+                            <Link href="/" className="relative group transition-transform active:scale-95 shrink-0">
+                                <Image src="/logo.png" alt="SHREEG Logo" width={140} height={40} className="h-9 md:h-10 w-auto" />
+                            </Link>
 
-                        <div className="hidden lg:flex items-center space-x-4 border-l border-gray-100 pl-4 h-8">
-                            <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isMarket ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
-                                }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${isMarket ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                                <span>Market {isMarket ? 'Live' : 'Closed'}</span>
+                            <div className="hidden lg:flex items-center space-x-4 border-l border-gray-100 pl-4 h-8">
+                                <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isMarket ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
+                                    }`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isMarket ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                                    <span>Market {isMarket ? 'Live' : 'Closed'}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Navigation - Institutional Group */}
-                    <div className="hidden md:flex items-center space-x-1 bg-gray-50/50 rounded-2xl p-1 border border-gray-100">
-                        <Link href="/" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
-                            <span>Home</span>
-                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-                        </Link>
-                        <Link href="/about" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
-                            <span>About</span>
-                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-                        </Link>
-                        <button onClick={() => scrollToSection('research')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
-                            <span>Research</span>
-                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-                        </button>
-                        <button onClick={() => scrollToSection('portfolio')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
-                            <span>Yield</span>
-                            <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-                        </button>
-                    </div>
-
-                    {/* Desktop Actions - Institutional Group */}
-                    <div className="hidden md:flex items-center space-x-3 border-l border-gray-100 pl-4">
-                        <Link
-                            href="https://ekyc.arihantcapital.com/?rmcode=9191"
-                            target="_blank"
-                            className="hidden lg:flex items-center px-5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-[#1B8A9F] hover:text-[#1B8A9F] transition-all active:scale-95 hover:shadow-sm"
-                        >
-                            Open Demat
-                        </Link>
-
-                        {userRole ? (
-                            <Link
-                                href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
-                                className="group relative px-6 py-3 bg-gray-900 text-white rounded-xl flex items-center space-x-3 overflow-hidden transition-all hover:shadow-2xl shadow-gray-200"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#1B8A9F] to-[#4ADE80] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <LayoutDashboard className="w-4 h-4 relative z-10" />
-                                <span className="text-sm font-black relative z-10">Console</span>
-                                <ArrowRight className="w-4 h-4 absolute right-2 opacity-0 group-hover:opacity-100 transition-all" />
+                        {/* Navigation - Institutional Group */}
+                        <div className="hidden md:flex items-center space-x-1 bg-gray-50/50 rounded-2xl p-1 border border-gray-100">
+                            <Link href="/" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
+                                <span>Home</span>
+                                <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </Link>
-                        ) : (
-                            <div className="flex items-center space-x-2">
+                            <Link href="/about" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
+                                <span>About</span>
+                                <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                            </Link>
+                            <button onClick={() => scrollToSection('research')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
+                                <span>Research</span>
+                                <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                            </button>
+                            <button onClick={() => scrollToSection('portfolio')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
+                                <span>Yield</span>
+                                <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                            </button>
+                        </div>
+
+                        {/* Desktop Actions - Institutional Group */}
+                        <div className="hidden md:flex items-center space-x-3 border-l border-gray-100 pl-4">
+                            <Link
+                                href="https://ekyc.arihantcapital.com/?rmcode=9191"
+                                target="_blank"
+                                className="hidden lg:flex items-center px-5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-[#1B8A9F] hover:text-[#1B8A9F] transition-all active:scale-95 hover:shadow-sm"
+                            >
+                                Open Demat
+                            </Link>
+
+                            {userRole ? (
                                 <Link
-                                    href="/login"
-                                    className="px-6 py-3 text-sm font-black uppercase tracking-widest text-gray-600 hover:text-[#1B8A9F] transition-all"
+                                    href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
+                                    className="group relative px-6 py-3 bg-gray-900 text-white rounded-xl flex items-center space-x-3 overflow-hidden transition-all hover:shadow-2xl shadow-gray-200"
                                 >
-                                    Login
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[#1B8A9F] to-[#4ADE80] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <LayoutDashboard className="w-4 h-4 relative z-10" />
+                                    <span className="text-sm font-black relative z-10">Console</span>
+                                    <ArrowRight className="w-4 h-4 absolute right-2 opacity-0 group-hover:opacity-100 transition-all" />
                                 </Link>
-                                <Link
-                                    href="/apply"
-                                    className="px-7 py-3 bg-gray-900 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-[#1B8A9F] hover:shadow-2xl shadow-gray-200 transition-all active:scale-95"
-                                >
-                                    Join Network
-                                </Link>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="flex items-center space-x-2">
+                                    <Link
+                                        href="/login"
+                                        className="px-6 py-3 text-sm font-black uppercase tracking-widest text-gray-600 hover:text-[#1B8A9F] transition-all"
+                                    >
+                                        Login
+                                    </Link>
+                                    <Link
+                                        href="/apply"
+                                        className="px-7 py-3 bg-gray-900 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:bg-[#1B8A9F] hover:shadow-2xl shadow-gray-200 transition-all active:scale-95"
+                                    >
+                                        Join Network
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Mobile Toggle */}
+                        <button
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="md:hidden p-3 bg-gray-50 border border-gray-100 rounded-2xl text-gray-600 active:scale-90 transition-all"
+                        >
+                            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        </button>
                     </div>
-
-                    {/* Mobile Toggle */}
-                    <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="md:hidden p-3 bg-gray-50 border border-gray-100 rounded-2xl text-gray-600 active:scale-90 transition-all"
-                    >
-                        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
                 </div>
-            </div>
 
-            {/* Mobile Menu */}
+            </nav>
+
+            {/* Mobile Menu - Moved outside nav to avoid parent layout interference */}
             <div className={`md:hidden fixed inset-0 z-[110] bg-white transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                 }`}>
-                <div className="p-6 h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-16">
-                        <Image src="/logo.png" alt="SHREEG Logo" width={112} height={32} className="h-8 w-auto" />
+                <div className="p-6 h-full flex flex-col overflow-y-auto">
+                    <div className="flex items-center justify-between mb-4 shrink-0">
+                        <Image src="/logo.png" alt="SHREEG Logo" width={84} height={24} className="h-6 w-auto" />
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="p-3 bg-gray-50 rounded-2xl"
@@ -168,7 +183,7 @@ export default function Navbar() {
                         </button>
                     </div>
 
-                    <div className="flex flex-col space-y-8">
+                    <div className="flex flex-col space-y-2">
                         {[
                             { name: 'Home', href: '/', type: 'link' },
                             { name: 'About Us', href: '/about', type: 'link' },
@@ -183,7 +198,7 @@ export default function Navbar() {
                                         setIsMobileMenuOpen(false);
                                         setTimeout(() => scrollToSection(item.id!), 300);
                                     }}
-                                    className="text-3xl font-black uppercase tracking-tighter text-gray-900 text-left transition-all active:scale-95"
+                                    className="text-sm font-bold uppercase tracking-widest text-gray-900 text-left transition-all active:scale-95"
                                 >
                                     {item.name}
                                 </button>
@@ -192,8 +207,8 @@ export default function Navbar() {
                                     key={i}
                                     href={item.href!}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className={`text-3xl font-black uppercase tracking-tighter transition-all active:scale-95 ${item.highlight
-                                        ? 'text-white bg-[#1B8A9F] px-6 py-4 rounded-2xl shadow-xl shadow-[#1B8A9F]/20 text-xl text-center'
+                                    className={`text-sm font-bold uppercase tracking-widest transition-all active:scale-95 ${item.highlight
+                                        ? 'text-white bg-[#1B8A9F] px-4 py-2.5 rounded-lg shadow-lg shadow-[#1B8A9F]/20 text-xs text-center inline-block w-fit'
                                         : item.special ? 'text-[#1B8A9F]' : 'text-gray-900'
                                         }`}
                                 >
@@ -203,12 +218,12 @@ export default function Navbar() {
                         ))}
                     </div>
 
-                    <div className="mt-auto space-y-4 pt-12">
+                    <div className="mt-auto space-y-2 pt-6">
                         {userRole ? (
                             <Link
                                 href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="w-full flex items-center justify-center space-x-3 py-6 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest text-lg"
+                                className="w-full flex items-center justify-center space-x-3 py-2.5 bg-gray-900 text-white rounded-lg font-bold uppercase tracking-widest text-xs"
                             >
                                 <LayoutDashboard className="w-6 h-6" />
                                 <span>Go to Console</span>
@@ -218,14 +233,14 @@ export default function Navbar() {
                                 <Link
                                     href="/apply"
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="w-full flex items-center justify-center py-6 bg-[#1B8A9F] text-white rounded-[32px] font-black uppercase tracking-widest text-lg shadow-2xl shadow-[#1B8A9F]/30"
+                                    className="w-full flex items-center justify-center py-2.5 bg-[#1B8A9F] text-white rounded-lg font-bold uppercase tracking-widest text-xs shadow-lg shadow-[#1B8A9F]/20"
                                 >
                                     Join Network
                                 </Link>
                                 <Link
                                     href="/login"
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="w-full flex items-center justify-center py-5 bg-gray-50 text-gray-900 rounded-[32px] font-black uppercase tracking-widest"
+                                    className="w-full flex items-center justify-center py-2 bg-gray-50 text-gray-900 rounded-lg font-bold uppercase tracking-widest text-[10px]"
                                 >
                                     Client Login
                                 </Link>
@@ -234,9 +249,9 @@ export default function Navbar() {
                         <div className="flex items-center justify-between px-4 pt-6">
                             <div className="flex items-center space-x-2">
                                 <Lock className="w-4 h-4 text-gray-400" />
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">10 years + holding company</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">10 years + holding company</span>
                             </div>
-                            <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${isMarket ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                            <div className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${isMarket ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
                                 }`}>
                                 Market {isMarket ? 'Live' : 'Closed'}
                             </div>
@@ -244,6 +259,6 @@ export default function Navbar() {
                     </div>
                 </div>
             </div>
-        </nav>
+        </>
     );
 }

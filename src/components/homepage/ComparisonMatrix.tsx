@@ -37,8 +37,8 @@ export default function ComparisonMatrix() {
         },
         {
             criteria: 'Taxation',
-            fd: '10%',
-            shreeg: '10%',
+            fd: '10% (TDS)',
+            shreeg: '10% (TDS)',
             summary: 'Applicable tax on gains',
             highlight: false
         },
