@@ -3,15 +3,20 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { isMarketOpen } from '@/lib/market';
 import { Menu, X, LayoutDashboard, Globe, Lock, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function Navbar() {
+    const pathname = usePathname();
+    const router = useRouter();
     const [isMarket, setIsMarket] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [scrolled, setScrolled] = useState(false);
+
+    const isAboutPage = pathname === '/about';
 
     useEffect(() => {
         setIsMarket(isMarketOpen());
@@ -69,10 +74,15 @@ export default function Navbar() {
         };
     }, [isMobileMenuOpen]);
 
-    const scrollToSection = (id: string) => {
-        const element = document.getElementById(id.replace('#', ''));
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
+    const handleNavClick = (id: string, isMobile = false) => {
+        if (isMobile) setIsMobileMenuOpen(false);
+        if (pathname === '/') {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        } else {
+            router.push(`/#${id}`);
         }
     };
 
@@ -80,7 +90,9 @@ export default function Navbar() {
         <>
             <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled
                 ? 'py-4 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm'
-                : 'py-6 bg-transparent'
+                : isAboutPage
+                    ? 'py-6 bg-white/5 backdrop-blur-2xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)]'
+                    : 'py-6 bg-transparent'
                 }`}>
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex items-center justify-between">
@@ -100,20 +112,20 @@ export default function Navbar() {
                         </div>
 
                         {/* Navigation - Institutional Group */}
-                        <div className="hidden md:flex items-center space-x-1 bg-gray-50/50 rounded-2xl p-1 border border-gray-100">
-                            <Link href="/" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
+                        <div className={`hidden md:flex items-center space-x-1 rounded-2xl p-1 border transition-colors ${scrolled || !isAboutPage ? 'bg-gray-50/50 border-gray-100' : 'bg-white/5 border-white/10'}`}>
+                            <Link href="/" className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F]`}>
                                 <span>Home</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </Link>
-                            <Link href="/about" className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all">
+                            <Link href="/about" className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F]`}>
                                 <span>About</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </Link>
-                            <button onClick={() => scrollToSection('research')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
+                            <button onClick={() => handleNavClick('research')} className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F] cursor-pointer`}>
                                 <span>Research</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </button>
-                            <button onClick={() => scrollToSection('portfolio')} className="group relative px-5 py-2 text-sm font-bold text-gray-600 hover:text-[#1B8A9F] transition-all cursor-pointer">
+                            <button onClick={() => handleNavClick('portfolio')} className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F] cursor-pointer`}>
                                 <span>Yield</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </button>
@@ -142,7 +154,7 @@ export default function Navbar() {
                                 <div className="flex items-center space-x-2">
                                     <Link
                                         href="/login"
-                                        className="px-6 py-3 text-sm font-black uppercase tracking-widest text-gray-600 hover:text-[#1B8A9F] transition-all"
+                                        className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-white'} hover:text-[#1B8A9F]`}
                                     >
                                         Login
                                     </Link>
@@ -193,10 +205,7 @@ export default function Navbar() {
                             item.type === 'scroll' ? (
                                 <button
                                     key={i}
-                                    onClick={() => {
-                                        setIsMobileMenuOpen(false);
-                                        setTimeout(() => scrollToSection(item.id!), 300);
-                                    }}
+                                    onClick={() => handleNavClick(item.id!, true)}
                                     className="text-sm font-bold uppercase tracking-widest text-gray-900 text-left transition-all active:scale-95"
                                 >
                                     {item.name}
