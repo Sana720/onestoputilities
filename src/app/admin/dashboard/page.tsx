@@ -783,8 +783,12 @@ export default function AdminDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {filteredInvestments.slice(0, investmentLimit).map((investment) => (
-                                        <tr key={investment.id} className="hover:bg-gray-50/50 transition-colors group">
+                                    {filteredInvestments.slice(0, investmentLimit).map((investment, idx) => (
+                                        <tr
+                                            key={investment.id}
+                                            ref={idx === filteredInvestments.slice(0, investmentLimit).length - 1 ? (node => lastElementRef(node as any)) : null}
+                                            className="hover:bg-gray-50/50 transition-colors group"
+                                        >
                                             <td className="px-8 py-6">
                                                 <button
                                                     onClick={() => handleManageInvestment(investment)}
@@ -903,8 +907,12 @@ export default function AdminDashboard() {
                                             ? (item.type === 'DEBIT' && item.status === 'pending')
                                             : (item.type === 'DEBIT' ? item.status === 'paid' : true);
                                         return matchesSearch && matchesTab;
-                                    }).slice(0, ledgerLimit).map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                    }).slice(0, ledgerLimit).map((item, idx, arr) => (
+                                        <tr
+                                            key={idx}
+                                            ref={idx === arr.length - 1 ? (node => lastElementRef(node as any)) : null}
+                                            className="hover:bg-gray-50/50 transition-colors"
+                                        >
                                             <td className="px-8 py-6 text-sm font-medium text-gray-600">
                                                 {formatDate(item.date)}
                                             </td>

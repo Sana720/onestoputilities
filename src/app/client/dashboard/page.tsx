@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -66,6 +66,9 @@ interface Investment {
         amount: number;
         date: string;
         status: string;
+        bank_name?: string;
+        payment_mode?: string;
+        reference_no?: string;
     }>;
     nominee: {
         name: string;
@@ -99,6 +102,8 @@ export default function ClientDashboard() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [productFilter, setProductFilter] = useState('all');
+    const [overviewLimit, setOverviewLimit] = useState(10);
+    const [dividendLimit, setDividendLimit] = useState(10);
     const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
     const [showResetModal, setShowResetModal] = useState(false);
     const [resetData, setResetData] = useState({
@@ -127,6 +132,29 @@ export default function ClientDashboard() {
         }
         setExpandedAgreements(newExpanded);
     };
+
+    // Infinite Scroll Observer
+    const observer = useRef<IntersectionObserver | null>(null);
+    const lastElementRef = useCallback((node: HTMLElement | null) => {
+        if (loading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                if (activeTab === 'overview') {
+                    setOverviewLimit(prev => prev + 10);
+                } else if (activeTab === 'dividends') {
+                    setDividendLimit(prev => prev + 10);
+                }
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loading, activeTab]);
+
+    // Reset limits on tab switch or filter change
+    useEffect(() => {
+        setOverviewLimit(10);
+        setDividendLimit(10);
+    }, [activeTab, productFilter]);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -578,8 +606,12 @@ export default function ClientDashboard() {
                     {activeTab === 'overview' && (
                         <div className="grid gap-6">
                             {filteredInvestments.length > 0 ? (
-                                filteredInvestments.map((investment) => (
-                                    <div key={investment.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                filteredInvestments.slice(0, overviewLimit).map((investment, idx) => (
+                                    <div
+                                        key={investment.id}
+                                        ref={idx === filteredInvestments.slice(0, overviewLimit).length - 1 ? lastElementRef : null}
+                                        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+                                    >
                                         <div className="p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                                             <div className="space-y-4">
                                                 <div className="flex items-center space-x-3">
@@ -722,12 +754,19 @@ export default function ClientDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {investments.flatMap(inv =>
-                                                (inv.dividends || []).map((dividend: any, idx) => (
-                                                    <tr key={`${inv.id}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
+                                            {filteredInvestments
+                                                .flatMap(inv => (inv.dividends || []).map(d => ({ ...d, invId: inv.id })))
+                                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                                .slice(0, dividendLimit)
+                                                .map((dividend, idx, arr) => (
+                                                    <tr
+                                                        key={`${dividend.invId}-${idx}`}
+                                                        ref={idx === arr.length - 1 ? lastElementRef : null}
+                                                        className="hover:bg-gray-50/50 transition-colors"
+                                                    >
                                                         <td className="px-8 py-5">
                                                             <p className="text-sm font-bold text-gray-900">Bond Application</p>
-                                                            <p className="text-[10px] font-mono text-gray-400 mt-0.5">#{inv.id.slice(0, 8)}</p>
+                                                            <p className="text-[10px] font-mono text-gray-400 mt-0.5">#{dividend.invId.slice(0, 8)}</p>
                                                         </td>
                                                         <td className="px-8 py-5">
                                                             <p className="text-sm font-bold text-green-600">+{formatCurrency(dividend.amount)}</p>
@@ -752,7 +791,7 @@ export default function ClientDashboard() {
                                                         </td>
                                                     </tr>
                                                 ))
-                                            )}
+                                            }
                                         </tbody>
                                     </table>
                                 </div>
@@ -767,11 +806,15 @@ export default function ClientDashboard() {
 
                     {activeTab === 'details' && (
                         <div className="space-y-6 animate-fade-in-up">
-                            {investments.length > 0 ? (
-                                investments.map((investment, idx) => {
+                            {filteredInvestments.length > 0 ? (
+                                filteredInvestments.slice(0, overviewLimit).map((investment, idx, arr) => {
                                     const isExpanded = expandedAgreements.has(investment.id);
                                     return (
-                                        <div key={investment.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300">
+                                        <div
+                                            key={investment.id}
+                                            ref={idx === arr.length - 1 ? lastElementRef : null}
+                                            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300"
+                                        >
                                             <button
                                                 onClick={() => toggleAgreement(investment.id)}
                                                 className="w-full px-8 py-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
