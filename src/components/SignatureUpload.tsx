@@ -5,11 +5,12 @@ import { Upload, X, Check, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 interface Props {
     onUpload: (file: File) => void;
+    onRemove?: () => void;
     currentSignatureUrl?: string;
     label?: string;
 }
 
-export const SignatureUpload = ({ onUpload, currentSignatureUrl, label = "Signature" }: Props) => {
+export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label = "Signature" }: Props) => {
     const [preview, setPreview] = useState<string | null>(currentSignatureUrl || null);
     const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +46,7 @@ export const SignatureUpload = ({ onUpload, currentSignatureUrl, label = "Signat
     const clearSignature = () => {
         setPreview(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
+        if (onRemove) onRemove();
     };
 
     return (

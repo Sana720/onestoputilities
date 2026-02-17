@@ -68,6 +68,7 @@ interface Investment {
         ifscCode: string;
         accountHolderName?: string;
         branch?: string;
+        accountType?: string;
     };
     dividends: Array<{
         amount: number;
@@ -100,8 +101,7 @@ export default function AdminDashboard() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [productFilter, setProductFilter] = useState('all');
     const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [showViewModal, setShowViewModal] = useState(false);
+    const [showManagementModal, setShowManagementModal] = useState(false);
     const [editData, setEditData] = useState({ dividend_rate: 0, status: '' });
     const [showDividendModal, setShowDividendModal] = useState(false);
     const [dividendData, setDividendData] = useState({
@@ -289,13 +289,24 @@ export default function AdminDashboard() {
         router.push('/login');
     };
 
-    const handleEditInvestment = (investment: Investment) => {
+    const handleManageInvestment = async (investment: Investment) => {
         setSelectedInvestment(investment);
         setEditData({
-            dividend_rate: Number(investment.dividend_rate) || 0,
+            dividend_rate: investment.product_name === 'Unlisted Shares' ? 18 : (Number(investment.dividend_rate) || 0),
             status: investment.status,
         });
-        setShowEditModal(true);
+        setShowManagementModal(true);
+        // Ensure admin signature is fresh
+        if (!adminSignatureUrl) {
+            const { data } = await supabase
+                .from('users')
+                .select('signature_url')
+                .eq('id', user?.id)
+                .maybeSingle();
+            if (data?.signature_url) {
+                setAdminSignatureUrl(data.signature_url);
+            }
+        }
     };
 
     const handleUpdateInvestment = async () => {
@@ -309,7 +320,7 @@ export default function AdminDashboard() {
             });
 
             if (response.ok) {
-                setShowEditModal(false);
+                setShowManagementModal(false);
                 fetchAllInvestments();
                 alert('Investment updated successfully');
             }
@@ -420,10 +431,10 @@ export default function AdminDashboard() {
     });
 
     const calculateStats = () => {
-        const totalInvestment = investments.reduce((sum, inv) => sum + Number(inv.investment_amount), 0);
-        const totalClients = new Set(investments.map(inv => inv.email)).size;
-        const activeInvestmentsCount = investments.filter(inv => inv.status === 'active').length;
-        const totalDividendsPaid = investments.reduce((sum, inv) => {
+        const totalInvestment = filteredInvestments.reduce((sum, inv) => sum + Number(inv.investment_amount), 0);
+        const totalClients = new Set(filteredInvestments.map(inv => inv.email)).size;
+        const activeInvestmentsCount = filteredInvestments.filter(inv => inv.status === 'active').length;
+        const totalDividendsPaid = filteredInvestments.reduce((sum, inv) => {
             return sum + (inv.dividends || [])
                 .filter(d => d.status === 'paid')
                 .reduce((dSum, d) => dSum + d.amount, 0);
@@ -626,7 +637,7 @@ export default function AdminDashboard() {
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active</span>
                         </div>
                         <p className="text-2xl md:text-3xl font-black text-gray-900">{stats.activeInvestmentsCount}</p>
-                        <p className="text-xs text-gray-400 mt-1 font-medium italic">Running Agreements</p>
+                        <p className="text-xs text-gray-400 mt-1 font-medium italic">Active Portfolios</p>
                     </div>
 
                     <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -776,21 +787,7 @@ export default function AdminDashboard() {
                                         <tr key={investment.id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-8 py-6">
                                                 <button
-                                                    onClick={async () => {
-                                                        setSelectedInvestment(investment);
-                                                        setShowViewModal(true);
-                                                        // Ensure admin signature is fresh
-                                                        if (!adminSignatureUrl) {
-                                                            const { data } = await supabase
-                                                                .from('users')
-                                                                .select('signature_url')
-                                                                .eq('id', user?.id)
-                                                                .maybeSingle();
-                                                            if (data?.signature_url) {
-                                                                setAdminSignatureUrl(data.signature_url);
-                                                            }
-                                                        }
-                                                    }}
+                                                    onClick={() => handleManageInvestment(investment)}
                                                     className="text-sm font-bold text-gray-900 leading-none hover:text-[#1B8A9F] transition-colors text-left"
                                                 >
                                                     {investment.full_name}
@@ -825,7 +822,7 @@ export default function AdminDashboard() {
                                             <td className="px-8 py-6 text-right">
                                                 <div className="flex items-center justify-end space-x-2">
                                                     <button
-                                                        onClick={() => handleEditInvestment(investment)}
+                                                        onClick={() => handleManageInvestment(investment)}
                                                         className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#1B8A9F] hover:bg-teal-50 rounded-xl transition-all"
                                                     >
                                                         <Edit className="w-4 h-4" />
@@ -848,7 +845,8 @@ export default function AdminDashboard() {
                                                             <MessageCircle className="w-4 h-4" />
                                                         </a>
                                                     )}
-                                                    {((investment.status === 'approved' || investment.status === 'active') &&
+                                                    {(investment.product_name === 'Unlisted Shares' &&
+                                                        (investment.status === 'approved' || investment.status === 'active') &&
                                                         investment.payment_verified &&
                                                         investment.client_signature_url &&
                                                         investment.admin_signed_at &&
@@ -862,17 +860,21 @@ export default function AdminDashboard() {
                                                                 loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />
                                                             )}
                                                         </PDFDownloadLink>
-                                                    ) : (
+                                                    ) : investment.product_name === 'Unlisted Shares' ? (
                                                         <button
                                                             disabled
                                                             className="p-2.5 bg-gray-50 text-gray-200 rounded-xl cursor-not-allowed"
-                                                            title={!(investment.status === 'approved' || investment.status === 'active') ? "Agreement pending approval" :
+                                                            title={!(investment.status === 'approved' || investment.status === 'active') ? "Application pending approval" :
                                                                 !investment.payment_verified ? "Pending payment verification" :
                                                                     !investment.client_signature_url ? "Client signature pending" :
                                                                         "Admin signature pending"}
                                                         >
                                                             <Lock className="w-4 h-4" />
                                                         </button>
+                                                    ) : (
+                                                        <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100" title="T&C Agreed">
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                        </div>
                                                     )}
                                                 </div>
                                             </td>
@@ -961,15 +963,15 @@ export default function AdminDashboard() {
             </div>
 
             {/* Edit Modal */}
-            {/* Investor Details Modal */}
-            {showViewModal && selectedInvestment && (
+            {/* Consolidated Management Modal */}
+            {showManagementModal && selectedInvestment && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                     <div className="bg-white rounded-3xl shadow-2xl p-0 max-w-2xl w-full border border-gray-100 animate-fade-in-up overflow-hidden max-h-[90vh] flex flex-col">
                         {/* Header */}
                         <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
                             <div className="flex items-center space-x-4">
                                 <div>
-                                    <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">Investor Profile</h3>
+                                    <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">Investment Management</h3>
                                     <div className="flex items-center space-x-2 mt-1">
                                         <p className="text-[10px] text-[#1B8A9F] font-bold uppercase tracking-[0.2em]">Comprehensive Portfolio View</p>
                                         {selectedInvestment.users?.kyc_verified && (
@@ -981,7 +983,7 @@ export default function AdminDashboard() {
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setShowViewModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+                            <button onClick={() => setShowManagementModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
                                 <X className="w-6 h-6 text-gray-400" />
                             </button>
                         </div>
@@ -1038,36 +1040,76 @@ export default function AdminDashboard() {
                             <section>
                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
                                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></div>
-                                    Investment & Position
+                                    Investment Configuration
                                 </h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6 bg-white border-2 border-green-50 rounded-2xl p-6">
                                     <div>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Principal Amount</p>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">
+                                            {selectedInvestment.product_name === 'Unlisted Shares' ? 'Principal Amount' : 'Trade Capital'}
+                                        </p>
                                         <p className="text-sm font-black text-green-600">{formatCurrency(selectedInvestment.investment_amount)}</p>
                                     </div>
+                                    {selectedInvestment.product_name === 'Unlisted Shares' && (
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Units (Shares)</p>
+                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.number_of_shares}</p>
+                                        </div>
+                                    )}
+                                    {selectedInvestment.product_name === 'Unlisted Shares' ? (
+                                        <>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Face Value / Unit</p>
+                                                <p className="text-sm font-bold text-gray-900">₹{selectedInvestment.face_value_per_share}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Yield Rate (%)</p>
+                                                <div className="w-full bg-teal-50 border border-teal-100 rounded-lg px-3 py-2 text-sm font-black text-[#1B8A9F]">
+                                                    18% (Fixed)
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Trading Management Fees (1%)</p>
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {formatCurrency(selectedInvestment.investment_amount * 0.01)}
+                                            </p>
+                                        </div>
+                                    )}
                                     <div>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Units (Shares)</p>
-                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.number_of_shares}</p>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Investment Status</p>
+                                        <select
+                                            value={editData.status}
+                                            onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-teal-100 transition-all"
+                                        >
+                                            <option value="pending">Pending</option>
+                                            <option value="approved">Approved</option>
+                                            <option value="active">Active</option>
+                                            <option value="matured">Matured</option>
+                                            <option value="bought_back">Liquidated</option>
+                                        </select>
                                     </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Face Value / Unit</p>
-                                        <p className="text-sm font-bold text-gray-900">₹{selectedInvestment.face_value_per_share}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Yield Rate</p>
-                                        <p className="text-sm font-black text-teal-600">{selectedInvestment.dividend_rate}% <span className="text-[9px] font-medium text-gray-400 ml-1">PA</span></p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Lock-in Period</p>
-                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.lock_in_period} Months</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Maturity Date</p>
-                                        <p className="text-sm font-bold text-orange-600">{formatDate(selectedInvestment.lock_in_end_date)}</p>
-                                    </div>
+                                    {selectedInvestment.product_name === 'Unlisted Shares' && (
+                                        <>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Lock-in Period</p>
+                                                <p className="text-sm font-bold text-gray-900">
+                                                    {`${selectedInvestment.lock_in_period} Years`}
+                                                </p>
+                                            </div>
+                                            <div className="md:col-span-1">
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Maturity Date</p>
+                                                <p className="text-sm font-bold text-orange-600">
+                                                    {formatDate(selectedInvestment.lock_in_end_date)}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </section>
 
+                            {/* settlement & bank section omitted for brevity in this step, but I'll include it to ensure completeness of the replacement */}
                             {/* Bank Details */}
                             <section>
                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
@@ -1086,6 +1128,14 @@ export default function AdminDashboard() {
                                     <div>
                                         <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">IFSC Code</p>
                                         <p className="text-sm font-bold text-gray-900 uppercase">{selectedInvestment.bank_details?.ifscCode || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Branch</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.branch || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Account Type</p>
+                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.accountType || 'N/A'}</p>
                                     </div>
                                 </div>
                             </section>
@@ -1186,22 +1236,32 @@ export default function AdminDashboard() {
                                 <div className="flex-1">
                                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center">
                                         <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mr-2"></div>
-                                        Client Signature
+                                        {selectedInvestment.product_name === 'Unlisted Shares' ? 'Client Signature' : 'Acceptance Status'}
                                     </h4>
-                                    {selectedInvestment.client_signature_url ? (
-                                        <div className="bg-white rounded-2xl p-4 border border-teal-100/50 shadow-sm inline-block">
-                                            <img
-                                                src={selectedInvestment.client_signature_url}
-                                                alt="Client Signature"
-                                                className="h-20 w-auto object-contain"
-                                            />
-                                            <p className="text-[9px] font-bold text-gray-400 mt-2 text-center uppercase tracking-wider">
-                                                Signed on {formatDate(selectedInvestment.client_signed_at || '')}
-                                            </p>
-                                        </div>
+                                    {selectedInvestment.product_name === 'Unlisted Shares' ? (
+                                        selectedInvestment.client_signature_url ? (
+                                            <div className="bg-white rounded-2xl p-4 border border-teal-100/50 shadow-sm inline-block">
+                                                <img
+                                                    src={selectedInvestment.client_signature_url}
+                                                    alt="Client Signature"
+                                                    className="h-20 w-auto object-contain"
+                                                />
+                                                <p className="text-[9px] font-bold text-gray-400 mt-2 text-center uppercase tracking-wider">
+                                                    Signed on {formatDate(selectedInvestment.client_signed_at || '')}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="p-6 bg-white/50 border-2 border-dashed border-teal-200 rounded-2xl flex items-center justify-center">
+                                                <p className="text-xs font-bold text-teal-600/50 italic">Signature Pending</p>
+                                            </div>
+                                        )
                                     ) : (
-                                        <div className="p-6 bg-white/50 border-2 border-dashed border-teal-200 rounded-2xl flex items-center justify-center">
-                                            <p className="text-xs font-bold text-teal-600/50 italic">Signature Pending</p>
+                                        <div className="p-6 bg-green-50/50 border-2 border-green-200 rounded-2xl flex items-center gap-4 text-green-700">
+                                            <CheckCircle2 className="w-6 h-6" />
+                                            <div>
+                                                <p className="text-sm font-bold">Terms & Conditions Accepted</p>
+                                                <p className="text-[10px] uppercase font-black tracking-widest opacity-60">Via Application Form</p>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -1245,61 +1305,57 @@ export default function AdminDashboard() {
                                             </div>
                                         </button>
 
-                                        {!selectedInvestment.admin_signed_at ? (
-                                            <button
-                                                disabled={!selectedInvestment.payment_verified || !adminSignatureUrl || approving}
-                                                onClick={async () => {
-                                                    setApproving(true);
-                                                    try {
-                                                        const { error } = await supabase
-                                                            .from('investments')
-                                                            .update({
+                                        {selectedInvestment.product_name === 'Unlisted Shares' && (
+                                            !selectedInvestment.admin_signed_at ? (
+                                                <button
+                                                    disabled={!selectedInvestment.payment_verified || !adminSignatureUrl || approving}
+                                                    onClick={async () => {
+                                                        setApproving(true);
+                                                        try {
+                                                            const { error } = await supabase
+                                                                .from('investments')
+                                                                .update({
+                                                                    admin_signed_at: new Date().toISOString(),
+                                                                    status: 'approved'
+                                                                })
+                                                                .eq('id', selectedInvestment.id);
+
+                                                            if (error) throw error;
+
+                                                            const updated = {
+                                                                ...selectedInvestment,
                                                                 admin_signed_at: new Date().toISOString(),
                                                                 status: 'approved'
-                                                            })
-                                                            .eq('id', selectedInvestment.id);
-
-                                                        if (error) throw error;
-
-                                                        const updated = {
-                                                            ...selectedInvestment,
-                                                            admin_signed_at: new Date().toISOString(),
-                                                            status: 'approved'
-                                                        };
-                                                        setSelectedInvestment(updated);
-                                                        setInvestments(prev => prev.map(inv =>
-                                                            inv.id === selectedInvestment.id ? updated : inv
-                                                        ));
-                                                    } catch (err) {
-                                                        console.error(err);
-                                                        alert('Approval failed');
-                                                    } finally {
-                                                        setApproving(false);
-                                                    }
-                                                }}
-                                                className="w-full bg-[#1B8A9F] text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
-                                            >
-                                                {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                                                Confirm & Digitally Sign
-                                            </button>
-                                        ) : (
-                                            <div className="bg-white rounded-2xl p-4 border border-teal-200 shadow-sm flex items-center justify-between">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-[#1B8A9F] uppercase tracking-[0.2em] mb-1">Approved & Signed</span>
-                                                    <p className="text-[10px] font-bold text-gray-500">{formatDate(selectedInvestment.admin_signed_at)}</p>
+                                                            };
+                                                            setSelectedInvestment(updated);
+                                                            setInvestments(prev => prev.map(inv =>
+                                                                inv.id === selectedInvestment.id ? updated : inv
+                                                            ));
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                            alert('Approval failed');
+                                                        } finally {
+                                                            setApproving(false);
+                                                        }
+                                                    }}
+                                                    className="w-full bg-[#1B8A9F] text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
+                                                >
+                                                    {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                                    Confirm & Digitally Sign
+                                                </button>
+                                            ) : (
+                                                <div className="bg-white rounded-2xl p-4 border border-teal-200 shadow-sm flex items-center justify-between">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[8px] font-black text-[#1B8A9F] uppercase tracking-[0.2em] mb-1">Approved & Signed</span>
+                                                        <p className="text-[10px] font-bold text-gray-500">{formatDate(selectedInvestment.admin_signed_at)}</p>
+                                                    </div>
+                                                    <img
+                                                        src={adminSignatureUrl || ''}
+                                                        alt="Admin Signature"
+                                                        className="h-10 w-auto opacity-80"
+                                                    />
                                                 </div>
-                                                <img
-                                                    src={adminSignatureUrl || ''}
-                                                    alt="Admin Signature"
-                                                    className="h-10 w-auto opacity-80"
-                                                />
-                                            </div>
-                                        )}
-
-                                        {!adminSignatureUrl && !selectedInvestment.admin_signed_at && (
-                                            <p className="text-[10px] text-red-500 font-bold text-center animate-pulse">
-                                                Please set your signature in Profile Settings first.
-                                            </p>
+                                            )
                                         )}
                                     </div>
                                 </div>
@@ -1333,19 +1389,16 @@ export default function AdminDashboard() {
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => {
-                                        setShowViewModal(false);
-                                        handleEditInvestment(selectedInvestment);
-                                    }}
+                                    onClick={handleUpdateInvestment}
                                     className="px-6 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-[10px] font-black text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all uppercase tracking-widest"
                                 >
-                                    Quick Edit
+                                    Guard Changes
                                 </button>
                                 <button
-                                    onClick={() => setShowViewModal(false)}
+                                    onClick={() => setShowManagementModal(false)}
                                     className="px-6 py-2.5 bg-[#1B8A9F] rounded-xl text-[10px] font-black text-white hover:bg-[#156d7d] transition-all uppercase tracking-widest shadow-lg shadow-teal-100"
                                 >
-                                    Dismiss Profile
+                                    Dismiss
                                 </button>
                             </div>
                         </div>
@@ -1353,124 +1406,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {
-                showEditModal && selectedInvestment && (
-                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border border-gray-100 animate-fade-in-up">
-                            <div className="flex items-center justify-between mb-8">
-                                <h3 className="text-xl font-bold text-gray-900 tracking-tight">Modify Application</h3>
-                                <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-900">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            <div className="space-y-6 mb-8">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Investor Name</label>
-                                        <div className="p-4 bg-gray-50 rounded-xl text-sm font-bold text-gray-900 border border-gray-100">
-                                            {selectedInvestment!.full_name}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Product</label>
-                                        <div className="p-4 bg-teal-50 rounded-xl text-[10px] font-black text-[#1B8A9F] border border-teal-100 uppercase tracking-widest">
-                                            {selectedInvestment!.product_name || 'N/A'}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Broker Attribution</p>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase">Broker ID</p>
-                                            <p className="text-xs font-bold text-gray-900">{selectedInvestment!.broker_id || 'Direct'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase">Broker Name</p>
-                                            <p className="text-xs font-bold text-gray-900">{selectedInvestment!.broker_name || 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
-                                    <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] mb-3 flex items-center">
-                                        <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
-                                        Verification Documents
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {selectedInvestment.pan_url && (
-                                            <a href={selectedInvestment.pan_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-bold text-red-600 hover:bg-red-50 transition-all flex items-center">
-                                                <Eye className="w-3 h-3 mr-1" /> PAN
-                                            </a>
-                                        )}
-                                        {selectedInvestment.aadhar_url && (
-                                            <a href={selectedInvestment.aadhar_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-bold text-red-600 hover:bg-red-50 transition-all flex items-center">
-                                                <Eye className="w-3 h-3 mr-1" /> Aadhaar
-                                            </a>
-                                        )}
-                                        {selectedInvestment.bank_cheque_url && (
-                                            <a href={selectedInvestment.bank_cheque_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-bold text-red-600 hover:bg-red-50 transition-all flex items-center">
-                                                <Eye className="w-3 h-3 mr-1" /> Cheque
-                                            </a>
-                                        )}
-                                        {!selectedInvestment.pan_url && !selectedInvestment.aadhar_url && !selectedInvestment.bank_cheque_url && (
-                                            <p className="text-[10px] text-red-400 font-bold italic">No documents uploaded for verification</p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Dividend Yield (%)</label>
-                                        <input
-                                            type="number"
-                                            value={isNaN(editData.dividend_rate) ? '' : editData.dividend_rate}
-                                            onChange={(e) => {
-                                                const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                                setEditData(prev => ({ ...prev, dividend_rate: val }));
-                                            }}
-                                            className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
-                                            step="0.1"
-                                            min="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Agreement Status</label>
-                                        <select
-                                            value={editData.status}
-                                            onChange={(e) => setEditData(prev => ({ ...prev, status: e.target.value }))}
-                                            className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all appearance-none"
-                                        >
-                                            <option value="pending">Pending</option>
-                                            <option value="approved">Approved</option>
-                                            <option value="active">Active</option>
-                                            <option value="matured">Matured</option>
-                                            <option value="bought_back">Liquidated</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={handleUpdateInvestment}
-                                    className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all"
-                                >
-                                    Guard Changes
-                                </button>
-                                <button
-                                    onClick={() => setShowEditModal(false)}
-                                    className="w-full bg-gray-50 text-gray-500 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all"
-                                >
-                                    Discard
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
 
             {/* Add Dividend Modal */}
             {

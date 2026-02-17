@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye, PenTool } from 'lucide-react';
+import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye, PenTool, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SignatureUpload } from '@/components/SignatureUpload';
 
@@ -74,6 +74,9 @@ export default function ApplyPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isPreFilled, setIsPreFilled] = useState(false);
     const [brokers, setBrokers] = useState<any[]>([]);
+    const [showTCModal, setShowTCModal] = useState(false);
+    const [agreedToTC, setAgreedToTC] = useState(false);
+    const [existingSignatureUrl, setExistingSignatureUrl] = useState<string | null>(null);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -131,6 +134,9 @@ export default function ApplyPage() {
                         bankChequeUrl: '',
                         kycVerified: latest.users?.kyc_verified || false
                     }));
+                    if (latest.client_signature_url) {
+                        setExistingSignatureUrl(latest.client_signature_url);
+                    }
                     setIsPreFilled(true);
                 } else {
                     // If no investment found, just fill the email from auth
@@ -306,7 +312,11 @@ export default function ApplyPage() {
         }
 
         if (step === 5) {
-            if (!files.signatureFile) newErrors.signatureFile = 'Digital signature is required';
+            if (formData.productName === 'Unlisted Shares') {
+                if (!files.signatureFile) newErrors.signatureFile = 'Digital signature is required';
+            } else {
+                if (!agreedToTC) newErrors.agreedToTC = 'You must agree to the Terms & Conditions';
+            }
         }
 
         setErrors(newErrors);
@@ -993,7 +1003,11 @@ export default function ApplyPage() {
                                         </div>
 
                                         <div>
-                                            <label className="label">Investment Amount (₹) *</label>
+                                            <label className="label">
+                                                {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(formData.productName)
+                                                    ? 'Trade Capital (₹) *'
+                                                    : 'Investment Amount (₹) *'}
+                                            </label>
                                             <input
                                                 type="number"
                                                 name="investmentAmount"
@@ -1009,12 +1023,21 @@ export default function ApplyPage() {
                                                     ₹{formatIndianNumber(formData.investmentAmount)}
                                                 </p>
                                             )}
-                                            <p className="text-[10px] text-teal-600 font-bold mt-1 uppercase tracking-wider">Minimum investment: ₹5.00 Lakhs</p>
+                                            <p className="text-[10px] text-teal-600 font-bold mt-1 uppercase tracking-wider">
+                                                {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(formData.productName)
+                                                    ? 'Minimum Capital: ₹5.00 Lakhs'
+                                                    : 'Minimum investment: ₹5.00 Lakhs'}
+                                            </p>
                                             {errors.investmentAmount && <p className="text-red-500 text-sm mt-1">{errors.investmentAmount}</p>}
                                         </div>
 
                                         <div>
-                                            <label className="label">Number of Shares</label>
+                                            <label className="label">
+                                                {formData.productName === 'Intraday Trading' ? 'Trade Management fees @1% Monthly' :
+                                                    formData.productName === 'Short-Term SIP' ? 'Trade Management fees @1% Quarterly' :
+                                                        formData.productName === 'Long-Term Holding' ? 'Trade Management fees @1% Yearly' :
+                                                            'Number of Shares'}
+                                            </label>
                                             <input
                                                 type="number"
                                                 name="numberOfShares"
@@ -1023,7 +1046,11 @@ export default function ApplyPage() {
                                                 className="input bg-gray-50"
                                                 placeholder="Auto-calculated"
                                             />
-                                            <p className="text-xs text-text-tertiary mt-1">@ ₹100 per share</p>
+                                            <p className="text-xs text-text-tertiary mt-1">
+                                                {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(formData.productName)
+                                                    ? 'Calculated based on capital'
+                                                    : '@ ₹100 per share'}
+                                            </p>
                                         </div>
 
                                         <div>
@@ -1149,76 +1176,139 @@ export default function ApplyPage() {
                                         <h3 className="font-bold text-lg mb-3">Investment Summary</h3>
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-text-secondary">Investment Amount:</span>
+                                                <span className="text-text-secondary">
+                                                    {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(formData.productName)
+                                                        ? 'Trade Capital:'
+                                                        : 'Investment Amount:'}
+                                                </span>
                                                 <span className="font-semibold">₹{formData.investmentAmount ? formatIndianNumber(formData.investmentAmount) : '0'}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-text-secondary">Number of Shares:</span>
+                                                <span className="text-text-secondary">
+                                                    {formData.productName === 'Intraday Trading' ? 'Mangement Fee (Monthly):' :
+                                                        formData.productName === 'Short-Term SIP' ? 'Mangement Fee (Quarterly):' :
+                                                            formData.productName === 'Long-Term Holding' ? 'Mangement Fee (Yearly):' :
+                                                                'Number of Shares:'}
+                                                </span>
                                                 <span className="font-semibold">{formData.numberOfShares || '0'}</span>
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-text-secondary">Face Value per Share:</span>
-                                                <span className="font-semibold">₹100</span>
-                                            </div>
+                                            {!['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(formData.productName) && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-text-secondary">Face Value per Share:</span>
+                                                    <span className="font-semibold">₹100</span>
+                                                </div>
+                                            )}
                                             <div className="flex justify-between border-t border-blue-200 pt-2 mt-2">
                                                 <span className="text-text-secondary font-bold text-blue-800">Maturity Date:</span>
                                                 <span className="font-bold text-blue-800">
-                                                    {formData.paymentDate ? (() => {
-                                                        const d = new Date(formData.paymentDate);
-                                                        d.setFullYear(d.getFullYear() + 3);
-                                                        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                                                    })() : 'Select payment date'}
+                                                    {formData.productName === 'Unlisted Shares' ? (
+                                                        formData.paymentDate ? (() => {
+                                                            const d = new Date(formData.paymentDate);
+                                                            d.setFullYear(d.getFullYear() + 3);
+                                                            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                                                        })() : 'Select payment date'
+                                                    ) : 'Immediate (No Lock-in)'}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-text-secondary">Lock-in Period:</span>
-                                                <span className="font-semibold">3 Years</span>
+                                                <span className="font-semibold">{formData.productName === 'Unlisted Shares' ? '3 Years' : 'No Lock-in'}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 5: Digital Signature */}
+                            {/* Step 5: Digital Signature or T&C */}
                             {currentStep === 5 && (
                                 <div className="space-y-8 animate-fade-in-up">
-                                    <div className="text-center space-y-4">
-                                        <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
-                                            <PenTool className="w-8 h-8 text-[#1B8A9F]" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-3xl font-bold text-gray-900">Final Step: Digital Signature</h2>
-                                            <p className="text-gray-500 max-w-md mx-auto">
-                                                Please provide your digital signature to authorize the investment agreement.
-                                                You can always update this from your dashboard later.
-                                            </p>
-                                        </div>
-                                    </div>
+                                    {formData.productName === 'Unlisted Shares' ? (
+                                        <>
+                                            <div className="text-center space-y-4">
+                                                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
+                                                    <PenTool className="w-8 h-8 text-[#1B8A9F]" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-3xl font-bold text-gray-900">Final Step: Digital Signature</h2>
+                                                    <p className="text-gray-500 max-w-md mx-auto">
+                                                        Please provide your digital signature to authorize the investment agreement.
+                                                        You can always update this from your dashboard later.
+                                                    </p>
+                                                </div>
+                                            </div>
 
-                                    <div className="max-w-xl mx-auto p-8 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#1B8A9F] transition-all">
-                                        <div className="space-y-6">
-                                            <SignatureUpload
-                                                onUpload={(file) => setFiles(prev => ({ ...prev, signatureFile: file }))}
-                                                label="Digital Signature *"
-                                            />
-                                            {errors.signatureFile && (
-                                                <p className="text-red-500 text-sm font-medium flex items-center gap-1">
-                                                    <CheckCircle2 className="w-4 h-4 text-red-500 rotate-45" />
-                                                    {errors.signatureFile}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
+                                            <div className="max-w-xl mx-auto p-8 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#1B8A9F] transition-all">
+                                                <div className="space-y-6">
+                                                    <SignatureUpload
+                                                        onUpload={(file) => setFiles(prev => ({ ...prev, signatureFile: file }))}
+                                                        onRemove={() => {
+                                                            setFiles(prev => ({ ...prev, signatureFile: null }));
+                                                            setExistingSignatureUrl(null);
+                                                        }}
+                                                        currentSignatureUrl={existingSignatureUrl || undefined}
+                                                        label="Digital Signature *"
+                                                    />
+                                                    {errors.signatureFile && (
+                                                        <p className="text-red-500 text-sm font-medium flex items-center gap-1">
+                                                            <CheckCircle2 className="w-4 h-4 text-red-500 rotate-45" />
+                                                            {errors.signatureFile}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex gap-4">
-                                        <ShieldCheck className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-bold text-blue-900 uppercase tracking-widest">Legal Confirmation</p>
-                                            <p className="text-sm text-blue-800/80 leading-relaxed">
-                                                By signing above, you confirm that all information provided is accurate and you agree to the terms of the investment agreement.
-                                            </p>
-                                        </div>
-                                    </div>
+                                            <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex gap-4">
+                                                <ShieldCheck className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                                                <div className="space-y-1">
+                                                    <p className="text-sm font-bold text-blue-900 uppercase tracking-widest">Legal Confirmation</p>
+                                                    <p className="text-sm text-blue-800/80 leading-relaxed">
+                                                        By signing above, you confirm that all information provided is accurate and you agree to the terms of the investment agreement.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="text-center space-y-4">
+                                                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
+                                                    <ShieldCheck className="w-8 h-8 text-[#1B8A9F]" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-3xl font-bold text-gray-900">Final Step: Agreement</h2>
+                                                    <p className="text-gray-500 max-w-md mx-auto">
+                                                        Please review and accept our Terms & Conditions to complete your application.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="max-w-xl mx-auto p-8 bg-white rounded-2xl border-2 border-gray-100 shadow-sm transition-all text-center">
+                                                <div className="space-y-6">
+                                                    <div className="flex items-center justify-center gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="agreedToTC"
+                                                            checked={agreedToTC}
+                                                            onChange={(e) => setAgreedToTC(e.target.checked)}
+                                                            className="w-5 h-5 rounded border-gray-300 text-[#1B8A9F] focus:ring-[#1B8A9F]"
+                                                        />
+                                                        <label htmlFor="agreedToTC" className="text-sm text-gray-700">
+                                                            I have read and agree to the{' '}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowTCModal(true)}
+                                                                className="text-[#1B8A9F] font-bold underline hover:text-[#156d7d]"
+                                                            >
+                                                                Terms & Conditions
+                                                            </button>
+                                                        </label>
+                                                    </div>
+                                                    {errors.agreedToTC && (
+                                                        <p className="text-red-500 text-sm font-medium">{errors.agreedToTC}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
 
@@ -1246,7 +1336,7 @@ export default function ApplyPage() {
                                     ) : (
                                         <button
                                             type="submit"
-                                            disabled={loading}
+                                            disabled={loading || (formData.productName === 'Unlisted Shares' ? (!files.signatureFile && !existingSignatureUrl) : !agreedToTC)}
                                             className="w-full sm:w-auto px-8 py-3 bg-[#1B8A9F] text-white rounded-lg font-bold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
                                             {loading ? (
@@ -1268,6 +1358,98 @@ export default function ApplyPage() {
                     </div>
                 </div>
             </div>
+            {/* T&C Modal */}
+            {showTCModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-fade-in-up">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-teal-50/30">
+                            <h3 className="text-xl font-bold text-gray-900">Terms & Conditions</h3>
+                            <button
+                                onClick={() => setShowTCModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <X className="w-6 h-6 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-8 overflow-y-auto prose prose-sm max-w-none">
+                            <h2 className="text-2xl font-black mb-6 uppercase tracking-tight text-[#1B8A9F]">TRADERG DISCLOSURE & ACCEPTANCE AGREEMENT</h2>
+
+                            <p className="mb-4">This Disclosure & Acceptance Agreement (&quot;Agreement&quot;) is executed electronically by the User (&quot;I / Client / Account Holder&quot;) in favour of <strong>TRADERG</strong> (&quot;TRADERG&quot; / &quot;Company&quot; / &quot;Platform&quot;).</p>
+
+                            <p className="mb-6">By registering, subscribing, or using any service, product, strategy, or software provided through the TRADERG mobile application or website (<a href="http://www.tradergwealth.com/" className="text-[#1B8A9F]">www.tradergwealth.com</a>), I hereby acknowledge, understand, and agree to the following terms:</p>
+
+                            <div className="space-y-8">
+                                <section>
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">1. Risk Disclosure & Understanding</h4>
+                                    <p className="text-gray-700 leading-relaxed">I confirm that I have carefully read and understood all relevant documents, disclosures, and service conditions before subscribing to any TRADERG service, including but not limited to algorithmic strategies, trade management tools, or platform features.</p>
+                                    <p className="text-gray-700 leading-relaxed mt-2">I fully understand that <strong>trading and investing in stock markets, derivatives, and other financial instruments involve significant risk</strong>, including the risk of partial or total loss of capital. I acknowledge that returns are not guaranteed.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">2. Voluntary Subscription & Decision-Making</h4>
+                                    <p className="text-gray-700 leading-relaxed">I declare that my decision to subscribe to and use TRADERG services is made <strong>voluntarily and at my own discretion</strong>. All investment, trading, and withdrawal decisions executed in my trading or demat accounts are solely my responsibility.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">3. Acceptance of Terms & Electronic Consent</h4>
+                                    <p className="text-gray-700 leading-relaxed">I confirm that I have reviewed and accepted all applicable <strong>Terms & Conditions</strong>, as displayed under each plan or service on the TRADERG mobile application and/or website. By providing electronic consent, I agree to be legally bound by this Agreement.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">4. Nature of Services – No Advisory or Guarantee</h4>
+                                    <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                                        <li>TRADERG <strong>does not provide investment advisory services, portfolio management services, or trading tips</strong>.</li>
+                                        <li>TRADERG operates solely as a <strong>technology platform</strong> that facilitates interaction between users and independent experts offering algorithmic strategies.</li>
+                                        <li>TRADERG <strong>does not guarantee performance, profits, accuracy, or suitability</strong> of any strategy, expert, or trading outcome.</li>
+                                    </ul>
+                                </section>
+
+                                <section className="border-t border-gray-100 pt-8 mt-8">
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">5. No Liability for Losses</h4>
+                                    <p className="text-gray-700 leading-relaxed">I agree and confirm that TRADERG, its associate companies, directors, officers, employees, or partners <strong>shall not be held liable for any losses</strong>, damages, or adverse outcomes arising from:</p>
+                                    <ul className="list-disc pl-5 mt-2 space-y-1 text-gray-700">
+                                        <li>Trades executed using algorithms or strategies</li>
+                                        <li>Market volatility or unforeseen events</li>
+                                        <li>Broker systems, execution delays, or third-party failures</li>
+                                    </ul>
+                                    <p className="font-bold text-gray-900 mt-3">All profits and losses accrue solely to my trading account.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">6. KYC & Regulatory Compliance</h4>
+                                    <p className="text-gray-700 leading-relaxed">I confirm that I have completed my <strong>Know Your Customer (KYC)</strong> process with my respective broker and comply with all applicable regulatory requirements.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">9. Fees, Taxes & Non-Refund Policy</h4>
+                                    <p className="text-gray-700 leading-relaxed">All subscription fees, service charges, brokerage, transaction fees, and government taxes are <strong>non-refundable</strong> once paid. No adjustment or refund shall be made under any circumstances.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-black text-xs uppercase tracking-widest text-[#1B8A9F] mb-3">11. Prohibition on Borrowing / Deposit Misuse</h4>
+                                    <p className="text-gray-700 leading-relaxed">I acknowledge that borrowing funds from clients or third parties for trading or account growth is strictly prohibited. Any complaint or violation may result in immediate termination and legal consequences.</p>
+                                </section>
+                            </div>
+
+                            <div className="mt-12 p-6 bg-teal-50 rounded-xl border border-teal-100">
+                                <p className="text-sm font-bold text-teal-900 uppercase tracking-widest mb-2">Final Confirmation</p>
+                                <p className="text-sm text-teal-800 leading-relaxed">By clicking &quot;I Agree&quot; on the previous screen, you legally bind yourself to these terms and the Disclosure &amp; Acceptance Agreement.</p>
+                            </div>
+                        </div>
+                        <div className="p-6 border-t border-gray-100 flex justify-end bg-gray-50">
+                            <button
+                                onClick={() => {
+                                    setAgreedToTC(true);
+                                    setShowTCModal(false);
+                                }}
+                                className="px-8 py-3 bg-[#1B8A9F] text-white rounded-lg font-bold hover:bg-[#156d7d] transition-all shadow-lg"
+                            >
+                                I Agree & Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

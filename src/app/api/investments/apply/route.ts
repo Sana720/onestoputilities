@@ -61,9 +61,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Calculate lock-in dates
+        const isUnlisted = data.productName === 'Unlisted Shares';
+        const lockInPeriod = isUnlisted ? 3 : 0;
         const lockInStartDate = new Date(data.paymentDate);
         const lockInEndDate = new Date(lockInStartDate);
-        lockInEndDate.setFullYear(lockInEndDate.getFullYear() + 3);
+
+        if (isUnlisted) {
+            lockInEndDate.setFullYear(lockInEndDate.getFullYear() + 3);
+        }
 
         // Create investment record
         const { data: investmentData, error: investmentError } = await supabaseAdmin
@@ -108,12 +113,12 @@ export async function POST(request: NextRequest) {
                 product_name: data.productName,
                 broker_id: data.brokerId,
                 broker_name: data.brokerName,
-                lock_in_period: 3,
+                lock_in_period: lockInPeriod,
                 lock_in_start_date: lockInStartDate.toISOString().split('T')[0],
                 lock_in_end_date: lockInEndDate.toISOString().split('T')[0],
-                dividend_rate: 0,
+                dividend_rate: isUnlisted ? 18 : 0,
                 status: 'pending',
-                client_signature_url: data.clientSignatureUrl,
+                client_signature_url: data.clientSignatureUrl || null,
                 client_signed_at: data.clientSignatureUrl ? new Date().toISOString() : null,
                 dividends: [],
             })

@@ -177,7 +177,11 @@ export const InvestmentAgreement = ({ data }: Props) => {
             {/* PAGE 1: APPLICATION FORM */}
             <Page size="A4" style={styles.page}>
                 <HeaderSnippet />
-                <Text style={styles.mainTitle}>APPLICATION FORM FOR Preference bond BOND SHARES OF Rs. 100/- EACH AT PAR</Text>
+                <Text style={styles.mainTitle}>
+                    {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name)
+                        ? 'APPLICATION FORM FOR TRADE MANAGEMENT'
+                        : 'APPLICATION FORM FOR Preference bond BOND SHARES OF Rs. 100/- EACH AT PAR'}
+                </Text>
                 <View style={styles.subTitleBox}><Text style={styles.subTitle}>PRIVATE AND CONFIDENTIAL</Text></View>
                 <View style={styles.contentRow}>
                     <View>
@@ -198,7 +202,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 </View>
                 <Text style={styles.salutation}>Dear Sir,</Text>
                 <Text style={styles.paragraph}>
-                    I <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text> hereby apply for the allotment of <Text style={styles.bold}>{formatCurrency(data.number_of_shares)} Preference bond Shares</Text> as detailed below. The application money is remitted herewith, with a face value of <Text style={styles.bold}>Rs. 100/- per share.</Text>
+                    I <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text> hereby apply for the {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trade Management' : 'allotment of ' + formatCurrency(data.number_of_shares) + ' Preference bond Shares'} as detailed below. The {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trade Capital' : 'application money'} is remitted herewith, {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? '' : 'with a face value of Ps. 100/- per share.'}
                 </Text>
                 <Text style={styles.paragraph}>
                     I agree to accept the shares applied for, or such number as may be allotted, subject to the terms of the Memorandum and Articles of Association, the terms and conditions of the application form, and the letter of allotment of the Company, all of which are acceptable to us.
@@ -217,11 +221,26 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 </Text>
                 <View style={styles.table}>
                     <View style={styles.tableRow}>
-                        <View style={[styles.tableCell, { flex: 2 }]}><Text>Number of Shares applied for (in figure)</Text><Text style={styles.bold}>{data.number_of_shares}</Text></View>
+                        <View style={[styles.tableCell, { flex: 2 }]}>
+                            <Text>
+                                {data.product_name === 'Intraday Trading' ? 'Trade Management fees @1% Monthly' :
+                                    data.product_name === 'Short-Term SIP' ? 'Trade Management fees @1% Quarterly' :
+                                        data.product_name === 'Long-Term Holding' ? 'Trade Management fees @1% Yearly' :
+                                            'Number of Shares applied for (in figure)'}
+                            </Text>
+                            <Text style={styles.bold}>{data.number_of_shares}</Text>
+                        </View>
                         <View style={[styles.tableCell, { flex: 3 }]}><Text style={styles.bold}>{numberInWords(data.number_of_shares).replace(' RUPEES ONLY', '')}</Text></View>
                     </View>
                     <View style={styles.tableRow}>
-                        <View style={[styles.tableCell, { flex: 4 }]}><Text>Amount paid towards application & Allotment money @ Rs 100/- per share by Cheques : {data.payment_reference}</Text><Text style={styles.bold}>Rs.: {formatCurrency(data.investment_amount)}</Text></View>
+                        <View style={[styles.tableCell, { flex: 4 }]}>
+                            <Text>
+                                {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name)
+                                    ? `Trade Capital paid towards Management via : ${data.payment_reference}`
+                                    : `Amount paid towards application & Allotment money @ Rs 100/- per share by Cheques : ${data.payment_reference}`}
+                            </Text>
+                            <Text style={styles.bold}>Rs.: {formatCurrency(data.investment_amount)}</Text>
+                        </View>
                         <View style={[styles.tableCell, { flex: 3 }]}>
                             <Text>Drawn on (Name of the Bank & Branch) Form</Text>
                             <View style={{ padding: 2 }}><Text style={styles.bold}>{data.bank_details?.bankName}</Text></View>
@@ -274,7 +293,11 @@ export const InvestmentAgreement = ({ data }: Props) => {
                         <Text>Specimen Signature - Second Holder (Nominee)</Text>
                     </View>
                 </View>
-                <Text style={[styles.mainTitle, { marginTop: 10 }]}>PREFERENCE BOND SHAREHOLDING AGREEMENT</Text>
+                <Text style={[styles.mainTitle, { marginTop: 10 }]}>
+                    {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name)
+                        ? 'TRADE MANAGEMENT AGREEMENT'
+                        : 'PREFERENCE BOND SHAREHOLDING AGREEMENT'}
+                </Text>
                 <Text style={{ textAlign: 'center', marginBottom: 8 }}>Sr. No:{generateSerialNumber()}</Text>
                 <Text style={styles.paragraph}>
                     THIS AGREEMENT made this <Text style={styles.bold}>{new Date().getDate()}TH day of {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}</Text> Place : <Text style={styles.bold}>Kolkata</Text>
@@ -288,7 +311,9 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     <Text style={styles.bold}>SHREEG EXPERT WEALTH ADVISORY LTD</Text> a Company incorporated under the Companies Act, 2013 having its office Mani Casadona, 11WS2, 6th Floor Suit Number 9 Action Area IIF, Opposite EcoSpace, Kolkata - 700156, herein represented by its Directors (hereinafter referred to as <Text style={styles.bold}>“a company”</Text>) <Text style={styles.bold}>which expression shall, unless repugnant to the context or meaning hereof, include its successors and assigns) of the Second Part;</Text>
                 </Text>
                 <Text style={[styles.bold, { marginTop: 10 }]}>WHEREAS:</Text>
-                <Text style={styles.paragraph}>(A) {data.full_name} desires to become a Preference bond Shareholder and invest in the Company SHREEG EXPERT WEALTH ADVISORY LTD for long-term Preference bond equity growth.</Text>
+                <Text style={styles.paragraph}>
+                    (A) {data.full_name} desires to become a {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trading Client' : 'Preference bond Shareholder'} and {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'avail Trade Management services from' : 'invest in'} the Company SHREEG EXPERT WEALTH ADVISORY LTD.
+                </Text>
                 <Text style={styles.paragraph}>(C) The Company has agreed to join in the execution of this Agreement to be aware of the rights and obligations of {data.full_name} as a party hereto and ensure compliance with the same.</Text>
             </Page>
 
@@ -334,9 +359,17 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     <Text style={styles.paragraph}>Account Type    :- {data.bank_details?.accountType || 'Savings'}</Text>
                     <Text style={styles.paragraph}>IFSC Code       :- {data.bank_details?.ifscCode}</Text>
                 </View>
-                <Text style={styles.sectionHeading}>5. Number of Shares Applied For:</Text>
+                <Text style={styles.sectionHeading}>
+                    {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name)
+                        ? '5. Trade Management Fee Details:'
+                        : '5. Number of Shares Applied For:'}
+                </Text>
                 <Text style={[styles.paragraph, { marginLeft: 15 }]}>
-                    Number of Preference bond Shares: {data.number_of_shares} ({numberInWords(data.number_of_shares).replace(' RUPEES ONLY', '')})
+                    {data.product_name === 'Intraday Trading' ? 'Trade Management fees @1% Monthly: ' :
+                        data.product_name === 'Short-Term SIP' ? 'Trade Management fees @1% Quarterly: ' :
+                            data.product_name === 'Long-Term Holding' ? 'Trade Management fees @1% Yearly: ' :
+                                'Number of Preference bond Shares: '}
+                    {data.number_of_shares} ({numberInWords(data.number_of_shares).replace(' RUPEES ONLY', '')})
                 </Text>
             </Page>
 

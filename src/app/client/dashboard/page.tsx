@@ -98,6 +98,7 @@ export default function ClientDashboard() {
     const [investments, setInvestments] = useState<Investment[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [productFilter, setProductFilter] = useState('all');
     const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
     const [showResetModal, setShowResetModal] = useState(false);
     const [resetData, setResetData] = useState({
@@ -373,8 +374,12 @@ export default function ClientDashboard() {
         }
     };
 
+    const filteredInvestments = investments.filter(inv =>
+        productFilter === 'all' || inv.product_name === productFilter
+    );
+
     const calculateTotalDividends = () => {
-        return investments.reduce((total, inv) => {
+        return filteredInvestments.reduce((total, inv) => {
             const paidDividends = (inv.dividends || [])
                 .filter(d => d.status === 'paid')
                 .reduce((sum, d) => sum + d.amount, 0);
@@ -383,11 +388,11 @@ export default function ClientDashboard() {
     };
 
     const calculateTotalInvestment = () => {
-        return investments.reduce((total, inv) => total + Number(inv.investment_amount), 0);
+        return filteredInvestments.reduce((total, inv) => total + Number(inv.investment_amount), 0);
     };
 
     const calculatePendingDividends = () => {
-        return investments.reduce((total, inv) => {
+        return filteredInvestments.reduce((total, inv) => {
             const pendingDividends = (inv.dividends || [])
                 .filter(d => d.status === 'pending')
                 .reduce((sum, d) => sum + d.amount, 0);
@@ -473,17 +478,39 @@ export default function ClientDashboard() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
                 {/* Dashboard Header */}
                 <div className="mb-8 md:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Portfolio Overview</h2>
-                        <p className="text-sm md:text-base text-gray-500 mt-1">Track your investments and dividend returns</p>
+                    <div className="flex flex-col md:flex-row md:items-end justify-between w-full gap-6">
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Portfolio Overview</h2>
+                            <p className="text-sm md:text-base text-gray-500 mt-1">Track your investments and dividend returns</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-hover:text-[#1B8A9F] transition-colors">
+                                    <TrendingUp className="w-4 h-4" />
+                                </div>
+                                <select
+                                    value={productFilter}
+                                    onChange={(e) => setProductFilter(e.target.value)}
+                                    className="block w-full sm:w-64 pl-10 pr-10 py-3 bg-white border-2 border-gray-100 rounded-xl text-sm font-bold text-gray-700 outline-none focus:border-[#1B8A9F] focus:ring-4 focus:ring-teal-50 transition-all cursor-pointer appearance-none"
+                                >
+                                    <option value="all">All Growth Products</option>
+                                    {Array.from(new Set(investments.map(inv => inv.product_name || 'SHREEG ASSET'))).map(prod => (
+                                        <option key={prod} value={prod}>{prod}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-300">
+                                    <ChevronDown className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <Link
+                                href="/apply"
+                                className="inline-flex items-center justify-center bg-[#1B8A9F] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#156d7d] hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                            >
+                                New Investment
+                                <ArrowUpRight className="w-4 h-4 ml-2" />
+                            </Link>
+                        </div>
                     </div>
-                    <Link
-                        href="/apply"
-                        className="inline-flex items-center justify-center bg-[#1B8A9F] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#156d7d] hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full md:w-auto"
-                    >
-                        New Investment
-                        <ArrowUpRight className="w-4 h-4 ml-2" />
-                    </Link>
                 </div>
 
                 {/* Stats Grid */}
@@ -496,56 +523,62 @@ export default function ClientDashboard() {
                         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{formatCurrency(calculateTotalInvestment())}</p>
                     </div>
 
-                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-4 text-[#4ADE80]">
-                            <ArrowUpRight className="w-5 h-5" />
-                        </div>
-                        <p className="text-gray-500 text-xs md:text-sm font-medium">Profit Earned</p>
-                        <p className="text-xl md:text-2xl font-bold text-[#4ADE80] mt-1">{formatCurrency(calculateTotalDividends())}</p>
-                    </div>
+                    {filteredInvestments.some(inv => inv.product_name === 'Unlisted Shares') && (
+                        <>
+                            <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                                <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-4 text-[#4ADE80]">
+                                    <ArrowUpRight className="w-5 h-5" />
+                                </div>
+                                <p className="text-gray-500 text-xs md:text-sm font-medium">Profit Earned</p>
+                                <p className="text-xl md:text-2xl font-bold text-[#4ADE80] mt-1">{formatCurrency(calculateTotalDividends())}</p>
+                            </div>
 
-                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center mb-4 text-orange-500">
-                            <Clock className="w-5 h-5" />
-                        </div>
-                        <p className="text-gray-500 text-xs md:text-sm font-medium">Pending Gains</p>
-                        <p className="text-xl md:text-2xl font-bold text-orange-500 mt-1">{formatCurrency(calculatePendingDividends())}</p>
-                    </div>
+                            <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center mb-4 text-orange-500">
+                                    <Clock className="w-5 h-5" />
+                                </div>
+                                <p className="text-gray-500 text-xs md:text-sm font-medium">Pending Gains</p>
+                                <p className="text-xl md:text-2xl font-bold text-orange-500 mt-1">{formatCurrency(calculatePendingDividends())}</p>
+                            </div>
+                        </>
+                    )}
 
                     <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center mb-4 text-[#1B8A9F]">
                             <PieChart className="w-5 h-5" />
                         </div>
                         <p className="text-gray-500 text-xs md:text-sm font-medium">Active Shares</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{investments.reduce((sum, inv) => sum + Number(inv.number_of_shares), 0)}</p>
+                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{filteredInvestments.reduce((sum, inv) => sum + Number(inv.number_of_shares), 0)}</p>
                     </div>
                 </div>
 
                 {/* Tabs */}
                 <div className="flex space-x-8 border-b border-gray-200 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    {['overview', 'dividends', 'details', 'profile'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`pb-4 text-sm font-bold uppercase tracking-wider transition-all relative ${activeTab === tab
-                                ? 'text-[#1B8A9F]'
-                                : 'text-gray-400 hover:text-gray-600'
-                                }`}
-                        >
-                            {tab}
-                            {activeTab === tab && (
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1B8A9F] rounded-t-full"></div>
-                            )}
-                        </button>
-                    ))}
+                    {['overview', 'dividends', 'details', 'profile']
+                        .filter(tab => tab !== 'dividends' || filteredInvestments.some(inv => inv.product_name === 'Unlisted Shares'))
+                        .map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`pb-4 text-sm font-bold uppercase tracking-wider transition-all relative ${activeTab === tab
+                                    ? 'text-[#1B8A9F]'
+                                    : 'text-gray-400 hover:text-gray-600'
+                                    }`}
+                            >
+                                {tab}
+                                {activeTab === tab && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1B8A9F] rounded-t-full"></div>
+                                )}
+                            </button>
+                        ))}
                 </div>
 
                 {/* Content Tabs */}
                 <div className="animate-fade-in-up">
                     {activeTab === 'overview' && (
                         <div className="grid gap-6">
-                            {investments.length > 0 ? (
-                                investments.map((investment) => (
+                            {filteredInvestments.length > 0 ? (
+                                filteredInvestments.map((investment) => (
                                     <div key={investment.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                                         <div className="p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                                             <div className="space-y-4">
@@ -570,28 +603,35 @@ export default function ClientDashboard() {
                                                     </div>
                                                     <div className="flex items-center">
                                                         <ShieldCheck className="w-4 h-4 mr-1 text-[#1B8A9F]" />
-                                                        3-Year Lock-in
+                                                        {investment.product_name === 'Unlisted Shares' ? '3-Year Lock-in' : 'No Lock-in'}
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 flex-1 max-w-2xl px-0 lg:px-8">
                                                 <div>
-                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Principal</p>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                                                        {investment.product_name === 'Unlisted Shares' ? 'Principal' : 'Trade Capital'}
+                                                    </p>
                                                     <p className="text-lg font-bold text-gray-900">{formatCurrency(investment.investment_amount)}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Shares</p>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                                                        {investment.product_name === 'Unlisted Shares' ? 'Shares' : 'Trade Management Fees'}
+                                                    </p>
                                                     <p className="text-lg font-bold text-gray-900">{investment.number_of_shares}</p>
                                                 </div>
-                                                <div>
-                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Yield (%)</p>
-                                                    <p className="text-lg font-bold text-[#1B8A9F]">{investment.dividend_rate > 0 ? `${investment.dividend_rate}%` : 'FIXED'}</p>
-                                                </div>
+                                                {investment.product_name === 'Unlisted Shares' && (
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Yield (%)</p>
+                                                        <p className="text-lg font-bold text-[#1B8A9F]">{investment.dividend_rate > 0 ? `${investment.dividend_rate}%` : 'FIXED'}</p>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-                                                {(['approved', 'active', 'matured', 'bought_back'].includes(investment.status) &&
+                                                {(investment.product_name === 'Unlisted Shares' &&
+                                                    ['approved', 'active', 'matured', 'bought_back'].includes(investment.status) &&
                                                     investment.payment_verified &&
                                                     investment.client_signature_url &&
                                                     investment.admin_signed_at &&
@@ -608,7 +648,7 @@ export default function ClientDashboard() {
                                                             </>
                                                         )}
                                                     </PDFDownloadLink>
-                                                ) : (
+                                                ) : investment.product_name === 'Unlisted Shares' ? (
                                                     <button
                                                         disabled
                                                         className="inline-flex items-center justify-center bg-gray-50 text-gray-400 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold cursor-not-allowed opacity-75"
@@ -620,6 +660,11 @@ export default function ClientDashboard() {
                                                         <Lock className="w-4 h-4 mr-2" />
                                                         Processing
                                                     </button>
+                                                ) : (
+                                                    <div className="inline-flex items-center justify-center bg-teal-50 text-[#1B8A9F] px-5 py-2.5 rounded-lg border border-teal-100 text-sm font-bold">
+                                                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                        T&C Agreed
+                                                    </div>
                                                 )}
                                                 {investment.product_name === 'Unlisted Shares' && getDaysRemaining(investment.lock_in_end_date) > 0 && (
                                                     <div className="text-center px-4 py-1 bg-teal-50 rounded-lg">
@@ -736,7 +781,9 @@ export default function ClientDashboard() {
                                                         <ShieldCheck className="w-5 h-5" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <h3 className="text-lg font-bold text-gray-900 leading-none">Agreement #{idx + 1}</h3>
+                                                        <h3 className="text-lg font-bold text-gray-900 leading-none">
+                                                            {investment.product_name === 'Unlisted Shares' ? 'Agreement' : 'Investment'} #{idx + 1}
+                                                        </h3>
                                                         <p className="text-[10px] font-mono text-gray-400 mt-1.5 uppercase tracking-widest">{investment.id.slice(0, 16)}...</p>
                                                     </div>
                                                 </div>
@@ -830,7 +877,7 @@ export default function ClientDashboard() {
                                                         <div className="lg:col-span-2 pt-6 border-t border-gray-100">
                                                             <h4 className="text-xs font-black text-teal-600 uppercase tracking-[0.2em] mb-6 flex items-center">
                                                                 <PieChart className="w-4 h-4 mr-2" />
-                                                                Agreement Specifics
+                                                                {investment.product_name === 'Unlisted Shares' ? 'Agreement Specifics' : 'Investment Specifics'}
                                                             </h4>
                                                             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
                                                                 {[
@@ -838,7 +885,7 @@ export default function ClientDashboard() {
                                                                     { label: 'Shares', value: investment.number_of_shares },
                                                                     { label: 'Face Value', value: formatCurrency(investment.face_value_per_share || 100) },
                                                                     { label: 'Yield', value: investment.dividend_rate > 0 ? `${investment.dividend_rate}%` : 'FIXED' },
-                                                                    { label: 'Lock-in', value: `${investment.lock_in_period} Years` },
+                                                                    { label: 'Lock-in', value: investment.product_name === 'Unlisted Shares' ? `${investment.lock_in_period} Years` : 'None' },
                                                                     { label: 'Demat Status', value: investment.demat_credited ? 'Credited' : 'Pending' },
                                                                 ].map((item) => (
                                                                     <div key={item.label}>

@@ -17,6 +17,41 @@ import { supabase } from '@/lib/supabase';
 function SuccessContent() {
     const searchParams = useSearchParams();
     const investmentId = searchParams.get('id');
+    const [productName, setProductName] = useState<string | null>(null);
+    const [fetching, setFetching] = useState(true);
+
+    useState(() => {
+        const fetchProduct = async () => {
+            if (!investmentId) {
+                setFetching(false);
+                return;
+            }
+            try {
+                const { data, error } = await supabase
+                    .from('investments')
+                    .select('product_name')
+                    .eq('id', investmentId)
+                    .single();
+
+                if (data) setProductName(data.product_name);
+            } catch (err) {
+                console.error('Error fetching product:', err);
+            } finally {
+                setFetching(false);
+            }
+        };
+        fetchProduct();
+    });
+
+    if (fetching) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-12 h-12 text-[#1B8A9F] animate-spin" />
+            </div>
+        );
+    }
+
+    const isUnlisted = productName === 'Unlisted Shares';
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-green-50 flex items-center justify-center p-4">
@@ -50,11 +85,15 @@ function SuccessContent() {
 
                     <div className="bg-green-50 border border-green-100 rounded-2xl p-6 mb-8 flex items-center gap-4 text-left">
                         <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <CheckCircle2 className="w-6 h-6 text-green-600" />
+                            <ShieldCheck className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
                             <h3 className="font-bold text-green-900 leading-none">Application Secured</h3>
-                            <p className="text-sm text-green-700 mt-2">Your digital signature has been securely attached to your application.</p>
+                            <p className="text-sm text-green-700 mt-2">
+                                {isUnlisted
+                                    ? 'Your digital signature has been securely attached to your application.'
+                                    : 'Your acceptance of Terms & Conditions has been successfully recorded.'}
+                            </p>
                         </div>
                     </div>
 
@@ -92,11 +131,19 @@ function SuccessContent() {
                             </div>
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 rounded-full bg-[#4ADE80] text-white flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-md">2</div>
-                                <p className="text-gray-600 text-left pt-1">Once approved, you'll receive your investment agreement.</p>
+                                <p className="text-gray-600 text-left pt-1">
+                                    {isUnlisted
+                                        ? "Once approved, you'll receive your investment agreement."
+                                        : "Once approved, your investment portfolio will be activated."}
+                                </p>
                             </div>
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 rounded-full bg-[#1B8A9F] text-white flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-md">3</div>
-                                <p className="text-gray-600 text-left pt-1">Shares credited to your demat account within 30 days.</p>
+                                <p className="text-gray-600 text-left pt-1">
+                                    {isUnlisted
+                                        ? "Shares credited to your demat account within 30 days."
+                                        : "Your portfolio will start generating returns as per selected strategy."}
+                                </p>
                             </div>
                         </div>
                     </div>
