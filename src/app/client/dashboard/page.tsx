@@ -26,10 +26,12 @@ import {
     ChevronUp,
     Edit2,
     KeyRound,
-    Eye
+    Eye,
+    PenTool
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
+import { SignatureUpload } from '@/components/SignatureUpload';
 import { supabase } from '@/lib/supabase';
 
 interface Investment {
@@ -81,6 +83,13 @@ interface Investment {
     pan_url?: string;
     aadhar_url?: string;
     bank_cheque_url?: string;
+    client_signature_url?: string;
+    admin_signed_at?: string;
+    payment_verified?: boolean;
+    users?: {
+        kyc_verified: boolean;
+        signature_url?: string;
+    };
 }
 
 export default function ClientDashboard() {
@@ -103,6 +112,10 @@ export default function ClientDashboard() {
     const [isEditing, setIsEditing] = useState(false);
     const [updateLoading, setUpdateLoading] = useState(false);
     const [profileData, setProfileData] = useState<any>(null);
+    const [signatureFile, setSignatureFile] = useState<File | null>(null);
+
+    const [kycLoading, setKycLoading] = useState(false);
+    const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
 
     const toggleAgreement = (id: string) => {
         const newExpanded = new Set(expandedAgreements);
@@ -164,6 +177,18 @@ export default function ClientDashboard() {
                     if (parsed.passwordResetRequired) {
                         setShowResetModal(true);
                     }
+                }
+
+                // Fetch admin signature
+                const { data: adminData } = await supabase
+                    .from('users')
+                    .select('signature_url')
+                    .eq('role', 'admin')
+                    .limit(1)
+                    .single();
+
+                if (adminData?.signature_url) {
+                    setAdminSignatureUrl(adminData.signature_url);
                 }
             }
 
@@ -228,6 +253,7 @@ export default function ClientDashboard() {
                             ifscCode: inv.bank_details?.ifscCode || '',
                             branch: inv.bank_details?.branch || ''
                         },
+                        client_signature_url: inv.client_signature_url || '',
                         kyc_verified: inv.users?.kyc_verified || false
                     });
                 }
@@ -251,6 +277,24 @@ export default function ClientDashboard() {
         setUpdateLoading(true);
 
         try {
+            if (signatureFile) {
+                const fileExt = signatureFile.name.split('.').pop();
+                const fileName = `client_sig_${user.id}_${Date.now()}.${fileExt}`;
+                const fullPath = `client_signatures/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('documents')
+                    .upload(fullPath, signatureFile);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('documents')
+                    .getPublicUrl(fullPath);
+
+                profileData.client_signature_url = publicUrl;
+            }
+
             const response = await fetch('/api/client/profile/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -262,6 +306,7 @@ export default function ClientDashboard() {
 
             if (response.ok) {
                 setIsEditing(false);
+                setSignatureFile(null);
                 // Refresh investments to show updated info
                 await fetchInvestments();
                 alert('Profile updated successfully!');
@@ -546,9 +591,13 @@ export default function ClientDashboard() {
                                             </div>
 
                                             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-                                                {['approved', 'active', 'matured', 'bought_back'].includes(investment.status) ? (
+                                                {(['approved', 'active', 'matured', 'bought_back'].includes(investment.status) &&
+                                                    investment.payment_verified &&
+                                                    investment.client_signature_url &&
+                                                    investment.admin_signed_at &&
+                                                    adminSignatureUrl) ? (
                                                     <PDFDownloadLink
-                                                        document={<InvestmentAgreement data={investment} />}
+                                                        document={<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />}
                                                         fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
                                                         className="inline-flex items-center justify-center bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-100 transition-colors"
                                                     >
@@ -563,7 +612,10 @@ export default function ClientDashboard() {
                                                     <button
                                                         disabled
                                                         className="inline-flex items-center justify-center bg-gray-50 text-gray-400 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold cursor-not-allowed opacity-75"
-                                                        title="Agreement will be available after admin approval"
+                                                        title={!['approved', 'active', 'matured', 'bought_back'].includes(investment.status) ? "Agreement will be available after admin approval" :
+                                                            !investment.payment_verified ? "Pending payment verification" :
+                                                                !investment.client_signature_url ? "Please upload your signature" :
+                                                                    "Admin signature pending"}
                                                     >
                                                         <Lock className="w-4 h-4 mr-2" />
                                                         Processing
@@ -1151,6 +1203,23 @@ export default function ClientDashboard() {
                                                 >
                                                     Cancel
                                                 </button>
+                                            </div>
+
+                                            {/* Digital Signature */}
+                                            <div className="space-y-6">
+                                                <h4 className="text-sm font-bold text-teal-600 uppercase tracking-wider flex items-center bg-teal-50/50 p-3 rounded-xl">
+                                                    <PenTool className="w-4 h-4 mr-2" />
+                                                    Digital Signature
+                                                </h4>
+                                                <div className="max-w-md">
+                                                    <SignatureUpload
+                                                        onUpload={(file) => setSignatureFile(file)}
+                                                        currentSignatureUrl={profileData?.client_signature_url}
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-2 italic px-1">
+                                                        Your signature will be used for all agreement documents.
+                                                    </p>
+                                                </div>
                                             </div>
                                         </form>
                                     ) : (

@@ -2,9 +2,18 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Mail, Key, ArrowRight, ShieldCheck, Clock, CreditCard, LayoutDashboard } from 'lucide-react';
-import { Suspense } from 'react';
-
+import {
+    CheckCircle2,
+    Mail,
+    Key,
+    ArrowRight,
+    ShieldCheck,
+    Clock,
+    LayoutDashboard,
+    Loader2
+} from 'lucide-react';
+import { useState, Suspense } from 'react';
+import { supabase } from '@/lib/supabase';
 function SuccessContent() {
     const searchParams = useSearchParams();
     const investmentId = searchParams.get('id');
@@ -33,11 +42,21 @@ function SuccessContent() {
                     </p>
 
                     {investmentId && (
-                        <div className="bg-teal-50 border-2 border-teal-100 rounded-xl p-6 mb-10">
+                        <div className="bg-teal-50 border-2 border-teal-100 rounded-xl p-6 mb-8 text-center">
                             <p className="text-sm font-semibold text-[#1B8A9F] uppercase tracking-wider mb-2">Application Reference ID</p>
                             <p className="text-2xl font-mono font-bold text-gray-900">{investmentId}</p>
                         </div>
                     )}
+
+                    <div className="bg-green-50 border border-green-100 rounded-2xl p-6 mb-8 flex items-center gap-4 text-left">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-green-900 leading-none">Application Secured</h3>
+                            <p className="text-sm text-green-700 mt-2">Your digital signature has been securely attached to your application.</p>
+                        </div>
+                    </div>
 
                     {/* Step Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 text-left">
@@ -105,7 +124,7 @@ function SuccessContent() {
                             <span className="text-xs font-semibold uppercase tracking-wider">Secure Investment Portal</span>
                         </div>
                         <p className="text-sm text-gray-500">
-                            Questions? Email us at <a href="mailto:info@shreeg.com" className="text-[#1B8A9F] font-bold hover:underline">info@shreeg.com</a>
+                            Questions? Email us at <a href="mailto:gauravd113@gmail.com" className="text-[#1B8A9F] font-bold hover:underline">gauravd113@gmail.com</a> or visit <a href="https://www.tradergwealth.com" target="_blank" rel="noopener noreferrer" className="text-[#1B8A9F] font-bold hover:underline">tradergwealth.com</a>
                         </p>
                     </div>
                 </div>

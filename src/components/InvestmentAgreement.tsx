@@ -264,8 +264,15 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     </View>
                 </View>
                 <View style={styles.signatureSection}>
-                    <View style={[styles.signatureBox, { borderRightWidth: 0 }]}><Text>Specimen Signature - First Holder</Text></View>
-                    <View style={styles.signatureBox}><Text>Specimen Signature - Second Holder (Nominee)</Text></View>
+                    <View style={[styles.signatureBox, { borderRightWidth: 0 }]}>
+                        <Text>Specimen Signature - First Holder</Text>
+                        {data.client_signature_url && (
+                            <Image src={data.client_signature_url} style={{ height: 40, width: 'auto', marginTop: 5, alignSelf: 'center' }} />
+                        )}
+                    </View>
+                    <View style={styles.signatureBox}>
+                        <Text>Specimen Signature - Second Holder (Nominee)</Text>
+                    </View>
                 </View>
                 <Text style={[styles.mainTitle, { marginTop: 10 }]}>PREFERENCE BOND SHAREHOLDING AGREEMENT</Text>
                 <Text style={{ textAlign: 'center', marginBottom: 8 }}>Sr. No:{generateSerialNumber()}</Text>
@@ -410,14 +417,20 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     </View>
                 </View>
                 <View style={[styles.table, { marginTop: 8 }]}>
-                    <View style={[styles.tableRow, { minHeight: 50 }]}>
+                    <View style={[styles.tableRow, { minHeight: 80 }]}>
                         <View style={styles.tableCell}>
                             <Text>Shareholding Applicant</Text>
                             <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text>
+                            {data.client_signature_url && (
+                                <Image src={data.client_signature_url} style={{ height: 40, width: 'auto', marginTop: 10 }} />
+                            )}
                         </View>
                         <View style={styles.tableCell}>
                             <Text>For (Director)</Text>
                             <Text style={styles.bold}>SHREEG EXPERT WEALTH ADVISORY LTD</Text>
+                            {data.admin_signature_url && (
+                                <Image src={data.admin_signature_url} style={{ height: 40, width: 'auto', marginTop: 10 }} />
+                            )}
                         </View>
                     </View>
                 </View>

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   password_reset_required BOOLEAN DEFAULT TRUE,
   kyc_verified BOOLEAN DEFAULT FALSE,
+  signature_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -62,6 +63,10 @@ CREATE TABLE IF NOT EXISTS investments (
   pan_url TEXT,
   aadhar_url TEXT,
   bank_cheque_url TEXT,
+  client_signature_url TEXT,
+  client_signed_at TIMESTAMP WITH TIME ZONE,
+  admin_signed_at TIMESTAMP WITH TIME ZONE,
+  payment_verified BOOLEAN DEFAULT FALSE,
   
   -- Product & Broker Details
   product_name TEXT,
@@ -129,6 +134,16 @@ CREATE POLICY "Admins can view all users"
   ON users FOR SELECT
   USING (is_admin());
 
+DROP POLICY IF EXISTS "Users can update their own data" ON users;
+CREATE POLICY "Users can update their own data"
+  ON users FOR UPDATE
+  USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert their own data" ON users;
+CREATE POLICY "Users can insert their own data"
+  ON users FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
 -- Investments table policies
 DROP POLICY IF EXISTS "Users can view their own investments" ON investments;
 CREATE POLICY "Users can view their own investments"
@@ -144,6 +159,11 @@ DROP POLICY IF EXISTS "Admins can update investments" ON investments;
 CREATE POLICY "Admins can update investments"
   ON investments FOR UPDATE
   USING (is_admin());
+
+DROP POLICY IF EXISTS "Users can update their own investments" ON investments;
+CREATE POLICY "Users can update their own investments"
+  ON investments FOR UPDATE
+  USING (user_id = auth.uid());
 
 DROP POLICY IF EXISTS "Anyone can insert investments (for application)" ON investments;
 CREATE POLICY "Anyone can insert investments (for application)"
@@ -161,6 +181,11 @@ ALTER TABLE investments ADD COLUMN IF NOT EXISTS product_name TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_id TEXT;
 ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker_name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS signature_url TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS client_signature_url TEXT;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS client_signed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS admin_signed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE investments ADD COLUMN IF NOT EXISTS payment_verified BOOLEAN DEFAULT FALSE;
 
 -- Notify Supabase to refresh its schema cache after migrations
 NOTIFY pgrst, 'reload schema';
@@ -216,19 +241,24 @@ CREATE POLICY "Public Access"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'documents' );
 
--- Allow authenticated users to upload files to the documents bucket
-CREATE POLICY "Authenticated Upload"
+-- Allow anyone to upload files to the documents bucket (necessary for client signatures during application)
+DROP POLICY IF EXISTS "Anyone can Upload" ON storage.objects;
+CREATE POLICY "Anyone can Upload"
 ON storage.objects FOR INSERT
-TO authenticated
+TO public
 WITH CHECK ( bucket_id = 'documents' );
 
+DROP POLICY IF EXISTS "Authenticated Upload" ON storage.objects; -- Remove the restrictive one if it exists
+
 -- Allow users to update/delete their own uploads (optional/standard)
+DROP POLICY IF EXISTS "User Update Access" ON storage.objects;
 CREATE POLICY "User Update Access"
 ON storage.objects FOR UPDATE
-TO authenticated
+TO public
 USING ( bucket_id = 'documents' );
 
+DROP POLICY IF EXISTS "User Delete Access" ON storage.objects;
 CREATE POLICY "User Delete Access"
 ON storage.objects FOR DELETE
-TO authenticated
+TO public
 USING ( bucket_id = 'documents' );

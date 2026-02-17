@@ -51,7 +51,39 @@ const coreFeatures = [
     }
 ];
 
+const hierarchyFeatures = [
+    {
+        title: 'Secured Ledger',
+        desc: 'Real-time audit trailing on all capital movement within the SHREEG ecosystem.',
+        icon: Shield
+    },
+    {
+        title: 'Preference Priority',
+        desc: 'Senior-most ranking in the capital stack, prioritized for repayment alongside debt.',
+        icon: Network
+    },
+    {
+        title: 'Escrow Protection',
+        desc: 'Funds managed through regulated escrow accounts ensuring strict usage compliance.',
+        icon: Lock
+    },
+    {
+        title: 'Independent Custody',
+        desc: 'Asset monitoring and custodianship provided by regulated third-party institutions.',
+        icon: Fingerprint
+    }
+];
+
 export default function Features() {
+    const [activeSlide, setActiveSlide] = React.useState(0);
+
+    React.useEffect(() => {
+        const timer = setInterval(() => {
+            setActiveSlide((prev) => (prev + 1) % hierarchyFeatures.length);
+        }, 4000);
+        return () => clearInterval(timer);
+    }, []);
+
     return (
         <section className="py-32 bg-white relative">
             <div className="max-w-7xl mx-auto px-6">
@@ -86,7 +118,7 @@ export default function Features() {
                             <span className="text-[#1B8A9F]">Seniority Hierarchy</span>
                         </h3>
                         <p className="text-xl text-gray-500 leading-relaxed font-medium">
-                            Unlike traditional equity which carries the highest risk, our **Preference Bonds** are structured at the top of the hierarchy. If a liquidity event occurs, you are prioritized for repayment alongside senior debt holders.
+                            Unlike traditional equity which carries the highest risk, our <span className="text-[#1B8A9F] font-black">Preference Bonds</span> are structured at the top of the hierarchy. If a liquidity event occurs, you are prioritized for repayment alongside senior debt holders.
                         </p>
                         <div className="flex gap-12">
                             <div>
@@ -108,12 +140,35 @@ export default function Features() {
                         <div className="relative">
                             <div className="absolute -inset-10 bg-teal-500/10 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-all duration-1000"></div>
                             <div className="relative bg-gray-50 rounded-[60px] p-4 border border-gray-100 shadow-2xl overflow-hidden aspect-square flex items-center justify-center">
-                                <div className="absolute inset-4 rounded-[48px] bg-white border border-gray-50 shadow-inner flex flex-col items-center justify-center p-12 text-center">
-                                    <div className="w-24 h-24 bg-teal-50 rounded-[32px] flex items-center justify-center mb-8 rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                                        <Shield className="w-12 h-12 text-[#1B8A9F]" />
+                                <div className="absolute inset-4 rounded-[48px] bg-white border border-gray-50 shadow-inner flex flex-col items-center justify-center p-12 text-center transition-all duration-700">
+                                    <div className="relative w-full h-full flex flex-col items-center justify-center">
+                                        {hierarchyFeatures.map((feat, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-1000 transform ${idx === activeSlide
+                                                    ? 'opacity-100 translate-y-0'
+                                                    : 'opacity-0 translate-y-8 pointer-events-none'
+                                                    }`}
+                                            >
+                                                <div className="w-24 h-24 bg-teal-50 rounded-[32px] flex items-center justify-center mb-8 shadow-sm">
+                                                    <feat.icon className="w-12 h-12 text-[#1B8A9F]" />
+                                                </div>
+                                                <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-4">{feat.title}</h4>
+                                                <p className="text-sm font-bold text-gray-400 max-w-[280px] leading-relaxed italic">{feat.desc}</p>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-4">Secured Ledger</h4>
-                                    <p className="text-sm font-medium text-gray-400 max-w-[240px]">Real-time audit trailing on all capital movement within the SHREEG ecosystem.</p>
+
+                                    {/* Slide Indicators */}
+                                    <div className="absolute bottom-12 flex gap-2">
+                                        {hierarchyFeatures.map((_, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`h-1.5 rounded-full transition-all duration-500 ${idx === activeSlide ? 'w-8 bg-[#1B8A9F]' : 'w-2 bg-gray-200'
+                                                    }`}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>

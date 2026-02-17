@@ -15,11 +15,18 @@ export default function ComparisonMatrix() {
 
     const comparisonData = [
         {
+            criteria: 'Monthly Returns',
+            fd: `₹${((investmentAmount * 0.071) / 12 / 1000).toFixed(1)}K`,
+            shreeg: `₹${((investmentAmount * 0.18) / 12 / 1000).toFixed(1)}K`,
+            summary: 'Average monthly yield',
+            highlight: true
+        },
+        {
             criteria: 'Annual Returns',
             fd: `₹${((investmentAmount * 0.071) / 100000).toFixed(2)}L`,
             shreeg: `₹${((investmentAmount * 0.18) / 100000).toFixed(2)}L`,
             summary: 'Net Annualized returns',
-            highlight: true
+            highlight: false
         },
         {
             criteria: 'Minimum Investment',
@@ -88,17 +95,19 @@ export default function ComparisonMatrix() {
                         </div>
 
                         {comparisonData.map((row, i) => (
-                            <div key={i} className="group relative bg-white rounded-[32px] p-6 border border-gray-100 transition-all duration-500 hover:shadow-2xl hover:shadow-gray-200/50 hover:border-[#1B8A9F]/20 overflow-hidden">
-                                <div className="absolute inset-y-0 left-0 w-1 bg-[#1B8A9F] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div key={i} className={`group relative bg-white rounded-[32px] p-6 border transition-all duration-500 hover:shadow-2xl hover:shadow-gray-200/50 overflow-hidden ${row.highlight ? 'border-[#1B8A9F]/30 ring-1 ring-[#1B8A9F]/10' : 'border-gray-100'}`}>
+                                <div className={`absolute inset-y-0 left-0 w-1 bg-[#1B8A9F] transition-opacity ${row.highlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}></div>
                                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                                     <div className="md:col-span-6">
                                         <p className="text-lg font-black text-gray-900 uppercase tracking-tight leading-none mb-1">{row.criteria}</p>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{row.summary}</p>
                                     </div>
                                     <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
+                                        <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest md:hidden">Standard FD</span>
                                         <span className="text-lg font-black text-gray-400">{row.fd}</span>
                                     </div>
-                                    <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
+                                    <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
+                                        <span className="text-[10px] font-black text-[#1B8A9F]/40 uppercase tracking-widest md:hidden">SHREEG</span>
                                         <span className="text-lg font-black text-gray-900 group-hover:text-[#1B8A9F] transition-colors">{row.shreeg}</span>
                                     </div>
                                 </div>

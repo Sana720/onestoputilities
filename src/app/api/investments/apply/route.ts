@@ -113,6 +113,8 @@ export async function POST(request: NextRequest) {
                 lock_in_end_date: lockInEndDate.toISOString().split('T')[0],
                 dividend_rate: 0,
                 status: 'pending',
+                client_signature_url: data.clientSignatureUrl,
+                client_signed_at: data.clientSignatureUrl ? new Date().toISOString() : null,
                 dividends: [],
             })
             .select()

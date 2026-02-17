@@ -95,7 +95,7 @@ export default function AboutPage() {
                                     <div className="text-[10px] font-black text-teal-400 bg-teal-400/10 px-3 py-1 rounded-full uppercase tracking-widest">Vault Secured</div>
                                 </div>
                                 <h4 className="text-xl font-black text-white mb-2">Institutional Grade</h4>
-                                <p className="text-sm text-gray-400 font-medium">Multi-tenant digital asset vaulting with periodic third-party audits.</p>
+                                <p className="text-sm text-white font-medium">Multi-tenant digital asset vaulting with periodic third-party audits.</p>
                             </div>
 
                             <div className="p-8 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[40px] shadow-2xl hover:bg-white/10 transition-all group -translate-x-8">
@@ -104,7 +104,7 @@ export default function AboutPage() {
                                     <div className="text-[10px] font-black text-teal-400 bg-teal-400/10 px-3 py-1 rounded-full uppercase tracking-widest">Live Alpha</div>
                                 </div>
                                 <h4 className="text-xl font-black text-white mb-2">Precision Yield</h4>
-                                <p className="text-sm text-gray-400 font-medium">Systematic arbitrage and bond-equity fusion strategies.</p>
+                                <p className="text-sm text-white font-medium">Systematic arbitrage and bond-equity fusion strategies.</p>
                             </div>
                         </div>
 

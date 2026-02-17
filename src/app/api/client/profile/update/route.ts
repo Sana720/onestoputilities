@@ -51,7 +51,8 @@ export async function POST(req: Request) {
             permanent_address: profileData.permanent_address,
             contact_number: profileData.contact_number,
             nominee: profileData.nominee,
-            bank_details: profileData.bank_details
+            bank_details: profileData.bank_details,
+            client_signature_url: profileData.client_signature_url // Added signature URL
         };
 
         // Only include kyc-sensitive fields if NOT verified

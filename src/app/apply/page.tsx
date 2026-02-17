@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye } from 'lucide-react';
+import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye, PenTool } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { SignatureUpload } from '@/components/SignatureUpload';
 
 export default function ApplyPage() {
     const router = useRouter();
@@ -62,10 +63,12 @@ export default function ApplyPage() {
         panFile: File | null;
         aadharFile: File | null;
         bankChequeFile: File | null;
+        signatureFile: File | null;
     }>({
         panFile: null,
         aadharFile: null,
         bankChequeFile: null,
+        signatureFile: null,
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -302,6 +305,10 @@ export default function ApplyPage() {
             if (!formData.brokerName) newErrors.brokerName = 'Broker Name is required';
         }
 
+        if (step === 5) {
+            if (!files.signatureFile) newErrors.signatureFile = 'Digital signature is required';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -321,7 +328,7 @@ export default function ApplyPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateStep(4)) return;
+        if (!validateStep(5)) return;
 
         setLoading(true);
 
@@ -330,6 +337,7 @@ export default function ApplyPage() {
             let panUrl = '';
             let aadharUrl = '';
             let bankChequeUrl = '';
+            let clientSignatureUrl = '';
 
             if (files.panFile) {
                 const url = await uploadFile(files.panFile, 'pan-cards');
@@ -343,6 +351,10 @@ export default function ApplyPage() {
                 const url = await uploadFile(files.bankChequeFile, 'bank-cheques');
                 if (url) bankChequeUrl = url;
             }
+            if (files.signatureFile) {
+                const url = await uploadFile(files.signatureFile, 'client_signatures');
+                if (url) clientSignatureUrl = url;
+            }
 
             const response = await fetch('/api/investments/apply', {
                 method: 'POST',
@@ -351,7 +363,8 @@ export default function ApplyPage() {
                     ...formData,
                     panUrl: panUrl || formData.panUrl,
                     aadharUrl: aadharUrl || formData.aadharUrl,
-                    bankChequeUrl: bankChequeUrl || formData.bankChequeUrl
+                    bankChequeUrl: bankChequeUrl || formData.bankChequeUrl,
+                    clientSignatureUrl: clientSignatureUrl
                 }),
             });
 
@@ -372,10 +385,11 @@ export default function ApplyPage() {
     };
 
     const steps = [
-        { number: 1, title: 'Personal Details', icon: User },
-        { number: 2, title: 'Nominee Details', icon: UsersIcon },
-        { number: 3, title: 'Bank Details', icon: Building2 },
-        { number: 4, title: 'Investment Details', icon: DollarSign },
+        { number: 1, title: 'Personal', icon: User },
+        { number: 2, title: 'Nominee', icon: UsersIcon },
+        { number: 3, title: 'Bank', icon: Building2 },
+        { number: 4, title: 'Investment', icon: DollarSign },
+        { number: 5, title: 'Signature', icon: PenTool },
     ];
 
     return (
@@ -1165,6 +1179,49 @@ export default function ApplyPage() {
                                 </div>
                             )}
 
+                            {/* Step 5: Digital Signature */}
+                            {currentStep === 5 && (
+                                <div className="space-y-8 animate-fade-in-up">
+                                    <div className="text-center space-y-4">
+                                        <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
+                                            <PenTool className="w-8 h-8 text-[#1B8A9F]" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-3xl font-bold text-gray-900">Final Step: Digital Signature</h2>
+                                            <p className="text-gray-500 max-w-md mx-auto">
+                                                Please provide your digital signature to authorize the investment agreement.
+                                                You can always update this from your dashboard later.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="max-w-xl mx-auto p-8 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#1B8A9F] transition-all">
+                                        <div className="space-y-6">
+                                            <SignatureUpload
+                                                onUpload={(file) => setFiles(prev => ({ ...prev, signatureFile: file }))}
+                                                label="Digital Signature *"
+                                            />
+                                            {errors.signatureFile && (
+                                                <p className="text-red-500 text-sm font-medium flex items-center gap-1">
+                                                    <CheckCircle2 className="w-4 h-4 text-red-500 rotate-45" />
+                                                    {errors.signatureFile}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex gap-4">
+                                        <ShieldCheck className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-bold text-blue-900 uppercase tracking-widest">Legal Confirmation</p>
+                                            <p className="text-sm text-blue-800/80 leading-relaxed">
+                                                By signing above, you confirm that all information provided is accurate and you agree to the terms of the investment agreement.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Navigation Buttons */}
                             <div className="flex flex-col-reverse sm:flex-row justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
                                 {currentStep > 1 && (
@@ -1178,27 +1235,30 @@ export default function ApplyPage() {
                                 )}
 
                                 <div className="sm:ml-auto w-full sm:w-auto">
-                                    {currentStep < 4 ? (
+                                    {currentStep < 5 ? (
                                         <button
                                             type="button"
                                             onClick={handleNext}
                                             className="w-full sm:w-auto px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
                                         >
-                                            Save & Next
+                                            Next Step
                                         </button>
                                     ) : (
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="w-full sm:w-auto px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                            className="w-full sm:w-auto px-8 py-3 bg-[#1B8A9F] text-white rounded-lg font-bold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
                                             {loading ? (
                                                 <>
-                                                    <Loader2 className="w-5 h-5 mr-2 inline animate-spin" />
-                                                    Submitting...
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    Finalizing Application...
                                                 </>
                                             ) : (
-                                                'Submit Application'
+                                                <>
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                    Submit Application
+                                                </>
                                             )}
                                         </button>
                                     )}

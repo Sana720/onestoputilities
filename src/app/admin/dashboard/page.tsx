@@ -23,6 +23,7 @@ import {
     ChevronRight,
     MoreHorizontal,
     Download,
+    User,
     Mail,
     MessageCircle,
     X,
@@ -79,8 +80,13 @@ interface Investment {
     pan_url?: string;
     aadhar_url?: string;
     bank_cheque_url?: string;
+    client_signature_url?: string;
+    client_signed_at?: string;
+    admin_signed_at?: string;
+    payment_verified?: boolean;
     users?: {
         kyc_verified: boolean;
+        signature_url?: string;
     };
     user_id: string;
 }
@@ -106,6 +112,8 @@ export default function AdminDashboard() {
         status: 'paid'
     });
     const [kycLoading, setKycLoading] = useState(false);
+    const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
+    const [approving, setApproving] = useState(false);
 
     const handleVerifyKYC = async (userId: string, verified: boolean) => {
         if (!confirm(`Are you sure you want to ${verified ? 'verify' : 'unverify'} this client's KYC?`)) return;
@@ -211,6 +219,28 @@ export default function AdminDashboard() {
 
                 const updatedUser = { ...session.user, ...userData, role };
                 setUser(updatedUser);
+
+                // Fetch admin signature with better error handling
+                const { data: adminData, error: adminError } = await supabase
+                    .from('users')
+                    .select('signature_url')
+                    .eq('id', session.user.id)
+                    .maybeSingle();
+
+                if (adminError) {
+                    console.error('Error fetching admin signature:', adminError);
+                } else if (adminData?.signature_url) {
+                    setAdminSignatureUrl(adminData.signature_url);
+                } else if (!adminData) {
+                    // If no user record exists, create one
+                    await supabase.from('users').upsert({
+                        id: session.user.id,
+                        email: session.user.email || '',
+                        role: role,
+                        name: userData.name || 'Admin',
+                    });
+                }
+
                 // Update localStorage to keep it in sync
                 localStorage.setItem('user', JSON.stringify(updatedUser));
             }
@@ -542,10 +572,16 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center space-x-6">
-                            <div className="flex flex-col items-end">
-                                <p className="text-sm font-bold text-gray-900">{user?.name}</p>
-                                <p className="text-xs text-gray-500 font-medium uppercase tracking-tighter">Chief Administrator</p>
-                            </div>
+                            <Link
+                                href="/admin/profile"
+                                className="flex flex-col items-end group"
+                            >
+                                <p className="text-sm font-bold text-gray-900 group-hover:text-[#1B8A9F] transition-colors">{user?.name}</p>
+                                <p className="text-xs text-gray-500 font-medium uppercase tracking-tighter flex items-center group-hover:text-[#1B8A9F] transition-colors">
+                                    <User className="w-3 h-3 mr-1" />
+                                    Account Settings
+                                </p>
+                            </Link>
                             <button
                                 onClick={handleLogout}
                                 className="inline-flex items-center text-gray-400 hover:text-red-500 transition-colors"
@@ -740,9 +776,20 @@ export default function AdminDashboard() {
                                         <tr key={investment.id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-8 py-6">
                                                 <button
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         setSelectedInvestment(investment);
                                                         setShowViewModal(true);
+                                                        // Ensure admin signature is fresh
+                                                        if (!adminSignatureUrl) {
+                                                            const { data } = await supabase
+                                                                .from('users')
+                                                                .select('signature_url')
+                                                                .eq('id', user?.id)
+                                                                .maybeSingle();
+                                                            if (data?.signature_url) {
+                                                                setAdminSignatureUrl(data.signature_url);
+                                                            }
+                                                        }
                                                     }}
                                                     className="text-sm font-bold text-gray-900 leading-none hover:text-[#1B8A9F] transition-colors text-left"
                                                 >
@@ -801,15 +848,32 @@ export default function AdminDashboard() {
                                                             <MessageCircle className="w-4 h-4" />
                                                         </a>
                                                     )}
-                                                    <PDFDownloadLink
-                                                        document={<InvestmentAgreement data={investment} />}
-                                                        fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
-                                                        className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
-                                                    >
-                                                        {({ loading }) => (
-                                                            loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />
-                                                        )}
-                                                    </PDFDownloadLink>
+                                                    {((investment.status === 'approved' || investment.status === 'active') &&
+                                                        investment.payment_verified &&
+                                                        investment.client_signature_url &&
+                                                        investment.admin_signed_at &&
+                                                        adminSignatureUrl) ? (
+                                                        <PDFDownloadLink
+                                                            document={<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />}
+                                                            fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
+                                                            className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                                                        >
+                                                            {({ loading }) => (
+                                                                loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />
+                                                            )}
+                                                        </PDFDownloadLink>
+                                                    ) : (
+                                                        <button
+                                                            disabled
+                                                            className="p-2.5 bg-gray-50 text-gray-200 rounded-xl cursor-not-allowed"
+                                                            title={!(investment.status === 'approved' || investment.status === 'active') ? "Agreement pending approval" :
+                                                                !investment.payment_verified ? "Pending payment verification" :
+                                                                    !investment.client_signature_url ? "Client signature pending" :
+                                                                        "Admin signature pending"}
+                                                        >
+                                                            <Lock className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1114,6 +1178,130 @@ export default function AdminDashboard() {
                                             <p className="text-[10px] font-black uppercase text-gray-400">Cheque Not Uploaded</p>
                                         </div>
                                     )}
+                                </div>
+                            </section>
+
+                            {/* Signatures & Approval */}
+                            <section className="bg-teal-50/50 rounded-3xl p-8 border border-teal-100 flex flex-col md:flex-row gap-8">
+                                <div className="flex-1">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center">
+                                        <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mr-2"></div>
+                                        Client Signature
+                                    </h4>
+                                    {selectedInvestment.client_signature_url ? (
+                                        <div className="bg-white rounded-2xl p-4 border border-teal-100/50 shadow-sm inline-block">
+                                            <img
+                                                src={selectedInvestment.client_signature_url}
+                                                alt="Client Signature"
+                                                className="h-20 w-auto object-contain"
+                                            />
+                                            <p className="text-[9px] font-bold text-gray-400 mt-2 text-center uppercase tracking-wider">
+                                                Signed on {formatDate(selectedInvestment.client_signed_at || '')}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="p-6 bg-white/50 border-2 border-dashed border-teal-200 rounded-2xl flex items-center justify-center">
+                                            <p className="text-xs font-bold text-teal-600/50 italic">Signature Pending</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex-1">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center">
+                                        <div className="w-1.5 h-1.5 bg-[#1B8A9F] rounded-full mr-2"></div>
+                                        Admin Approval Status
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <button
+                                            onClick={async () => {
+                                                const newStatus = !selectedInvestment.payment_verified;
+                                                const { error } = await supabase
+                                                    .from('investments')
+                                                    .update({ payment_verified: newStatus })
+                                                    .eq('id', selectedInvestment.id);
+
+                                                if (!error) {
+                                                    setSelectedInvestment({ ...selectedInvestment, payment_verified: newStatus });
+                                                    setInvestments(prev => prev.map(inv =>
+                                                        inv.id === selectedInvestment.id ? { ...inv, payment_verified: newStatus } : inv
+                                                    ));
+                                                }
+                                            }}
+                                            className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${selectedInvestment.payment_verified
+                                                ? 'bg-green-50 border-green-200 text-green-700'
+                                                : 'bg-white border-gray-100 text-gray-400 hover:border-teal-200'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${selectedInvestment.payment_verified ? 'bg-green-200 text-green-700' : 'bg-gray-100 text-gray-400 group-hover:bg-teal-50 group-hover:text-teal-600'
+                                                    }`}>
+                                                    <DollarSign className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-xs font-bold uppercase tracking-wider">Payment Verified</span>
+                                            </div>
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedInvestment.payment_verified ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-gray-200'
+                                                }`}>
+                                                {selectedInvestment.payment_verified && <CheckCircle2 className="w-3.5 h-3.5" />}
+                                            </div>
+                                        </button>
+
+                                        {!selectedInvestment.admin_signed_at ? (
+                                            <button
+                                                disabled={!selectedInvestment.payment_verified || !adminSignatureUrl || approving}
+                                                onClick={async () => {
+                                                    setApproving(true);
+                                                    try {
+                                                        const { error } = await supabase
+                                                            .from('investments')
+                                                            .update({
+                                                                admin_signed_at: new Date().toISOString(),
+                                                                status: 'approved'
+                                                            })
+                                                            .eq('id', selectedInvestment.id);
+
+                                                        if (error) throw error;
+
+                                                        const updated = {
+                                                            ...selectedInvestment,
+                                                            admin_signed_at: new Date().toISOString(),
+                                                            status: 'approved'
+                                                        };
+                                                        setSelectedInvestment(updated);
+                                                        setInvestments(prev => prev.map(inv =>
+                                                            inv.id === selectedInvestment.id ? updated : inv
+                                                        ));
+                                                    } catch (err) {
+                                                        console.error(err);
+                                                        alert('Approval failed');
+                                                    } finally {
+                                                        setApproving(false);
+                                                    }
+                                                }}
+                                                className="w-full bg-[#1B8A9F] text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
+                                            >
+                                                {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                                Confirm & Digitally Sign
+                                            </button>
+                                        ) : (
+                                            <div className="bg-white rounded-2xl p-4 border border-teal-200 shadow-sm flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-black text-[#1B8A9F] uppercase tracking-[0.2em] mb-1">Approved & Signed</span>
+                                                    <p className="text-[10px] font-bold text-gray-500">{formatDate(selectedInvestment.admin_signed_at)}</p>
+                                                </div>
+                                                <img
+                                                    src={adminSignatureUrl || ''}
+                                                    alt="Admin Signature"
+                                                    className="h-10 w-auto opacity-80"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {!adminSignatureUrl && !selectedInvestment.admin_signed_at && (
+                                            <p className="text-[10px] text-red-500 font-bold text-center animate-pulse">
+                                                Please set your signature in Profile Settings first.
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             </section>
                         </div>
