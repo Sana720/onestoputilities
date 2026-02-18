@@ -89,6 +89,13 @@ interface Investment {
     client_signature_url?: string;
     admin_signed_at?: string;
     payment_verified?: boolean;
+    fees?: Array<{
+        amount: number;
+        payment_reference: string;
+        payment_date: string;
+        status: string;
+        created_at: string;
+    }>;
     users?: {
         kyc_verified: boolean;
         signature_url?: string;
@@ -122,6 +129,96 @@ export default function ClientDashboard() {
 
     const [kycLoading, setKycLoading] = useState(false);
     const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
+
+    // Fee State
+    const [dueFees, setDueFees] = useState<any[]>([]);
+    const [showFeeModal, setShowFeeModal] = useState(false);
+    const [selectedFeeInvestment, setSelectedFeeInvestment] = useState<Investment | null>(null);
+    const [feePaymentData, setFeePaymentData] = useState({
+        reference: '',
+        date: new Date().toISOString().split('T')[0]
+    });
+    const [feeLoading, setFeeLoading] = useState(false);
+
+    const checkFees = useCallback((currentInvestments: Investment[]) => {
+        const feesToPay: any[] = [];
+        const today = new Date();
+
+        currentInvestments.forEach(inv => {
+            // Only apply to non-unlisted products that are active
+            if (inv.product_name !== 'Unlisted Shares' && (inv.status === 'active' || inv.status === 'approved')) {
+                const startDate = new Date(inv.payment_date);
+                const diffTime = Math.abs(today.getTime() - startDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays > 7) {
+                    // Check if a fee has been paid/submitted in the last 30 days
+                    const lastFee = [...(inv.fees || [])]
+                        .filter(f => f.status === 'paid' || f.status === 'pending')
+                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+                    let isDue = false;
+                    if (!lastFee) {
+                        isDue = true;
+                    } else {
+                        const lastDate = new Date(lastFee.created_at);
+                        const daysSinceLast = Math.ceil(Math.abs(today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+                        if (daysSinceLast >= 30) {
+                            isDue = true;
+                        }
+                    }
+
+                    if (isDue) {
+                        feesToPay.push({
+                            investment: inv,
+                            amount: inv.investment_amount * 0.01,
+                            reason: lastFee ? 'Monthly Management Fee' : 'Initial Management Fee (Post 7-day trial)'
+                        });
+                    }
+                }
+            }
+        });
+
+        setDueFees(feesToPay);
+        if (feesToPay.length > 0) {
+            setSelectedFeeInvestment(feesToPay[0].investment);
+            setShowFeeModal(true);
+        }
+    }, []);
+
+    const handlePayFee = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedFeeInvestment) return;
+
+        setFeeLoading(true);
+        try {
+            const response = await fetch('/api/investments/fees/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    investmentId: selectedFeeInvestment.id,
+                    amount: selectedFeeInvestment.investment_amount * 0.01,
+                    payment_reference: feePaymentData.reference,
+                    payment_date: feePaymentData.date
+                }),
+            });
+
+            if (response.ok) {
+                setShowFeeModal(false);
+                setFeePaymentData({ reference: '', date: new Date().toISOString().split('T')[0] });
+                await fetchInvestments();
+                alert('Fee payment submitted successfully! It will be verified by our team.');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to submit fee payment');
+            }
+        } catch (error) {
+            console.error('Error paying fee:', error);
+            alert('An error occurred while submitting fee payment');
+        } finally {
+            setFeeLoading(false);
+        }
+    };
 
     const toggleAgreement = (id: string) => {
         const newExpanded = new Set(expandedAgreements);
@@ -286,6 +383,8 @@ export default function ClientDashboard() {
                         kyc_verified: inv.users?.kyc_verified || false
                     });
                 }
+                // Check for due fees after setting investments
+                checkFees(data.investments);
             }
         } catch (error) {
             console.error('Error fetching investments:', error);
@@ -649,9 +748,11 @@ export default function ClientDashboard() {
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                                                        {investment.product_name === 'Unlisted Shares' ? 'Shares' : 'Trade Management Fees'}
+                                                        {investment.product_name === 'Unlisted Shares' ? 'Shares' : 'Monthly Fee (1%)'}
                                                     </p>
-                                                    <p className="text-lg font-bold text-gray-900">{investment.number_of_shares}</p>
+                                                    <p className="text-lg font-bold text-gray-900">
+                                                        {investment.product_name === 'Unlisted Shares' ? investment.number_of_shares : formatCurrency(Number(investment.investment_amount) * 0.01)}
+                                                    </p>
                                                 </div>
                                                 {investment.product_name === 'Unlisted Shares' && (
                                                     <div>
@@ -693,9 +794,21 @@ export default function ClientDashboard() {
                                                         Processing
                                                     </button>
                                                 ) : (
-                                                    <div className="inline-flex items-center justify-center bg-teal-50 text-[#1B8A9F] px-5 py-2.5 rounded-lg border border-teal-100 text-sm font-bold">
-                                                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                        T&C Agreed
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="inline-flex items-center justify-center bg-teal-50 text-[#1B8A9F] px-5 py-2.5 rounded-lg border border-teal-100 text-sm font-bold">
+                                                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                            T&C Agreed
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedFeeInvestment(investment);
+                                                                setShowFeeModal(true);
+                                                            }}
+                                                            className="inline-flex items-center justify-center bg-orange-100 text-orange-600 px-5 py-2.5 rounded-lg border border-orange-200 text-sm font-bold hover:bg-orange-200 flex-1 transition-all"
+                                                        >
+                                                            <DollarSign className="w-4 h-4 mr-2" />
+                                                            Pay Monthly Fee
+                                                        </button>
                                                     </div>
                                                 )}
                                                 {investment.product_name === 'Unlisted Shares' && getDaysRemaining(investment.lock_in_end_date) > 0 && (
@@ -1449,6 +1562,78 @@ export default function ClientDashboard() {
                     )}
                 </div>
             </div>
+
+            {/* Fee Payment Modal */}
+            {showFeeModal && selectedFeeInvestment && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowFeeModal(false)}></div>
+                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-8">
+                            <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
+                                <DollarSign className="w-8 h-8" />
+                            </div>
+                            <div className="text-center mb-8">
+                                <h3 className="text-2xl font-bold text-gray-900">Trade Management Fee</h3>
+                                <p className="text-gray-500 mt-2">Monthly maintenance fee (1%) for your investment in <strong>{selectedFeeInvestment.product_name || 'SHREEG ASSET'}</strong>.</p>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100 space-y-4">
+                                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                                    <span className="text-sm text-gray-500 font-bold uppercase tracking-wider">Trading Capital</span>
+                                    <span className="text-lg font-black text-gray-900">{formatCurrency(selectedFeeInvestment.investment_amount)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-orange-600 font-bold uppercase tracking-wider">Payable Fee (1%)</span>
+                                    <span className="text-2xl font-black text-orange-600">{formatCurrency(selectedFeeInvestment.investment_amount * 0.01)}</span>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handlePayFee} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Payment Reference (UTR/Ref No.)</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={feePaymentData.reference}
+                                        onChange={(e) => setFeePaymentData({ ...feePaymentData, reference: e.target.value })}
+                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none transition-all"
+                                        placeholder="Enter transaction reference number"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Payment Date</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={feePaymentData.date}
+                                        onChange={(e) => setFeePaymentData({ ...feePaymentData, date: e.target.value })}
+                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="flex gap-4 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowFeeModal(false)}
+                                        className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={feeLoading}
+                                        className="flex-[2] bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-100 transition-all disabled:opacity-50 flex items-center justify-center"
+                                    >
+                                        {feeLoading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : 'Submit Payment'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Password Reset Modal */}
             {

@@ -3,60 +3,71 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(request: NextRequest) {
     try {
-        // Fetch all active "Unlisted Shares" investments
+        // Fetch all "Unlisted Shares" investments that are approved or active
         const { data: investments, error: fetchError } = await supabaseAdmin
             .from('investments')
             .select('*')
             .eq('product_name', 'Unlisted Shares')
-            .eq('status', 'active');
+            .in('status', ['approved', 'active']);
 
         if (fetchError) {
             console.error('Fetch Error:', fetchError);
             return NextResponse.json({ error: 'Failed to fetch investments' }, { status: 500 });
         }
-
-        const DAILY_RATE = 7500 / 30; // ₹250 per day
         const updatedInvestments = [];
 
         for (const investment of investments) {
             const dividends = investment.dividends || [];
+
+            // Optimization: Create a Set of existing "Month-Year" keys for O(1) lookup
+            const existingPeriods = new Set(
+                dividends.map((d: any) => {
+                    const dDate = new Date(d.date);
+                    return `${dDate.getFullYear()}-${dDate.getMonth()}`;
+                })
+            );
+
             const paymentDate = new Date(investment.payment_date);
             const today = new Date();
 
-            // We generate dividends for every 10th from the investment date until today
-            let currentGenDate = new Date(paymentDate);
+            // Monthly rate calculation based on ₹1,500 per Lakh rule
+            const monthlyRate = (investment.investment_amount / 100000) * 1500;
+            const DAILY_RATE = monthlyRate / 30;
 
-            // Move to the first 10th after or on the payment date
-            if (currentGenDate.getDate() > 10) {
-                // Move to 10th of next month
+            // Find the starting payout cycle (the first 10th after investment)
+            let currentGenDate = new Date(paymentDate);
+            if (currentGenDate.getDate() >= 10) {
                 currentGenDate.setMonth(currentGenDate.getMonth() + 1);
             }
             currentGenDate.setDate(10);
+            currentGenDate.setHours(0, 0, 0, 0); // Reset time for cleaner comparison
 
             let hasChanges = false;
             let lastCycleEndDate = new Date(paymentDate);
 
             // While generated 10th is in the past or today
-            while (currentGenDate <= today) {
-                const dateString = currentGenDate.toISOString().split('T')[0];
+            // Adding a safety limit: don't generate more than 10 years of dividends to prevent infinite/heavy loops
+            const tenYearsAgo = new Date();
+            tenYearsAgo.setFullYear(today.getFullYear() - 10);
 
-                // Check if dividend already exists for this cycle (approximate check by month/year)
-                const alreadyExists = dividends.some((d: any) => {
-                    const dDate = new Date(d.date);
-                    return dDate.getMonth() === currentGenDate.getMonth() &&
-                        dDate.getFullYear() === currentGenDate.getFullYear();
-                });
+            let loopSafety = 0;
+            while (currentGenDate <= today && loopSafety < 500) {
+                loopSafety++;
+                const periodKey = `${currentGenDate.getFullYear()}-${currentGenDate.getMonth()}`;
 
-                if (!alreadyExists) {
-                    let amount = 7500;
+                if (!existingPeriods.has(periodKey)) {
+                    let amount = monthlyRate;
 
-                    // Calculation logic for the very first dividend
-                    const isFirstDividend = dividends.length === 0;
-                    if (isFirstDividend) {
-                        // Calculate days from paymentDate to this first 10th
-                        const diffTime = Math.abs(currentGenDate.getTime() - lastCycleEndDate.getTime());
+                    // Calculation logic for the very first dividend (pro-rata)
+                    // We treat it as first if there were no previous dividends in the array
+                    const isFirstInArray = dividends.length === 0;
+                    if (isFirstInArray) {
+                        const diffTime = currentGenDate.getTime() - lastCycleEndDate.getTime();
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        amount = diffDays * DAILY_RATE;
+                        // Sanity check for negative or zero days
+                        if (diffDays > 0) {
+                            amount = diffDays * DAILY_RATE;
+                        }
                     }
 
                     dividends.push({
@@ -67,12 +78,14 @@ export async function POST(request: NextRequest) {
                         reference_no: 'AUTOMATED',
                         payment_mode: 'NEFT'
                     });
+
+                    existingPeriods.add(periodKey); // Update set to prevent duplicates in same run
                     hasChanges = true;
                 }
 
-                // Move to next month's 10th
+                // Move to next month's 10th efficiently
                 currentGenDate.setMonth(currentGenDate.getMonth() + 1);
-                currentGenDate.setDate(10); // Ensure it stays on the 10th
+                currentGenDate.setDate(10);
             }
 
             if (hasChanges) {

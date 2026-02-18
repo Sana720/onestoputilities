@@ -14,6 +14,7 @@ export async function PATCH(
             .update({
                 dividend_rate: data.dividend_rate,
                 status: data.status,
+                fees: data.fees, // Support fee updates
             })
             .eq('id', id)
             .select()

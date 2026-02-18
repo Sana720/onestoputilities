@@ -17,17 +17,17 @@ import {
     Edit,
     Eye,
     Loader2,
-    Briefcase,
-    ArrowUpRight,
     ShieldCheck,
-    ChevronRight,
     MoreHorizontal,
     Download,
     User,
     Mail,
     MessageCircle,
     X,
-    Sparkles
+    Sparkles,
+    AlertTriangle,
+    Briefcase,
+    ArrowUpRight
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
@@ -89,6 +89,13 @@ interface Investment {
         kyc_verified: boolean;
         signature_url?: string;
     };
+    fees?: Array<{
+        amount: number;
+        payment_reference: string;
+        payment_date: string;
+        status: string;
+        created_at: string;
+    }>;
     user_id: string;
 }
 
@@ -114,6 +121,7 @@ export default function AdminDashboard() {
     const [kycLoading, setKycLoading] = useState(false);
     const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
     const [approving, setApproving] = useState(false);
+    const [updateLoading, setUpdateLoading] = useState(false);
 
     const handleVerifyKYC = async (userId: string, verified: boolean) => {
         if (!confirm(`Are you sure you want to ${verified ? 'verify' : 'unverify'} this client's KYC?`)) return;
@@ -496,7 +504,7 @@ export default function AdminDashboard() {
                     client: inv.full_name,
                     email: inv.email,
                     type: 'DEBIT',
-                    description: `Dividend Payout`,
+                    description: `Dividend: ${inv.product_name || 'SHREEG ASSET'}`,
                     amount: div.amount,
                     bank: div.bank_name || 'N/A',
                     payment_mode: div.payment_mode || 'N/A',
@@ -504,6 +512,26 @@ export default function AdminDashboard() {
                     dividend_rate: inv.dividend_rate,
                     status: div.status
                 });
+            });
+
+            // Add each PAID fee as inflow (credit)
+            (inv.fees || []).forEach((fee, idx) => {
+                if (fee.status === 'paid') {
+                    ledger.push({
+                        id: inv.id,
+                        feeIndex: idx,
+                        date: fee.payment_date,
+                        client: inv.full_name,
+                        email: inv.email,
+                        type: 'CREDIT',
+                        description: `Management Fee: ${inv.product_name || 'SHREEG ASSET'}`,
+                        amount: fee.amount,
+                        bank: inv.bank_details?.bankName || 'N/A',
+                        payment_mode: 'UPI/NEFT',
+                        reference: fee.payment_reference,
+                        status: 'paid'
+                    });
+                }
             });
         });
 
@@ -892,9 +920,9 @@ export default function AdminDashboard() {
                                     <tr className="bg-gray-50/50">
                                         <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
                                         <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product/Purpose</th>
                                         <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type</th>
                                         <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bank</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mode</th>
                                         <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Amount</th>
                                         <th className="px-8 py-5 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reference</th>
                                     </tr>
@@ -929,6 +957,10 @@ export default function AdminDashboard() {
                                                 <p className="text-[10px] text-gray-400 font-medium">{item.email}</p>
                                             </td>
                                             <td className="px-8 py-6">
+                                                <p className="text-xs font-bold text-gray-900">{item.description}</p>
+                                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{item.payment_mode}</p>
+                                            </td>
+                                            <td className="px-8 py-6">
                                                 <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${item.type === 'CREDIT'
                                                     ? 'bg-green-100 text-green-700'
                                                     : 'bg-red-100 text-red-700'
@@ -938,11 +970,6 @@ export default function AdminDashboard() {
                                             </td>
                                             <td className="px-8 py-6 text-[10px] text-gray-500 font-bold uppercase">
                                                 {item.bank}
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[9px] font-black uppercase">
-                                                    {item.payment_mode}
-                                                </span>
                                             </td>
                                             <td className={`px-8 py-6 text-sm font-black ${item.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
                                                 }`}>
@@ -1172,6 +1199,79 @@ export default function AdminDashboard() {
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee Address</p>
                                             <p className="text-sm font-medium text-gray-700">{selectedInvestment.nominee.address || 'N/A'}</p>
                                         </div>
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Fee Collection Tracking */}
+                            {selectedInvestment.product_name !== 'Unlisted Shares' && (
+                                <section>
+                                    <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-4 flex items-center">
+                                        <AlertTriangle className="w-3.5 h-3.5 mr-2" />
+                                        Fee Collection History & Verification
+                                    </h4>
+                                    <div className="bg-orange-50/30 rounded-2xl p-6 border border-orange-50">
+                                        {selectedInvestment.fees && selectedInvestment.fees.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {selectedInvestment.fees.map((fee: any, idx: number) => (
+                                                    <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white rounded-xl border border-orange-100 gap-4">
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                                                            <div>
+                                                                <p className="text-[8px] font-bold text-gray-400 uppercase mb-0.5">Fee Amount</p>
+                                                                <p className="text-sm font-black text-gray-900">{formatCurrency(fee.amount)}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[8px] font-bold text-gray-400 uppercase mb-0.5">Reference No.</p>
+                                                                <p className="text-sm font-mono font-bold text-gray-600">{fee.payment_reference}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[8px] font-bold text-gray-400 uppercase mb-0.5">Payment Date</p>
+                                                                <p className="text-sm font-bold text-gray-900">{formatDate(fee.payment_date)}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[8px] font-bold text-gray-400 uppercase mb-0.5">Status</p>
+                                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${fee.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                                                    }`}>
+                                                                    {fee.status}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        {fee.status === 'pending' && (
+                                                            <button
+                                                                onClick={async () => {
+                                                                    const updatedFees = [...(selectedInvestment.fees || [])];
+                                                                    updatedFees[idx].status = 'paid';
+                                                                    setUpdateLoading(true);
+                                                                    try {
+                                                                        const response = await fetch(`/api/admin/investments/${selectedInvestment.id}`, {
+                                                                            method: 'PATCH',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({ fees: updatedFees })
+                                                                        });
+                                                                        if (response.ok) {
+                                                                            setSelectedInvestment({ ...selectedInvestment, fees: updatedFees });
+                                                                            fetchAllInvestments();
+                                                                            alert('Fee payment verified successfully!');
+                                                                        }
+                                                                    } catch (err) {
+                                                                        console.error(err);
+                                                                    } finally {
+                                                                        setUpdateLoading(false);
+                                                                    }
+                                                                }}
+                                                                className="px-4 py-2 bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-orange-600 transition-all shadow-md shadow-orange-100"
+                                                            >
+                                                                Verify Payment
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6">
+                                                <p className="text-sm text-gray-400 font-medium">No fee collection records found for this investment.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </section>
                             )}
@@ -1526,7 +1626,8 @@ export default function AdminDashboard() {
                             <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                                 <div>
                                     <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest mb-2 inline-block ${selectedTransaction.type === 'CREDIT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {selectedTransaction.type === 'CREDIT' ? 'Investment Entry' : 'Dividend Payout'}
+                                        {selectedTransaction.description.includes('Management Fee') ? 'Management Fee' :
+                                            selectedTransaction.type === 'CREDIT' ? 'Investment Entry' : 'Dividend Payout'}
                                     </span>
                                     <h3 className="text-2xl font-black text-gray-900 tracking-tight">{selectedTransaction.client}</h3>
                                     <p className="text-sm text-gray-500 font-medium">{selectedTransaction.email}</p>
@@ -1651,7 +1752,18 @@ export default function AdminDashboard() {
                                                 <ShieldCheck className="w-4 h-4 text-teal-400" />
                                             </div>
                                             <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                                                {selectedTransaction.type === 'CREDIT' ? (
+                                                {selectedTransaction.description.includes('Management Fee') ? (
+                                                    <>
+                                                        <div className="col-span-2">
+                                                            <p className="text-[9px] text-gray-400 uppercase font-bold">Invoiced Product</p>
+                                                            <p className="text-xs font-bold text-white uppercase">{selectedTransaction.description.split(': ')[1]}</p>
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <p className="text-[9px] text-gray-400 uppercase font-bold">Transaction Category</p>
+                                                            <p className="text-xs font-bold text-white uppercase">Monthly Trade Management Fee (1%)</p>
+                                                        </div>
+                                                    </>
+                                                ) : selectedTransaction.type === 'CREDIT' ? (
                                                     <>
                                                         <div>
                                                             <p className="text-[9px] text-gray-400 uppercase font-bold">Investment Product</p>
