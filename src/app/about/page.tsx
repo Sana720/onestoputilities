@@ -27,7 +27,7 @@ export default function AboutPage() {
             <Navbar />
 
             {/* --- HERO SECTION: THE "AWESOME" PHASE --- */}
-            <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-[#020617] text-white">
+            <section className="relative min-h-screen flex items-center pt-32 md:pt-20 overflow-hidden bg-[#020617] text-white">
                 {/* Background Base */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
                     <Image
@@ -52,7 +52,7 @@ export default function AboutPage() {
                             <span>The TraderG Wealth</span>
                         </div>
 
-                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.8] mb-10">
+                        <h1 className="text-5xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.8] mb-10">
                             Legacy <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1B8A9F] via-teal-300 to-white">Redefined.</span>
                         </h1>
@@ -115,7 +115,7 @@ export default function AboutPage() {
             </section>
 
             {/* --- CORE PILLARS: GLASS CARDS --- */}
-            <section className="py-24 -mt-24 relative z-20">
+            <section className="py-24 mt-0 lg:-mt-24 relative z-20">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
@@ -205,14 +205,14 @@ export default function AboutPage() {
                     <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Quantifiable Trust indicators</p>
                 </div>
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
                             { label: 'Market Cap Managed', value: '₹500Cr+', sub: 'Institutional Grade' },
                             { label: 'Dedicated Clients', value: '1000+', sub: 'High Net Worth' },
                             { label: 'Regulatory Bodies', value: '3 Major', sub: 'NSE / BSE / CDSL' },
                             { label: 'States of Presence', value: '4 Key', sub: 'Central & West India' }
                         ].map((stat, i) => (
-                            <div key={i} className="group p-10 bg-white rounded-[40px] border border-gray-100 transition-all hover:bg-white hover:shadow-2xl hover:shadow-gray-200/50">
+                            <div key={i} className="group p-8 md:p-10 bg-white rounded-[40px] border border-gray-100 transition-all hover:bg-white hover:shadow-2xl hover:shadow-gray-200/50 flex flex-col items-center text-center">
                                 <div className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest mb-4 opacity-60">
                                     {stat.sub}
                                 </div>

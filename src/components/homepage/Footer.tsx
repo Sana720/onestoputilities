@@ -123,11 +123,11 @@ export default function Footer() {
                             ))}
                         </div>
 
-                        <div className="flex gap-8">
-                            <Link href="/privacy-policy" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Privacy</Link>
-                            <Link href="/terms-conditions" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Legal</Link>
-                            <Link href="/terms-conditions#risk" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Risk</Link>
-                            <Link href="/privacy-policy#cookies" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Cookies</Link>
+                        <div className="flex flex-wrap justify-center gap-x-6 sm:gap-x-10 gap-y-4">
+                            <Link href="/privacy-policy" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] sm:tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Privacy</Link>
+                            <Link href="/terms-conditions" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] sm:tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Legal</Link>
+                            <Link href="/terms-conditions#risk" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] sm:tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Risk</Link>
+                            <Link href="/privacy-policy#cookies" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] sm:tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Cookies</Link>
                         </div>
                     </div>
                 </div>
