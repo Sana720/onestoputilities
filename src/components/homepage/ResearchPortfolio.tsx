@@ -182,7 +182,7 @@ export default function ResearchPortfolio() {
 
                         {/* LEFT: Sector Card - Large & Modern */}
                         <div className="lg:col-span-12 xl:col-span-7 group">
-                            <div className="bg-white rounded-[48px] p-8 md:p-12 border border-gray-100 shadow-2xl shadow-gray-200/50 h-full relative overflow-hidden transition-all duration-500 hover:shadow-teal-100/30">
+                            <div className="bg-white rounded-[48px] p-5 md:p-12 border border-gray-100 shadow-2xl shadow-gray-200/50 h-full relative overflow-hidden transition-all duration-500 hover:shadow-teal-100/30">
                                 {/* Decorative elements */}
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full blur-3xl -mr-32 -mt-32"></div>
 
@@ -216,15 +216,15 @@ export default function ResearchPortfolio() {
                                     </div>
 
                                     <div className="w-full md:w-1/2 flex items-center justify-center relative">
-                                        <div className="w-[300px] h-[300px] lg:w-[350px] lg:h-[350px]">
+                                        <div className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[350px] aspect-square">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <RePieChart>
                                                     <Pie
                                                         data={sectorData}
                                                         cx="50%"
                                                         cy="50%"
-                                                        innerRadius={90}
-                                                        outerRadius={140}
+                                                        innerRadius="65%"
+                                                        outerRadius="100%"
                                                         paddingAngle={10}
                                                         dataKey="value"
                                                         stroke="none"
