@@ -185,11 +185,6 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Demo Credentials */}
-                    <div className="mt-6 p-4 bg-teal-50 rounded-lg border border-teal-200">
-                        <p className="text-sm font-semibold text-[#1B8A9F] mb-2">Demo Credentials:</p>
-                        <p className="text-xs text-gray-600">Admin: admin@tradergwealth.com / admin123</p>
-                    </div>
                 </div>
 
                 {/* Footer */}
