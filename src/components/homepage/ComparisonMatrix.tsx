@@ -9,7 +9,7 @@ export default function ComparisonMatrix() {
     // Chart Calculations
     const maxAmount = 10000000;
     const chartScale = investmentAmount / maxAmount;
-    const shreegY = 180 - (chartScale * 150);
+    const tradergY = 180 - (chartScale * 150);
     const fdY = 180 - (chartScale * 45);
     const cpY = 180 - (chartScale * 100);
 
@@ -17,35 +17,35 @@ export default function ComparisonMatrix() {
         {
             criteria: 'Monthly Returns',
             fd: `₹${((investmentAmount * 0.071) / 12 / 1000).toFixed(1)}K`,
-            shreeg: `₹${((investmentAmount * 0.18) / 12 / 1000).toFixed(1)}K`,
+            traderg: `₹${((investmentAmount * 0.18) / 12 / 1000).toFixed(1)}K`,
             summary: 'Average monthly yield',
             highlight: true
         },
         {
             criteria: 'Annual Returns',
             fd: `₹${((investmentAmount * 0.071) / 100000).toFixed(2)}L`,
-            shreeg: `₹${((investmentAmount * 0.18) / 100000).toFixed(2)}L`,
+            traderg: `₹${((investmentAmount * 0.18) / 100000).toFixed(2)}L`,
             summary: 'Net Annualized returns',
             highlight: false
         },
         {
             criteria: 'Minimum Investment',
             fd: '₹1,000/-',
-            shreeg: '₹5,00,000/-',
+            traderg: '₹5,00,000/-',
             summary: 'Entry barrier for investors',
             highlight: false
         },
         {
             criteria: 'Capital Security',
             fd: 'Very High',
-            shreeg: 'High',
+            traderg: 'High',
             summary: 'Risk assessment profile',
             highlight: false
         },
         {
             criteria: 'Taxation (TDS)',
             fd: '10%',
-            shreeg: '10%',
+            traderg: '10%',
             summary: 'Applicable tax on gains',
             highlight: false
         },
@@ -90,7 +90,7 @@ export default function ComparisonMatrix() {
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Standard FD</span>
                             </div>
                             <div className="md:col-span-3 text-center">
-                                <span className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-[0.3em]">SHREEG</span>
+                                <span className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-[0.3em]">TRADERG WEALTH</span>
                             </div>
                         </div>
 
@@ -107,8 +107,8 @@ export default function ComparisonMatrix() {
                                         <span className="text-lg font-black text-gray-400">{row.fd}</span>
                                     </div>
                                     <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
-                                        <span className="text-[10px] font-black text-[#1B8A9F]/40 uppercase tracking-widest md:hidden">SHREEG</span>
-                                        <span className="text-lg font-black text-gray-900 group-hover:text-[#1B8A9F] transition-colors">{row.shreeg}</span>
+                                        <span className="text-[10px] font-black text-[#1B8A9F]/40 uppercase tracking-widest md:hidden">TRADERG WEALTH</span>
+                                        <span className="text-lg font-black text-gray-900 group-hover:text-[#1B8A9F] transition-colors">{row.traderg}</span>
                                     </div>
                                 </div>
                             </div>
@@ -171,14 +171,14 @@ export default function ComparisonMatrix() {
                                                 FD ~₹{(investmentAmount * 1.7 / 10000000).toFixed(2)}Cr
                                             </text>
 
-                                            {/* Shreeg Label */}
+                                            {/* TraderG Label */}
                                             <text
                                                 x="395"
-                                                y={shreegY - 25}
+                                                y={tradergY - 25}
                                                 textAnchor="end"
                                                 className="text-[14px] font-black fill-[#3DD2E5] tracking-tight uppercase"
                                             >
-                                                SHREEG ₹{(investmentAmount * 2.8 / 10000000).toFixed(2)}Cr
+                                                TRADERG WEALTH ₹{(investmentAmount * 2.8 / 10000000).toFixed(2)}Cr
                                             </text>
                                         </g>
                                         <path
@@ -190,13 +190,13 @@ export default function ComparisonMatrix() {
                                             className="opacity-20 transition-all duration-700"
                                         />
                                         <path
-                                            d={`M 0 180 Q 200 ${cpY} 400 ${shreegY}`}
+                                            d={`M 0 180 Q 200 ${cpY} 400 ${tradergY}`}
                                             fill="none"
                                             stroke="#1B8A9F"
                                             strokeWidth="5"
                                             className="transition-all duration-700"
                                         />
-                                        <g transform={`translate(400, ${shreegY})`}>
+                                        <g transform={`translate(400, ${tradergY})`}>
                                             <circle r="8" fill="#1B8A9F" className="animate-pulse" />
                                             <circle r="16" fill="#1B8A9F" className="animate-ping opacity-20" />
                                         </g>

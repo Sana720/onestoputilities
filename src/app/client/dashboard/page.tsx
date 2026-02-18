@@ -27,7 +27,8 @@ import {
     Edit2,
     KeyRound,
     Eye,
-    PenTool
+    PenTool,
+    Sparkles
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
@@ -99,6 +100,7 @@ interface Investment {
     users?: {
         kyc_verified: boolean;
         signature_url?: string;
+        referral_code?: string;
     };
 }
 
@@ -139,6 +141,24 @@ export default function ClientDashboard() {
         date: new Date().toISOString().split('T')[0]
     });
     const [feeLoading, setFeeLoading] = useState(false);
+
+    const [referrals, setReferrals] = useState<any[]>([]);
+    const [referralsLoading, setReferralsLoading] = useState(false);
+
+    const fetchReferrals = async (referralCode: string) => {
+        try {
+            setReferralsLoading(true);
+            const response = await fetch(`/api/referrals/my-referrals?code=${referralCode}`);
+            const data = await response.json();
+            if (response.ok) {
+                setReferrals(data.referrals);
+            }
+        } catch (error) {
+            console.error('Error fetching referrals:', error);
+        } finally {
+            setReferralsLoading(false);
+        }
+    };
 
     const checkFees = useCallback((currentInvestments: Investment[]) => {
         const feesToPay: any[] = [];
@@ -316,8 +336,18 @@ export default function ClientDashboard() {
                 if (adminData?.signature_url) {
                     setAdminSignatureUrl(adminData.signature_url);
                 }
-            }
 
+                // Fetch referral code from users table
+                const { data: referralData } = await supabase
+                    .from('users')
+                    .select('referral_code')
+                    .eq('id', session.user.id)
+                    .single();
+                if (referralData?.referral_code) {
+                    setUser((prev: any) => ({ ...prev, referral_code: referralData.referral_code }));
+                    fetchReferrals(referralData.referral_code);
+                }
+            }
             fetchInvestments();
         };
 
@@ -574,7 +604,7 @@ export default function ClientDashboard() {
                             <Link href="/">
                                 <Image
                                     src="/logo.png"
-                                    alt="SHREEG Logo"
+                                    alt="TraderG Wealth Logo"
                                     width={150}
                                     height={40}
                                     className="h-10 w-auto"
@@ -621,7 +651,7 @@ export default function ClientDashboard() {
                                     className="block w-full sm:w-64 pl-10 pr-10 py-3 bg-white border-2 border-gray-100 rounded-xl text-sm font-bold text-gray-700 outline-none focus:border-[#1B8A9F] focus:ring-4 focus:ring-teal-50 transition-all cursor-pointer appearance-none"
                                 >
                                     <option value="all">All Growth Products</option>
-                                    {Array.from(new Set(investments.map(inv => inv.product_name || 'SHREEG ASSET'))).map(prod => (
+                                    {Array.from(new Set(investments.map(inv => inv.product_name || 'TRADERG ASSET'))).map(prod => (
                                         <option key={prod} value={prod}>{prod}</option>
                                     ))}
                                 </select>
@@ -679,9 +709,39 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
+                {user?.referral_code && (
+                    <div className="bg-[#1B8A9F] p-5 md:p-6 rounded-2xl shadow-sm border border-[#1B8A9F]/20 hover:shadow-md transition-shadow group relative overflow-hidden mb-8 md:mb-12">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                            <Sparkles className="w-12 h-12 text-white" />
+                        </div>
+                        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                            <div>
+                                <p className="text-teal-50 text-xs font-bold uppercase tracking-widest opacity-80">Referral Program</p>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <p className="text-2xl md:text-3xl font-black text-white tracking-widest uppercase">{user?.referral_code}</p>
+                                    <span className="px-2.5 py-1 bg-white/20 rounded-lg text-[10px] font-black text-white uppercase tracking-widest border border-white/10">Your Code</span>
+                                </div>
+                                <p className="text-teal-50/70 text-[10px] md:text-xs mt-2 font-medium">Share this code with friends and family to grow together.</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const url = `${window.location.origin}/apply?ref=${user.referral_code}`;
+                                    navigator.clipboard.writeText(url);
+                                    alert('Referral link copied to clipboard!');
+                                }}
+                                className="inline-flex items-center justify-center gap-2 bg-white text-[#1B8A9F] px-8 py-4 rounded-xl font-bold text-sm hover:bg-teal-50 transition-all shadow-xl shadow-black/5 active:scale-95 transform"
+                            >
+                                Copy Referral Link
+                                <ArrowUpRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+
                 {/* Tabs */}
                 <div className="flex space-x-8 border-b border-gray-200 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    {['overview', 'dividends', 'details', 'profile']
+                    {['overview', 'referrals', 'dividends', 'details', 'profile']
                         .filter(tab => tab !== 'dividends' || filteredInvestments.some(inv => inv.product_name === 'Unlisted Shares'))
                         .map((tab) => (
                             <button
@@ -702,6 +762,72 @@ export default function ClientDashboard() {
 
                 {/* Content Tabs */}
                 <div className="animate-fade-in-up">
+                    {activeTab === 'referrals' && (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
+                            <div className="p-6 md:p-8 border-b border-gray-50 bg-gray-50/30">
+                                <h3 className="text-xl font-bold text-gray-900 uppercase tracking-tight flex items-center gap-3">
+                                    <Users className="w-6 h-6 text-[#1B8A9F]" />
+                                    Your Referrals
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-1">People who joined using your referral code.</p>
+                            </div>
+                            <div className="p-6 md:p-8">
+                                {referralsLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-20">
+                                        <Loader2 className="w-12 h-12 text-[#1B8A9F] animate-spin" />
+                                        <p className="text-gray-500 mt-4 font-medium italic">Fetching your referrals...</p>
+                                    </div>
+                                ) : referrals.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="text-left border-b border-gray-100">
+                                                    <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest">Name</th>
+                                                    <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest">Email</th>
+                                                    <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest">Joined Date</th>
+                                                    <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {referrals.map((referral) => (
+                                                    <tr key={referral.id} className="group hover:bg-gray-50/50 transition-colors">
+                                                        <td className="py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-full bg-[#1B8A9F]/10 flex items-center justify-center text-[#1B8A9F] font-bold">
+                                                                    {referral.name?.charAt(0) || 'U'}
+                                                                </div>
+                                                                <span className="font-bold text-gray-900">{referral.name || 'Anonymous'}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-4 text-sm text-gray-600 font-medium">{referral.email}</td>
+                                                        <td className="py-4 text-sm text-gray-500">{new Date(referral.created_at).toLocaleDateString('en-IN', {
+                                                            day: '2-digit',
+                                                            month: 'short',
+                                                            year: 'numeric'
+                                                        })}</td>
+                                                        <td className="py-4 text-right">
+                                                            <span className="px-2.5 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-100">
+                                                                Joined
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                            <Users className="w-8 h-8 text-gray-300" />
+                                        </div>
+                                        <h4 className="text-gray-900 font-bold uppercase tracking-tight">No Referrals Yet</h4>
+                                        <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">Share your referral code with friends and family to see them listed here!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {activeTab === 'overview' && (
                         <div className="grid gap-6">
                             {filteredInvestments.length > 0 ? (
@@ -1561,151 +1687,151 @@ export default function ClientDashboard() {
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Fee Payment Modal */}
-            {showFeeModal && selectedFeeInvestment && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowFeeModal(false)}></div>
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-8">
-                            <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
-                                <DollarSign className="w-8 h-8" />
-                            </div>
-                            <div className="text-center mb-8">
-                                <h3 className="text-2xl font-bold text-gray-900">Trade Management Fee</h3>
-                                <p className="text-gray-500 mt-2">Monthly maintenance fee (1%) for your investment in <strong>{selectedFeeInvestment.product_name || 'SHREEG ASSET'}</strong>.</p>
-                            </div>
-
-                            <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100 space-y-4">
-                                <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                                    <span className="text-sm text-gray-500 font-bold uppercase tracking-wider">Trading Capital</span>
-                                    <span className="text-lg font-black text-gray-900">{formatCurrency(selectedFeeInvestment.investment_amount)}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-orange-600 font-bold uppercase tracking-wider">Payable Fee (1%)</span>
-                                    <span className="text-2xl font-black text-orange-600">{formatCurrency(selectedFeeInvestment.investment_amount * 0.01)}</span>
-                                </div>
-                            </div>
-
-                            <form onSubmit={handlePayFee} className="space-y-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Payment Reference (UTR/Ref No.)</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={feePaymentData.reference}
-                                        onChange={(e) => setFeePaymentData({ ...feePaymentData, reference: e.target.value })}
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none transition-all"
-                                        placeholder="Enter transaction reference number"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Payment Date</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={feePaymentData.date}
-                                        onChange={(e) => setFeePaymentData({ ...feePaymentData, date: e.target.value })}
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none transition-all"
-                                    />
-                                </div>
-
-                                <div className="flex gap-4 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowFeeModal(false)}
-                                        className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={feeLoading}
-                                        className="flex-[2] bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-100 transition-all disabled:opacity-50 flex items-center justify-center"
-                                    >
-                                        {feeLoading ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                        ) : 'Submit Payment'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Password Reset Modal */}
-            {
-                showResetModal && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
-                        <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                {/* Fee Payment Modal */}
+                {showFeeModal && selectedFeeInvestment && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowFeeModal(false)}></div>
+                        <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="p-8">
                                 <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
-                                    <Lock className="w-8 h-8" />
+                                    <DollarSign className="w-8 h-8" />
                                 </div>
                                 <div className="text-center mb-8">
-                                    <h3 className="text-2xl font-bold text-gray-900">Reset Your Password</h3>
-                                    <p className="text-gray-500 mt-2">For security reasons, you must change your temporary password before proceeding.</p>
+                                    <h3 className="text-2xl font-bold text-gray-900">Trade Management Fee</h3>
+                                    <p className="text-gray-500 mt-2">Monthly maintenance fee (1%) for your investment in <strong>{selectedFeeInvestment.product_name || 'TRADERG ASSET'}</strong>.</p>
                                 </div>
 
-                                <form onSubmit={handleResetPassword} className="space-y-5">
+                                <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100 space-y-4">
+                                    <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                                        <span className="text-sm text-gray-500 font-bold uppercase tracking-wider">Trading Capital</span>
+                                        <span className="text-lg font-black text-gray-900">{formatCurrency(selectedFeeInvestment.investment_amount)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-orange-600 font-bold uppercase tracking-wider">Payable Fee (1%)</span>
+                                        <span className="text-2xl font-black text-orange-600">{formatCurrency(selectedFeeInvestment.investment_amount * 0.01)}</span>
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handlePayFee} className="space-y-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">New Password</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Payment Reference (UTR/Ref No.)</label>
                                         <input
-                                            type="password"
+                                            type="text"
                                             required
-                                            value={resetData.newPassword}
-                                            onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
-                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
-                                            placeholder="Enter at least 6 characters"
+                                            value={feePaymentData.reference}
+                                            onChange={(e) => setFeePaymentData({ ...feePaymentData, reference: e.target.value })}
+                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none transition-all"
+                                            placeholder="Enter transaction reference number"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Confirm New Password</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Payment Date</label>
                                         <input
-                                            type="password"
+                                            type="date"
                                             required
-                                            value={resetData.confirmPassword}
-                                            onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
-                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
-                                            placeholder="Repeat password"
+                                            value={feePaymentData.date}
+                                            onChange={(e) => setFeePaymentData({ ...feePaymentData, date: e.target.value })}
+                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none transition-all"
                                         />
                                     </div>
 
-                                    {resetError && (
-                                        <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100">
-                                            {resetError}
-                                        </div>
-                                    )}
-
-                                    {resetSuccess ? (
-                                        <div className="p-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl border border-green-100 flex items-center justify-center">
-                                            <CheckCircle2 className="w-5 h-5 mr-2" />
-                                            Password Updated Successfully
-                                        </div>
-                                    ) : (
+                                    <div className="flex gap-4 pt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowFeeModal(false)}
+                                            className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
                                         <button
                                             type="submit"
-                                            disabled={resetLoading}
-                                            className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-bold hover:bg-[#156d7d] shadow-lg shadow-teal-100 transition-all disabled:opacity-50 flex items-center justify-center"
+                                            disabled={feeLoading}
+                                            className="flex-[2] bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-100 transition-all disabled:opacity-50 flex items-center justify-center"
                                         >
-                                            {resetLoading ? (
-                                                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                            ) : 'Update & Continue'}
+                                            {feeLoading ? (
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                            ) : 'Submit Payment'}
                                         </button>
-                                    )}
+                                    </div>
                                 </form>
                             </div>
                         </div>
                     </div>
                 )
-            }
+                }
 
+                {/* Password Reset Modal */}
+                {
+                    showResetModal && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
+                            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                                <div className="p-8">
+                                    <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
+                                        <Lock className="w-8 h-8" />
+                                    </div>
+                                    <div className="text-center mb-8">
+                                        <h3 className="text-2xl font-bold text-gray-900">Reset Your Password</h3>
+                                        <p className="text-gray-500 mt-2">For security reasons, you must change your temporary password before proceeding.</p>
+                                    </div>
+
+                                    <form onSubmit={handleResetPassword} className="space-y-5">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">New Password</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={resetData.newPassword}
+                                                onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
+                                                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                placeholder="Enter at least 6 characters"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Confirm New Password</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={resetData.confirmPassword}
+                                                onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
+                                                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all"
+                                                placeholder="Repeat password"
+                                            />
+                                        </div>
+
+                                        {resetError && (
+                                            <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100">
+                                                {resetError}
+                                            </div>
+                                        )}
+
+                                        {resetSuccess ? (
+                                            <div className="p-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl border border-green-100 flex items-center justify-center">
+                                                <CheckCircle2 className="w-5 h-5 mr-2" />
+                                                Password Updated Successfully
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="submit"
+                                                disabled={resetLoading}
+                                                className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-bold hover:bg-[#156d7d] shadow-lg shadow-teal-100 transition-all disabled:opacity-50 flex items-center justify-center"
+                                            >
+                                                {resetLoading ? (
+                                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                                ) : 'Update & Continue'}
+                                            </button>
+                                        )}
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+            </div>
             <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center border-t border-gray-200 mt-10">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                    © {new Date().getFullYear()} SHREEG Expert Wealth Advisory Limited • Secure Client Portal
+                    © {new Date().getFullYear()} TRADERG WEALTH ADVISORY LIMITED • Secure Client Portal
                 </p>
             </footer>
         </div >

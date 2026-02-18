@@ -14,6 +14,17 @@ export async function POST(request: NextRequest) {
 
         let userId = existingUser?.id;
         let tempPassword = '';
+        let newUserReferralCode = '';
+
+        // Helper to generate a unique referral code
+        const generateCode = () => {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        };
 
         if (!userId) {
             // Create user with Supabase Auth
@@ -39,6 +50,21 @@ export async function POST(request: NextRequest) {
             }
 
             userId = authData.user.id;
+            newUserReferralCode = generateCode();
+
+            // Handle referral code (referred_by)
+            let referredBy = data.referralCode || 'ADMIN';
+            // Verify if provided referral code exists
+            if (data.referralCode) {
+                const { data: referee } = await supabaseAdmin
+                    .from('users')
+                    .select('id')
+                    .eq('referral_code', data.referralCode)
+                    .single();
+                if (!referee) {
+                    referredBy = 'ADMIN';
+                }
+            }
 
             // Create user record in users table
             const { error: userError } = await supabaseAdmin
@@ -48,6 +74,8 @@ export async function POST(request: NextRequest) {
                     email: data.email,
                     role: 'client',
                     name: data.fullName,
+                    referral_code: newUserReferralCode,
+                    referred_by_code: referredBy
                 });
 
             if (userError) {

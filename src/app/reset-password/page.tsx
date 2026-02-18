@@ -106,7 +106,7 @@ export default function ResetPasswordPage() {
                     <div className="text-center mb-8">
                         <Image
                             src="/logo.png"
-                            alt="SHREEG Logo"
+                            alt="TraderG Wealth Logo"
                             width={200}
                             height={60}
                             className="h-14 w-auto mx-auto mb-4"

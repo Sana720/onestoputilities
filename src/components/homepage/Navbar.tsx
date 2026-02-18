@@ -16,7 +16,7 @@ export default function Navbar() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [scrolled, setScrolled] = useState(false);
 
-    const isAboutPage = pathname === '/about';
+    const isTransparentPage = ['/about', '/privacy-policy', '/terms-conditions'].includes(pathname);
 
     useEffect(() => {
         setIsMarket(isMarketOpen());
@@ -90,7 +90,7 @@ export default function Navbar() {
         <>
             <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled
                 ? 'py-4 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm'
-                : isAboutPage
+                : isTransparentPage
                     ? 'py-6 bg-white/5 backdrop-blur-2xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)]'
                     : 'py-6 bg-transparent'
                 }`}>
@@ -99,7 +99,7 @@ export default function Navbar() {
                         {/* Logo & Status Group */}
                         <div className="flex items-center space-x-6">
                             <Link href="/" className="relative group transition-transform active:scale-95 shrink-0">
-                                <Image src="/logo.png" alt="SHREEG Logo" width={140} height={40} className="h-9 md:h-10 w-auto" />
+                                <Image src="/logo.png" alt="TraderG Wealth Logo" width={140} height={40} className="h-9 md:h-10 w-auto" />
                             </Link>
 
                             <div className="hidden lg:flex items-center space-x-4 border-l border-gray-100 pl-4 h-8">
@@ -112,20 +112,20 @@ export default function Navbar() {
                         </div>
 
                         {/* Navigation - Institutional Group */}
-                        <div className={`hidden md:flex items-center space-x-1 rounded-2xl p-1 border transition-colors ${scrolled || !isAboutPage ? 'bg-gray-50/50 border-gray-100' : 'bg-white/5 border-white/10'}`}>
-                            <Link href="/" className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F]`}>
+                        <div className={`hidden md:flex items-center space-x-1 rounded-2xl p-1 border transition-colors ${scrolled || !isTransparentPage ? 'bg-gray-50/50 border-gray-100' : 'bg-white/5 border-white/10'}`}>
+                            <Link href="/" className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isTransparentPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F]`}>
                                 <span>Home</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </Link>
-                            <Link href="/about" className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F]`}>
+                            <Link href="/about" className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isTransparentPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F]`}>
                                 <span>About</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </Link>
-                            <button onClick={() => handleNavClick('research')} className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F] cursor-pointer`}>
+                            <button onClick={() => handleNavClick('research')} className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isTransparentPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F] cursor-pointer`}>
                                 <span>Research</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </button>
-                            <button onClick={() => handleNavClick('portfolio')} className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F] cursor-pointer`}>
+                            <button onClick={() => handleNavClick('portfolio')} className={`group relative px-5 py-2 text-sm font-bold transition-all ${scrolled || !isTransparentPage ? 'text-gray-600' : 'text-gray-300'} hover:text-[#1B8A9F] cursor-pointer`}>
                                 <span>Yield</span>
                                 <span className="absolute bottom-1 left-5 right-5 h-0.5 bg-[#1B8A9F] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                             </button>
@@ -154,7 +154,7 @@ export default function Navbar() {
                                 <div className="flex items-center space-x-2">
                                     <Link
                                         href="/login"
-                                        className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all ${scrolled || !isAboutPage ? 'text-gray-600' : 'text-white'} hover:text-[#1B8A9F]`}
+                                        className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all ${scrolled || !isTransparentPage ? 'text-gray-600' : 'text-white'} hover:text-[#1B8A9F]`}
                                     >
                                         Login
                                     </Link>
@@ -185,7 +185,7 @@ export default function Navbar() {
                 }`}>
                 <div className="p-6 h-full flex flex-col overflow-y-auto">
                     <div className="flex items-center justify-between mb-4 shrink-0">
-                        <Image src="/logo.png" alt="SHREEG Logo" width={84} height={24} className="h-6 w-auto" />
+                        <Image src="/logo.png" alt="TraderG Wealth Logo" width={84} height={24} className="h-6 w-auto" />
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="p-3 bg-gray-50 rounded-2xl"

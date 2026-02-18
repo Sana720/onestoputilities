@@ -102,7 +102,7 @@ export default function AdminProfile() {
                             </Link>
                             <Image
                                 src="/logo.png"
-                                alt="SHREEG Logo"
+                                alt="TraderG Wealth Logo"
                                 width={120}
                                 height={32}
                                 className="h-8 w-auto"

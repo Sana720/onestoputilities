@@ -154,7 +154,7 @@ export default function AdminDashboard() {
             setKycLoading(false);
         }
     };
-    const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends'>('investments');
+    const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends' | 'referrals'>('investments');
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [investmentLimit, setInvestmentLimit] = useState(20);
@@ -163,6 +163,24 @@ export default function AdminDashboard() {
     const [editDividendData, setEditDividendData] = useState<any>(null);
     const [updatingDividend, setUpdatingDividend] = useState(false);
     const [syncing, setSyncing] = useState(false);
+
+    const [referrals, setReferrals] = useState<any[]>([]);
+    const [referralsLoading, setReferralsLoading] = useState(false);
+
+    const fetchAdminReferrals = async () => {
+        try {
+            setReferralsLoading(true);
+            const response = await fetch('/api/admin/referrals');
+            const data = await response.json();
+            if (response.ok) {
+                setReferrals(data.referrals);
+            }
+        } catch (error) {
+            console.error('Error fetching admin referrals:', error);
+        } finally {
+            setReferralsLoading(false);
+        }
+    };
 
     // Infinite Scroll Observer
     const observer = useRef<IntersectionObserver | null>(null);
@@ -180,6 +198,12 @@ export default function AdminDashboard() {
         });
         if (node) observer.current.observe(node);
     }, [loading, activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 'referrals') {
+            fetchAdminReferrals();
+        }
+    }, [activeTab]);
 
     // Reset limits on tab switch or search
     useEffect(() => {
@@ -427,14 +451,14 @@ export default function AdminDashboard() {
 
 
 
-    const products = Array.from(new Set(investments.map(inv => inv.product_name || 'SHREEG ASSET')));
+    const products = Array.from(new Set(investments.map(inv => inv.product_name || 'TRADERG ASSET')));
 
     const filteredInvestments = investments.filter(inv => {
         const matchesSearch = (inv.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (inv.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (inv.product_name || 'SHREEG ASSET').toLowerCase().includes(searchTerm.toLowerCase());
+            (inv.product_name || 'TRADERG ASSET').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
-        const matchesProduct = productFilter === 'all' || (inv.product_name || 'SHREEG ASSET') === productFilter;
+        const matchesProduct = productFilter === 'all' || (inv.product_name || 'TRADERG ASSET') === productFilter;
         return matchesSearch && matchesStatus && matchesProduct;
     });
 
@@ -480,7 +504,7 @@ export default function AdminDashboard() {
                 client: inv.full_name,
                 email: inv.email,
                 type: 'CREDIT',
-                description: `Investment: ${inv.product_name || 'SHREEG ASSET'}`,
+                description: `Investment: ${inv.product_name || 'TRADERG ASSET'}`,
                 amount: inv.investment_amount,
                 bank: inv.bank_details?.bankName || 'N/A',
                 account_number: inv.bank_details?.accountNumber || 'N/A',
@@ -504,7 +528,7 @@ export default function AdminDashboard() {
                     client: inv.full_name,
                     email: inv.email,
                     type: 'DEBIT',
-                    description: `Dividend: ${inv.product_name || 'SHREEG ASSET'}`,
+                    description: `Dividend: ${inv.product_name || 'TRADERG ASSET'}`,
                     amount: div.amount,
                     bank: div.bank_name || 'N/A',
                     payment_mode: div.payment_mode || 'N/A',
@@ -524,7 +548,7 @@ export default function AdminDashboard() {
                         client: inv.full_name,
                         email: inv.email,
                         type: 'CREDIT',
-                        description: `Management Fee: ${inv.product_name || 'SHREEG ASSET'}`,
+                        description: `Management Fee: ${inv.product_name || 'TRADERG ASSET'}`,
                         amount: fee.amount,
                         bank: inv.bank_details?.bankName || 'N/A',
                         payment_mode: 'UPI/NEFT',
@@ -571,7 +595,7 @@ export default function AdminDashboard() {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `SHREEG_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `TRADERG_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -599,7 +623,7 @@ export default function AdminDashboard() {
                             <Link href="/">
                                 <Image
                                     src="/logo.png"
-                                    alt="SHREEG Logo"
+                                    alt="TraderG Wealth Logo"
                                     width={150}
                                     height={40}
                                     className="h-10 w-auto"
@@ -709,6 +733,15 @@ export default function AdminDashboard() {
                     >
                         Pending Payouts
                     </button>
+                    <button
+                        onClick={() => setActiveTab('referrals')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'referrals'
+                            ? 'bg-white text-[#1B8A9F] shadow-sm'
+                            : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                    >
+                        Referrals
+                    </button>
                 </div>
 
                 {/* Management Section */}
@@ -721,14 +754,18 @@ export default function AdminDashboard() {
                                         ? 'Investment Management'
                                         : activeTab === 'pending_dividends'
                                             ? 'Pending Dividend Payouts'
-                                            : 'Global Financial Ledger'}
+                                            : activeTab === 'referrals'
+                                                ? 'Referral Network'
+                                                : 'Global Financial Ledger'}
                                 </h3>
                                 <p className="text-sm text-gray-500 mt-1 font-medium">
                                     {activeTab === 'investments'
                                         ? 'Verify applications and manage dividend payouts'
                                         : activeTab === 'pending_dividends'
                                             ? 'Track and manage dividends awaiting payment'
-                                            : 'Chronological log of all debits and credits'}
+                                            : activeTab === 'referrals'
+                                                ? 'Global view of all client referrals and relationships'
+                                                : 'Chronological log of all debits and credits'}
                                 </p>
                             </div>
 
@@ -798,7 +835,76 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="overflow-x-auto">
-                        {activeTab === 'investments' ? (
+                        {activeTab === 'referrals' ? (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-50/50">
+                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Referred User</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Referred By</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Joined Date</th>
+                                        <th className="px-8 py-5 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Verification</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {referralsLoading ? (
+                                        <tr>
+                                            <td colSpan={4} className="py-20 text-center">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <Loader2 className="w-12 h-12 text-[#1B8A9F] animate-spin" />
+                                                    <p className="text-gray-500 mt-4 font-medium italic">Mapping referral network...</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : referrals.length > 0 ? (
+                                        referrals.map((referral) => (
+                                            <tr key={referral.id} className="hover:bg-gray-50/50 transition-colors group">
+                                                <td className="px-8 py-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-[#1B8A9F]/10 flex items-center justify-center text-[#1B8A9F] font-bold">
+                                                            {referral.name?.charAt(0) || 'U'}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-gray-900">{referral.name || 'Anonymous'}</p>
+                                                            <p className="text-xs text-gray-500">{referral.email}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-gray-700">{referral.referrer?.name || 'N/A'}</span>
+                                                        <span className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest">{referral.referred_by_code}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6 text-sm text-gray-500 font-medium">
+                                                    {new Date(referral.created_at).toLocaleDateString('en-IN', {
+                                                        day: '2-digit',
+                                                        month: 'short',
+                                                        year: 'numeric'
+                                                    })}
+                                                </td>
+                                                <td className="px-8 py-6 text-right">
+                                                    <span className="px-2.5 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-100">
+                                                        Verified User
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={4} className="py-20 text-center">
+                                                <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 mx-8">
+                                                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                                        <Sparkles className="w-8 h-8 text-gray-300" />
+                                                    </div>
+                                                    <h4 className="text-gray-900 font-bold uppercase tracking-tight">No Referrals Recorded</h4>
+                                                    <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">Referral relationships will appear here once new users join using referral codes.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        ) : activeTab === 'investments' ? (
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-gray-50/50">
@@ -824,7 +930,7 @@ export default function AdminDashboard() {
                                                 >
                                                     {investment.full_name}
                                                 </button>
-                                                <p className="text-[10px] text-[#1B8A9F] font-black uppercase tracking-widest mt-1.5">{investment.product_name || 'SHREEG ASSET'}</p>
+                                                <p className="text-[10px] text-[#1B8A9F] font-black uppercase tracking-widest mt-1.5">{investment.product_name || 'TRADERG ASSET'}</p>
                                                 <p className="text-xs text-gray-400 mt-1 flex items-center">
                                                     <Mail className="w-3 h-3 mr-1" />
                                                     {investment.email}
@@ -986,7 +1092,7 @@ export default function AdminDashboard() {
                         <div ref={lastElementRef} className="h-4 w-full" />
                     </div>
 
-                    {(activeTab === 'investments' ? filteredInvestments.length : getLedgerData().length) === 0 && (
+                    {(activeTab === 'investments' ? filteredInvestments.length : activeTab === 'referrals' ? referrals.length : getLedgerData().length) === 0 && (
                         <div className="p-20 text-center">
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Search className="w-8 h-8 text-gray-200" />
@@ -1615,7 +1721,7 @@ export default function AdminDashboard() {
 
             <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center border-t border-gray-200 mt-10">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">
-                    SHREEG Admin Engine v4.0 • Enterprise Wealth Management Systems
+                    TraderG Admin Engine v4.0 • Enterprise Wealth Management Systems
                 </p>
             </footer>
             {/* Transaction Detail Modal */}

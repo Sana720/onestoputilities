@@ -32,7 +32,7 @@ export default function AboutPage() {
                 <div className="absolute inset-0 z-0 overflow-hidden">
                     <Image
                         src="/images/about/hero.png"
-                        alt="SHREEG Institutional Vision"
+                        alt="TraderG Wealth Institutional Vision"
                         fill
                         className="object-cover opacity-70 animate-pulse-slow backdrop-brightness-50"
                         priority
@@ -49,7 +49,7 @@ export default function AboutPage() {
                     <div className="lg:col-span-7 space-y-10">
                         <div className="inline-flex items-center space-x-3 px-6 py-2.5 bg-white/5 backdrop-blur-3xl border border-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-[0.4em] mb-4 shadow-[0_0_50px_rgba(27,138,159,0.3)] border-t-white/20">
                             <Sparkles className="w-4 h-4 text-[#1B8A9F] animate-spin-slow" />
-                            <span>The SHREEG</span>
+                            <span>The TraderG Wealth</span>
                         </div>
 
                         <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.8] mb-10">
@@ -58,8 +58,8 @@ export default function AboutPage() {
                         </h1>
 
                         <p className="text-2xl md:text-3xl text-gray-300 font-medium leading-tight max-w-xl">
-                            Institutional intelligence fused with <br className="hidden md:block" />
-                            <span className="text-white italic font-serif">precision engineering</span> for the elite.
+                            <span className="text-[#1B8A9F] font-black italic">Trader</span> for Trading, <span className="text-white font-black italic">G</span> for Growth. <br className="hidden md:block" />
+                            Precision engineering for your <span className="text-white italic font-serif">financial evolution</span>.
                         </p>
 
                         <div className="flex flex-wrap items-center gap-10 pt-4">
@@ -174,7 +174,7 @@ export default function AboutPage() {
                             </div>
 
                             <p className="text-lg text-gray-500 leading-relaxed font-medium">
-                                ShreeG Wealth Advisory evolved from a dedicated sub-broking firm in 2011 into a powerhouse of institutional research. We bridge the gap between complex market dynamics and sustainable wealth creation.
+                                TraderG (ShreeG Expert Wealth Advisory Limited) was incorporated in 2016 as a public limited company. Our mission is to bridge the gap between complex market dynamics and sustainable wealth creation through accessible algo-trading.
                             </p>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
@@ -201,7 +201,7 @@ export default function AboutPage() {
             {/* --- STATS SECTION: COMPACT & BALANCED --- */}
             <section className="py-24 bg-gray-50/50">
                 <div className="max-w-7xl mx-auto px-6 text-center mb-16">
-                    <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter mb-4">The SHREEG <span className="text-[#1B8A9F]">Magnitude</span></h2>
+                    <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter mb-4">The TRADERG WEALTH <span className="text-[#1B8A9F]">Magnitude</span></h2>
                     <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Quantifiable Trust indicators</p>
                 </div>
                 <div className="max-w-7xl mx-auto px-6">
@@ -283,6 +283,42 @@ export default function AboutPage() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* --- ONBOARDING ROADMAP: THE 6 STEPS --- */}
+            <section className="py-32 bg-[#F8FBFC] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-teal-500/5 rounded-full blur-[120px] -mr-96 -mt-96"></div>
+
+                <div className="max-w-7xl mx-auto px-6 relative z-10">
+                    <div className="text-center mb-24">
+                        <div className="inline-block px-4 py-1.5 bg-[#1B8A9F]/10 text-[#1B8A9F] rounded-full text-[10px] font-black uppercase tracking-widest mb-6">
+                            Onboarding Protocol
+                        </div>
+                        <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tighter leading-tight">
+                            Six Simple Steps to <br />
+                            <span className="text-[#1B8A9F]">Start Growth.</span>
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {[
+                            { step: '01', title: 'Registration', desc: 'Secure your access using your mobile number, email, or direct Google Auth.' },
+                            { step: '02', title: 'Secure Login', desc: 'Access your dedicated dashboard with your encrypted credentials.' },
+                            { step: '03', title: 'Select Tenor', desc: 'Choose your investment horizon to align with specific yield targets.' },
+                            { step: '04', title: 'Complete KYC', desc: 'Frictionless verification using PAN, Aadhaar, and digital profile.' },
+                            { step: '05', title: 'Demat Linkage', desc: 'Integrate with Arihant Capital for direct market execution.' },
+                            { step: '06', title: 'Add Capital', desc: 'Inject funds into your demat account and trigger the algo-engine.' }
+                        ].map((s, i) => (
+                            <div key={i} className="group p-10 bg-white border border-gray-100 rounded-[48px] hover:shadow-2xl hover:shadow-[#1B8A9F]/10 transition-all duration-500">
+                                <div className="text-5xl font-black text-gray-50 group-hover:text-[#1B8A9F]/10 transition-colors mb-6">
+                                    {s.step}
+                                </div>
+                                <h4 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">{s.title}</h4>
+                                <p className="text-gray-500 font-semibold text-sm leading-relaxed">{s.desc}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>

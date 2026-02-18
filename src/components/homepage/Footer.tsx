@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Shield, Mail, ChevronRight, Linkedin, Twitter, Instagram, Facebook, ArrowUpRight, Fingerprint, MapPin, Send } from 'lucide-react';
+import { Shield, Mail, ChevronRight, Linkedin, Twitter, Instagram, Facebook, ArrowUpRight, Fingerprint, MapPin, MessageCircle } from 'lucide-react';
 
 export default function Footer() {
     return (
@@ -29,7 +29,7 @@ export default function Footer() {
                         {/* Domain 1: Brand Essence */}
                         <div className="lg:pr-12">
                             <Link href="/" className="inline-block mb-10 transition-transform hover:scale-[1.02]">
-                                <Image src="/logo.png" alt="SHREEG Logo" width={170} height={48} className="h-10 w-auto" />
+                                <Image src="/logo.png" alt="TraderG Wealth Logo" width={170} height={48} className="h-10 w-auto" />
                             </Link>
                             <p className="text-gray-600 font-medium text-lg leading-relaxed mb-10">
                                 Institutional intelligence forged with <br className="hidden xl:block" /> systematic precision.
@@ -89,7 +89,7 @@ export default function Footer() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <Link href="mailto:info@shreeg.group" className="p-5 bg-white rounded-2xl border border-gray-100/50 shadow-sm transition-all hover:bg-[#1B8A9F] hover:text-white flex flex-col items-center justify-center space-y-2 group/btn text-center">
+                                <Link href="mailto:info@tradergwealth.com" className="p-5 bg-white rounded-2xl border border-gray-100/50 shadow-sm transition-all hover:bg-[#1B8A9F] hover:text-white flex flex-col items-center justify-center space-y-2 group/btn text-center">
                                     <Mail className="w-5 h-5 text-[#1B8A9F] group-hover/btn:text-white" />
                                     <span className="text-[10px] font-black uppercase tracking-widest">Mail</span>
                                 </Link>
@@ -97,7 +97,7 @@ export default function Footer() {
                                     onClick={() => typeof window !== 'undefined' && window.open('https://wa.me/917596044046', '_blank')}
                                     className="p-5 bg-white rounded-2xl border border-gray-100/50 shadow-sm transition-all hover:bg-[#25D366] hover:text-white flex flex-col items-center justify-center space-y-2 group/btn cursor-pointer text-center"
                                 >
-                                    <Send className="w-5 h-5 text-[#25D366] group-hover/btn:text-white" />
+                                    <MessageCircle className="w-5 h-5 text-[#25D366] group-hover/btn:text-white" />
                                     <span className="text-[10px] font-black uppercase tracking-widest">WhatsApp</span>
                                 </div>
                             </div>
@@ -117,16 +117,17 @@ export default function Footer() {
 
                         <div className="flex items-center space-x-8">
                             {[Linkedin, Twitter, Instagram, Facebook].map((Icon, i) => (
-                                <Link key={i} href="#" className="p-3 bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-white hover:shadow-md transition-all">
+                                <Link key={i} href="#" className="p-3 bg-gray-50 rounded-xl text-gray-400 hover:text-white hover:bg-[#1B8A9F] hover:shadow-md transition-all">
                                     <Icon className="w-4 h-4" />
                                 </Link>
                             ))}
                         </div>
 
                         <div className="flex gap-8">
-                            {['Privacy', 'Legal', 'Risk', 'Cookies'].map(item => (
-                                <Link key={item} href="#" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">{item}</Link>
-                            ))}
+                            <Link href="/privacy-policy" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Privacy</Link>
+                            <Link href="/terms-conditions" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Legal</Link>
+                            <Link href="/terms-conditions#risk" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Risk</Link>
+                            <Link href="/privacy-policy#cookies" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] hover:text-[#1B8A9F] transition-colors">Cookies</Link>
                         </div>
                     </div>
                 </div>
@@ -163,7 +164,7 @@ export default function Footer() {
                     </div>
 
                     <p className="text-[10px] font-black text-gray-400 uppercase leading-relaxed max-w-6xl mx-auto tracking-[0.2em] text-center opacity-60">
-                        SHREEG EXPERT Wealth Advisory Limited is a structural capital provider. Investment in unlisted equities and bespoke bonds carries inherent risk. Past metrics do not guarantee future velocity. All transactions are subject to internal audit and regulatory sensitivity. Consult your analyst before allocation.
+                        Disclaimer - Trading & Investing in stock market are subjected to market risks, read all scheme related documents carefully. It involves high substantial risk & might not be suitable for everyone. The content provided in this website is solely for educational purposes. The owner has no responsibility of any decision taken in trading by the viewer.
                     </p>
                 </div>
             </div>

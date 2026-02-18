@@ -9,12 +9,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SHREEG Investment Portal - Preference Bond Shareholding",
-  description: "Manage your preference bond investments with SHREEG Expert Wealth Advisory Limited. Track dividends, view portfolio, and access your investment agreements.",
-  keywords: "investment, preference bonds, shareholding, dividends, wealth management, SHREEG",
-  authors: [{ name: "SHREEG Expert Wealth Advisory Limited" }],
+  title: "TraderG Wealth Investment Portal - Preference Bond Shareholding",
+  description: "Manage your preference bond investments with TRADERG WEALTH ADVISORY LIMITED. Track dividends, view portfolio, and access your investment agreements.",
+  keywords: "investment, preference bonds, shareholding, dividends, wealth management, TraderG Wealth",
+  authors: [{ name: "TRADERG WEALTH ADVISORY LIMITED" }],
   openGraph: {
-    title: "SHREEG Investment Portal",
+    title: "TraderG Wealth Investment Portal",
     description: "Manage your preference bond investments and track your portfolio",
     type: "website",
   },

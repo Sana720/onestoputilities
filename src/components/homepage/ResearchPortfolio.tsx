@@ -192,7 +192,7 @@ export default function ResearchPortfolio() {
                                             <div className="p-3 bg-blue-50 rounded-2xl">
                                                 <PieChartIcon className="w-6 h-6 text-blue-500" />
                                             </div>
-                                            <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Shreeg fund - Sectors Diversification</h4>
+                                            <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">TraderG Wealth fund - Sectors Diversification</h4>
                                         </div>
                                         <p className="text-gray-400 text-sm font-medium mb-8 leading-relaxed">
                                             Our sector allocation is data-driven, prioritizing high-liquidity large-cap stocks while maintaining exposure to blue-chip dividends and defensive ETFs.
@@ -260,7 +260,7 @@ export default function ResearchPortfolio() {
                                         <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
                                             <Briefcase className="w-6 h-6 text-[#4ADE80]" />
                                         </div>
-                                        <h4 className="text-2xl font-black uppercase tracking-tighter">SHREEG FUND</h4>
+                                        <h4 className="text-2xl font-black uppercase tracking-tighter">TRADERG WEALTH FUND</h4>
                                     </div>
 
                                     <div className="space-y-4">

@@ -80,7 +80,7 @@ export default function LoginPage() {
                     <div className="text-center mb-8">
                         <Image
                             src="/logo.png"
-                            alt="SHREEG Logo"
+                            alt="TraderG Wealth Logo"
                             width={200}
                             height={60}
                             className="h-14 w-auto mx-auto mb-4"
@@ -188,13 +188,13 @@ export default function LoginPage() {
                     {/* Demo Credentials */}
                     <div className="mt-6 p-4 bg-teal-50 rounded-lg border border-teal-200">
                         <p className="text-sm font-semibold text-[#1B8A9F] mb-2">Demo Credentials:</p>
-                        <p className="text-xs text-gray-600">Admin: admin@shreeg.com / admin123</p>
+                        <p className="text-xs text-gray-600">Admin: admin@tradergwealth.com / admin123</p>
                     </div>
                 </div>
 
                 {/* Footer */}
                 <p className="text-center text-sm text-gray-500 mt-6">
-                    © {new Date().getFullYear()} SHREEG Expert Wealth Advisory Limited
+                    © {new Date().getFullYear()} TRADERG WEALTH ADVISORY LIMITED
                 </p>
             </div>
         </div>

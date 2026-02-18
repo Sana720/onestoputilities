@@ -121,7 +121,7 @@ const HeaderSnippet = () => (
     <View style={styles.headerWrapper}>
         <View style={styles.headerTop}>
             <View style={{ flex: 1 }}>
-                <Text style={styles.companyName}>SHREEG EXPERT WEALTH ADVISORY LIMITED</Text>
+                <Text style={styles.companyName}>TRADERG WEALTH ADVISORY LIMITED</Text>
                 <Text style={styles.headerInfo}><Text style={styles.bold}>Corp.Office : </Text>11WS2 Mani Casadona, Action Area 2 Rajarhat Newtown Kolkata(W.B)</Text>
                 <Text style={styles.headerInfo}><Text style={styles.bold}>CIN : </Text>U74140CT2016PLC002054</Text>
                 <Text style={styles.headerInfo}><Text style={styles.bold}>website : </Text>www.tradergwealth.com</Text>
@@ -129,7 +129,7 @@ const HeaderSnippet = () => (
                 <Text style={styles.headerInfo}><Text style={styles.bold}>Contact: </Text>91-7044520894</Text>
             </View>
             <View style={styles.logoContainer}>
-                <Image src="/shreeg_logo.png" style={{ width: 80, height: 40 }} />
+                <Image src="/logo.png" style={{ width: 80, height: 40 }} />
             </View>
         </View>
     </View>
@@ -187,7 +187,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     <View>
                         <Text>To,</Text>
                         <Text style={styles.bold}>The Board of Directors,</Text>
-                        <Text>SHREEG EXPERT WEALTH ADVISORY LIMITED</Text>
+                        <Text>TRADERG WEALTH ADVISORY LIMITED</Text>
                         <View style={{ marginTop: 2 }}>
                             <Text style={styles.headerInfo}>Reg. Office : Shop No. 353, Third Floor, Progressive Point Near Fruit Market Lalpur Dhamtari Road Raipur CT 492001 IN</Text>
                         </View>
@@ -308,11 +308,11 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 </Text>
                 <Text style={[styles.bold, { textAlign: 'center', marginVertical: 8 }]}>And</Text>
                 <Text style={styles.paragraph}>
-                    <Text style={styles.bold}>SHREEG EXPERT WEALTH ADVISORY LTD</Text> a Company incorporated under the Companies Act, 2013 having its office Mani Casadona, 11WS2, 6th Floor Suit Number 9 Action Area IIF, Opposite EcoSpace, Kolkata - 700156, herein represented by its Directors (hereinafter referred to as <Text style={styles.bold}>“a company”</Text>) <Text style={styles.bold}>which expression shall, unless repugnant to the context or meaning hereof, include its successors and assigns) of the Second Part;</Text>
+                    <Text style={styles.bold}>TRADERG WEALTH ADVISORY LTD</Text> a Company incorporated under the Companies Act, 2013 having its office Mani Casadona, 11WS2, 6th Floor Suit Number 9 Action Area IIF, Opposite EcoSpace, Kolkata - 700156, herein represented by its Directors (hereinafter referred to as <Text style={styles.bold}>“a company”</Text>) <Text style={styles.bold}>which expression shall, unless repugnant to the context or meaning hereof, include its successors and assigns) of the Second Part;</Text>
                 </Text>
                 <Text style={[styles.bold, { marginTop: 10 }]}>WHEREAS:</Text>
                 <Text style={styles.paragraph}>
-                    (A) {data.full_name} desires to become a {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trading Client' : 'Preference bond Shareholder'} and {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'avail Trade Management services from' : 'invest in'} the Company SHREEG EXPERT WEALTH ADVISORY LTD.
+                    (A) {data.full_name} desires to become a {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trading Client' : 'Preference bond Shareholder'} and {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'avail Trade Management services from' : 'invest in'} the Company TRADERG WEALTH ADVISORY LTD.
                 </Text>
                 <Text style={styles.paragraph}>(C) The Company has agreed to join in the execution of this Agreement to be aware of the rights and obligations of {data.full_name} as a party hereto and ensure compliance with the same.</Text>
             </Page>
@@ -460,7 +460,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                         </View>
                         <View style={styles.tableCell}>
                             <Text>For (Director)</Text>
-                            <Text style={styles.bold}>SHREEG EXPERT WEALTH ADVISORY LTD</Text>
+                            <Text style={styles.bold}>TRADERG WEALTH ADVISORY LTD</Text>
                             {data.admin_signature_url && (
                                 <Image src={data.admin_signature_url} style={{ height: 40, width: 'auto', marginTop: 10 }} />
                             )}
@@ -468,7 +468,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     </View>
                 </View>
                 <View style={{ marginTop: 40, borderTopWidth: 0.5, paddingTop: 10 }}>
-                    <Text style={{ textAlign: 'center', fontSize: 8, color: '#666' }}>Computer generated document. Digitally approved by SHREEG EXPERT WEALTH ADVISORY LTD.</Text>
+                    <Text style={{ textAlign: 'center', fontSize: 8, color: '#666' }}>Computer generated document. Digitally approved by TRADERG WEALTH ADVISORY LTD.</Text>
                 </View>
             </Page>
         </Document>

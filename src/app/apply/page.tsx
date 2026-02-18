@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye, PenTool, X } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye, PenTool, X, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SignatureUpload } from '@/components/SignatureUpload';
 
-export default function ApplyPage() {
+function ApplyForm() {
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -57,6 +57,7 @@ export default function ApplyPage() {
         aadharUrl: '',
         bankChequeUrl: '',
         kycVerified: false,
+        referralCode: '',
     });
 
     const [files, setFiles] = useState<{
@@ -77,8 +78,17 @@ export default function ApplyPage() {
     const [showTCModal, setShowTCModal] = useState(false);
     const [agreedToTC, setAgreedToTC] = useState(false);
     const [existingSignatureUrl, setExistingSignatureUrl] = useState<string | null>(null);
+    const [isReferralLocked, setIsReferralLocked] = useState(false);
+
+    const searchParams = useSearchParams();
 
     useEffect(() => {
+        const ref = searchParams.get('ref');
+        if (ref) {
+            setFormData(prev => ({ ...prev, referralCode: ref }));
+            setIsReferralLocked(true);
+        }
+
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
@@ -414,7 +424,7 @@ export default function ApplyPage() {
                         </Link>
                         <Image
                             src="/logo.png"
-                            alt="SHREEG Logo"
+                            alt="TraderG Wealth Logo"
                             width={150}
                             height={40}
                             className="h-10 w-auto"
@@ -669,6 +679,44 @@ export default function ApplyPage() {
                                                     placeholder="your.email@example.com"
                                                 />
                                                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                                            </div>
+
+                                            <div>
+                                                <label className="label text-[#1B8A9F] font-bold">Referral Code (Optional)</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        name="referralCode"
+                                                        value={formData.referralCode}
+                                                        onChange={(e) => {
+                                                            if (isReferralLocked) return;
+                                                            const val = e.target.value.toUpperCase();
+                                                            setFormData(prev => ({ ...prev, referralCode: val }));
+                                                        }}
+                                                        readOnly={isReferralLocked}
+                                                        className={`input border-[#1B8A9F]/30 font-bold tracking-widest ${isReferralLocked ? 'bg-gray-100 cursor-not-allowed opacity-75' : 'bg-teal-50/10'}`}
+                                                        placeholder="ENTER CODE"
+                                                    />
+                                                    {isReferralLocked ? (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 group">
+                                                            <Lock className="w-4 h-4 text-gray-400" />
+                                                            <div className="absolute bottom-full right-0 mb-2 invisible group-hover:visible bg-gray-900 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap">
+                                                                Referral code locked from link
+                                                            </div>
+                                                        </div>
+                                                    ) : formData.referralCode && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                            <Sparkles className="w-4 h-4 text-[#1B8A9F] animate-pulse" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {isReferralLocked ? (
+                                                    <p className="text-[10px] text-[#1B8A9F] mt-1 italic font-bold flex items-center gap-1">
+                                                        <CheckCircle2 className="w-3 h-3" /> Referral link applied and secured.
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-[10px] text-gray-400 mt-1 italic">If you were referred by someone, enter their code here.</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1173,7 +1221,9 @@ export default function ApplyPage() {
                                     </div>
 
                                     <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
-                                        <h3 className="font-bold text-lg mb-3">Investment Summary</h3>
+                                        <h3 className="font-bold text-lg mb-3">
+                                            {formData.productName === 'Unlisted Shares' ? 'Investment Summary' : 'Trade Summary'}
+                                        </h3>
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-text-secondary">
@@ -1185,9 +1235,9 @@ export default function ApplyPage() {
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-text-secondary">
-                                                    {formData.productName === 'Intraday Trading' ? 'Mangement Fee (Monthly):' :
-                                                        formData.productName === 'Short-Term SIP' ? 'Mangement Fee (Quarterly):' :
-                                                            formData.productName === 'Long-Term Holding' ? 'Mangement Fee (Yearly):' :
+                                                    {formData.productName === 'Intraday Trading' ? 'Management Fee (Monthly):' :
+                                                        formData.productName === 'Short-Term SIP' ? 'Management Fee (Quarterly):' :
+                                                            formData.productName === 'Long-Term Holding' ? 'Management Fee (Yearly):' :
                                                                 'Number of Shares:'}
                                                 </span>
                                                 <span className="font-semibold">{formData.numberOfShares || '0'}</span>
@@ -1198,6 +1248,33 @@ export default function ApplyPage() {
                                                     <span className="font-semibold">₹100</span>
                                                 </div>
                                             )}
+
+                                            {/* Risk and Guarantee Section */}
+                                            {formData.productName && (
+                                                <>
+                                                    <div className="flex justify-between border-t border-blue-100 pt-2 mt-2">
+                                                        <span className="text-text-secondary">Risk Level:</span>
+                                                        <span className={`font-black uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-md ${formData.productName === 'Intraday Trading' ? 'bg-red-100 text-red-700' :
+                                                            formData.productName === 'Short-Term SIP' ? 'bg-orange-100 text-orange-700' :
+                                                                'bg-green-100 text-green-700'
+                                                            }`}>
+                                                            {formData.productName === 'Intraday Trading' ? 'High' :
+                                                                formData.productName === 'Short-Term SIP' ? 'Moderate' :
+                                                                    formData.productName === 'Long-Term Holding' ? 'Low' :
+                                                                        'Very Low (secured structure)'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-text-secondary">
+                                                            {formData.productName === 'Unlisted Shares' ? 'Dividend:' : 'Guarantee:'}
+                                                        </span>
+                                                        <span className={`font-semibold ${formData.productName === 'Unlisted Shares' ? 'text-[#1B8A9F]' : 'text-gray-400'}`}>
+                                                            {formData.productName === 'Unlisted Shares' ? 'Fixed Dividend' : 'No'}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+
                                             <div className="flex justify-between border-t border-blue-200 pt-2 mt-2">
                                                 <span className="text-text-secondary font-bold text-blue-800">Maturity Date:</span>
                                                 <span className="font-bold text-blue-800">
@@ -1216,6 +1293,7 @@ export default function ApplyPage() {
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             )}
 
@@ -1451,5 +1529,20 @@ export default function ApplyPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ApplyPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-[#1B8A9F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500 font-medium">Loading investment form...</p>
+                </div>
+            </div>
+        }>
+            <ApplyForm />
+        </Suspense>
     );
 }

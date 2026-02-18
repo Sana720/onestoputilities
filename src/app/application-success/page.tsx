@@ -72,7 +72,7 @@ function SuccessContent() {
                     </h1>
 
                     <p className="text-lg text-gray-600 mb-8">
-                        Thank you for choosing <span className="text-[#1B8A9F] font-bold">SHREEG</span> Expert Wealth Advisory.
+                        Thank you for choosing <span className="text-[#1B8A9F] font-bold">TraderG Wealth</span> Expert Wealth Advisory.
                         Your investment journey starts here.
                     </p>
 

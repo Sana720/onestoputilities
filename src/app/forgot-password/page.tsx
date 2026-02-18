@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
                     <div className="text-center mb-8">
                         <Image
                             src="/logo.png"
-                            alt="SHREEG Logo"
+                            alt="TraderG Wealth Logo"
                             width={200}
                             height={60}
                             className="h-14 w-auto mx-auto mb-4"
@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
 
                 {/* Footer */}
                 <p className="text-center text-sm text-gray-500 mt-6">
-                    © {new Date().getFullYear()} SHREEG Expert Wealth Advisory Limited
+                    © {new Date().getFullYear()} TRADERG WEALTH ADVISORY LIMITED
                 </p>
             </div>
         </div>
