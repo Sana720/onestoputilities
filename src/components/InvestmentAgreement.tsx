@@ -3,7 +3,7 @@ import { Page, Text, View, Document, StyleSheet, Font, Svg, Path, Line, Image } 
 
 const styles = StyleSheet.create({
     page: {
-        padding: 20,
+        padding: 18,
         fontFamily: 'Helvetica',
         fontSize: 9,
         color: '#000',
@@ -35,14 +35,14 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginVertical: 6,
+        marginVertical: 3,
         textTransform: 'uppercase',
     },
     subTitleBox: {
         border: '0.5pt solid #000',
         alignSelf: 'center',
         padding: '2 12',
-        marginBottom: 10,
+        marginBottom: 4,
     },
     subTitle: {
         fontSize: 9,
@@ -51,15 +51,15 @@ const styles = StyleSheet.create({
     contentRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     salutation: {
-        marginTop: 6,
-        marginBottom: 4,
+        marginTop: 4,
+        marginBottom: 2,
         fontWeight: 'bold',
     },
     paragraph: {
-        marginBottom: 2,
+        marginBottom: 1,
         lineHeight: 1.2,
         textAlign: 'justify',
     },
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
         width: '100%',
         borderWidth: 0.5,
         borderColor: '#000',
-        marginVertical: 4,
+        marginVertical: 2,
     },
     tableRow: {
         flexDirection: 'row',
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#000',
     },
     tableCell: {
-        padding: 3,
+        padding: 2,
         borderRightWidth: 0.5,
         borderRightColor: '#000',
         flex: 1,
@@ -94,13 +94,13 @@ const styles = StyleSheet.create({
     },
     signatureSection: {
         flexDirection: 'row',
-        marginTop: 10,
+        marginTop: 5,
     },
     signatureBox: {
         flex: 1,
         border: '0.5pt solid #000',
         padding: 4,
-        minHeight: 50,
+        minHeight: 40,
     },
     declarationText: {
         padding: 2,
@@ -117,8 +117,8 @@ interface Props {
     data: any;
 }
 
-const HeaderSnippet = () => (
-    <View style={styles.headerWrapper}>
+const HeaderSnippet = ({ fixed = false }: { fixed?: boolean }) => (
+    <View style={styles.headerWrapper} fixed={fixed}>
         <View style={styles.headerTop}>
             <View style={{ flex: 1 }}>
                 <Text style={styles.companyName}>TRADERG WEALTH ADVISORY LIMITED</Text>
@@ -264,11 +264,23 @@ export const InvestmentAgreement = ({ data }: Props) => {
                         <View style={styles.tableCell}><Text>SAVING/CURRENT A/C NO. : {data.bank_details?.accountNumber}</Text></View>
                     </View>
                 </View>
+                {/* Signatures moved to Page 1 */}
+                <View style={styles.signatureSection}>
+                    <View style={[styles.signatureBox, { borderRightWidth: 0 }]}>
+                        <Text>Specimen Signature - First Holder</Text>
+                        {data.client_signature_url && (
+                            <Image src={data.client_signature_url} style={{ height: 40, width: 'auto', marginTop: 5, alignSelf: 'center' }} />
+                        )}
+                    </View>
+                    <View style={styles.signatureBox}>
+                        <Text>Specimen Signature - Second Holder (Nominee)</Text>
+                    </View>
+                </View>
             </Page>
 
             {/* PAGE 2: PERSONAL DETAILS & AGREEMENT START */}
             <Page size="A4" style={styles.page}>
-                <HeaderSnippet />
+                <HeaderSnippet fixed />
                 <View style={styles.table}>
                     <View style={[styles.tableRow, { backgroundColor: '#f3f4f6' }]}>
                         <View style={[styles.tableCell, { flex: 2 }]}><Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text></View>
@@ -280,17 +292,6 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     <View style={styles.tableRow}>
                         <View style={[styles.tableCell, { borderRightWidth: 0 }]}><Text>Full Address :</Text></View>
                         <View style={[styles.tableCell, { flex: 5 }]}><Text style={styles.bold}>{data.permanent_address?.toUpperCase()}</Text></View>
-                    </View>
-                </View>
-                <View style={styles.signatureSection}>
-                    <View style={[styles.signatureBox, { borderRightWidth: 0 }]}>
-                        <Text>Specimen Signature - First Holder</Text>
-                        {data.client_signature_url && (
-                            <Image src={data.client_signature_url} style={{ height: 40, width: 'auto', marginTop: 5, alignSelf: 'center' }} />
-                        )}
-                    </View>
-                    <View style={styles.signatureBox}>
-                        <Text>Specimen Signature - Second Holder (Nominee)</Text>
                     </View>
                 </View>
                 <Text style={[styles.mainTitle, { marginTop: 10 }]}>
@@ -315,11 +316,8 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     (A) {data.full_name} desires to become a {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trading Client' : 'Preference bond Shareholder'} and {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'avail Trade Management services from' : 'invest in'} the Company TRADERG WEALTH ADVISORY LTD.
                 </Text>
                 <Text style={styles.paragraph}>(C) The Company has agreed to join in the execution of this Agreement to be aware of the rights and obligations of {data.full_name} as a party hereto and ensure compliance with the same.</Text>
-            </Page>
 
-            {/* PAGE 3: PERFORMANCE BOND SHAREHOLDER TERMS */}
-            <Page size="A4" style={styles.page}>
-                <HeaderSnippet />
+                {/* Consolidating previous Page 3, 4, 5 content here */}
                 <Text style={[styles.paragraph, { marginTop: 6 }]}>(D) The parties desire to record the terms and conditions of their Agreement in writing.</Text>
                 <Text style={[styles.bold, { marginTop: 8, marginBottom: 8 }]}>NOW IT IS HEREBY AGREED BY AND BETWEEN THE PARTIES HERETO AS FOLLOWS:</Text>
                 <Text style={styles.sectionHeading}>1. Preference bond Shareholder</Text>
@@ -371,11 +369,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                                 'Number of Preference bond Shares: '}
                     {data.number_of_shares} ({numberInWords(data.number_of_shares).replace(' RUPEES ONLY', '')})
                 </Text>
-            </Page>
 
-            {/* PAGE 4: SECTIONS 6-10 */}
-            <Page size="A4" style={styles.page}>
-                <HeaderSnippet />
                 <Text style={styles.sectionHeading}>6. Branch Office and Business:</Text>
                 <Text style={styles.paragraph}>(b) The branch office of the Company shall be situated at Mani Casadona, 11WS2, 6th Floor Suite Number 9, Action Area IIF, Opposite EcoSpace, Kolkata - 700156, <Text style={styles.bold}>or at such other places as may be mutually agreed upon in writing.</Text></Text>
                 <Text style={styles.paragraph}>(c) The Company shall engage in the business of Investment advisory & Investment in holding securities ,companies , bonds, either by itself or through other agencies or company industries, <Text style={styles.bold}>and may carry on any other business as decided by the Board of Directors.</Text></Text>
@@ -393,11 +387,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 <Text style={styles.paragraph}>
                     A nominee is someone who is designated to act on behalf of the shareholder. If {data.full_name} is naming <Text style={styles.bold}>{data.nominee?.name}</Text> as the nominee, this would mean that, in the event he is unable to manage her investment, <Text style={styles.bold}>{data.nominee?.name}</Text> Would be the person who can claim the shares and manage them according to the terms of the investment.
                 </Text>
-            </Page>
 
-            {/* PAGE 5: SECTIONS 11-12 & OVERRIDE */}
-            <Page size="A4" style={styles.page}>
-                <HeaderSnippet />
                 <Text style={styles.sectionHeading}>11. Buyback, Lock-in & Maturity Valuation</Text>
                 <Text style={styles.paragraph}>a) Lock-in Period : The Preference Bond Shares allotted under this Agreement shall be subject to a minimum lock-in period of three (3) years from the date on which the investment amount is credited to the Company’s bank account and the Preference Bond Shares are credited to the Shareholder’s demat account.</Text>
                 <Text style={styles.paragraph}>b) Restriction on Transfer / Sale : The Shareholder shall not transfer, sell, pledge, or otherwise dispose of the Preference Bond Shares, whether partially or fully, before completion of the said three-year lock-in period, except with the prior written consent of the Company and subject to applicable laws.</Text>
@@ -427,7 +417,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
 
             {/* PAGE 6: FINAL SIGNATURES */}
             <Page size="A4" style={styles.page}>
-                <HeaderSnippet />
+                <HeaderSnippet fixed />
                 <View style={styles.table}>
                     <View style={[styles.tableRow, { minHeight: 100 }]}>
                         <View style={styles.tableCell}>

@@ -8,9 +8,10 @@ interface Props {
     onRemove?: () => void;
     currentSignatureUrl?: string;
     label?: string;
+    disabled?: boolean;
 }
 
-export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label = "Signature" }: Props) => {
+export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label = "Signature", disabled = false }: Props) => {
     const [preview, setPreview] = useState<string | null>(currentSignatureUrl || null);
     const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,11 +59,13 @@ export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label
                     onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
                     onDragLeave={() => setDragging(false)}
                     onDrop={onDrop}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => !disabled && fileInputRef.current?.click()}
                     className={`
                         relative flex flex-col items-center justify-center w-full h-40 
-                        border-2 border-dashed rounded-xl cursor-pointer transition-all
-                        ${dragging ? 'border-[#1B8A9F] bg-teal-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}
+                        border-2 border-dashed rounded-xl transition-all
+                        ${disabled ? 'border-gray-200 bg-gray-50/50 cursor-not-allowed' :
+                            dragging ? 'border-[#1B8A9F] bg-teal-50 cursor-pointer' :
+                                'border-gray-300 bg-gray-50 hover:bg-gray-100 cursor-pointer'}
                     `}
                 >
                     <Upload className={`w-8 h-8 mb-2 ${dragging ? 'text-[#1B8A9F]' : 'text-gray-400'}`} />
@@ -83,15 +86,17 @@ export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label
                         alt="Signature Preview"
                         className="max-w-full max-h-full object-contain"
                     />
-                    <div className="absolute top-2 right-2 flex gap-2">
-                        <button
-                            onClick={clearSignature}
-                            className="p-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors shadow-sm"
-                            title="Remove signature"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
+                    {!disabled && (
+                        <div className="absolute top-2 right-2 flex gap-2">
+                            <button
+                                onClick={clearSignature}
+                                className="p-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors shadow-sm"
+                                title="Remove signature"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                     <div className="absolute bottom-2 right-2">
                         <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-md text-[10px] font-bold border border-green-100 uppercase tracking-wider">
                             <Check className="w-3 h-3" /> Ready

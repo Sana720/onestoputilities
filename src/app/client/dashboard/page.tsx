@@ -325,17 +325,7 @@ export default function ClientDashboard() {
                     }
                 }
 
-                // Fetch admin signature
-                const { data: adminData } = await supabase
-                    .from('users')
-                    .select('signature_url')
-                    .eq('role', 'admin')
-                    .limit(1)
-                    .single();
-
-                if (adminData?.signature_url) {
-                    setAdminSignatureUrl(adminData.signature_url);
-                }
+                // admin signature is now fetched via the my-investments API to bypass RLS
 
                 // Fetch referral code from users table
                 const { data: referralData } = await supabase
@@ -381,6 +371,9 @@ export default function ClientDashboard() {
 
             if (response.ok) {
                 setInvestments(data.investments);
+                if (data.admin_signature_url) {
+                    setAdminSignatureUrl(data.admin_signature_url);
+                }
                 // Initialize profile data from the most recent investment
                 if (data.investments.length > 0 && !profileData) {
                     const inv = data.investments[0];
@@ -903,7 +896,7 @@ export default function ClientDashboard() {
                                                         {({ loading }) => (
                                                             <>
                                                                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                                                Manifest
+                                                                Agreement
                                                             </>
                                                         )}
                                                     </PDFDownloadLink>
@@ -1544,9 +1537,12 @@ export default function ClientDashboard() {
                                                     <SignatureUpload
                                                         onUpload={(file) => setSignatureFile(file)}
                                                         currentSignatureUrl={profileData?.client_signature_url}
+                                                        disabled={!!profileData?.client_signature_url}
                                                     />
                                                     <p className="text-xs text-gray-500 mt-2 italic px-1">
-                                                        Your signature will be used for all agreement documents.
+                                                        {profileData?.client_signature_url
+                                                            ? "To update your signature, please raise a request to the admin."
+                                                            : "Your signature will be used for all agreement documents."}
                                                     </p>
                                                 </div>
                                             </div>

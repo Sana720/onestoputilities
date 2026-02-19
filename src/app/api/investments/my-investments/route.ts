@@ -28,9 +28,18 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        // Fetch admin signature URL (using supabaseAdmin to bypass RLS)
+        const { data: adminData } = await supabaseAdmin
+            .from('users')
+            .select('signature_url')
+            .eq('role', 'admin')
+            .limit(1)
+            .single();
+
         return NextResponse.json({
             success: true,
             investments: investments || [],
+            admin_signature_url: adminData?.signature_url || null
         });
 
     } catch (error) {
