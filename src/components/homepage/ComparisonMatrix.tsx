@@ -90,7 +90,7 @@ export default function ComparisonMatrix() {
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Standard FD</span>
                             </div>
                             <div className="md:col-span-3 text-center">
-                                <span className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-[0.3em]">TRADERG WEALTH</span>
+                                <span className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-[0.3em]">SHREE G WEALTH</span>
                             </div>
                         </div>
 
@@ -107,7 +107,7 @@ export default function ComparisonMatrix() {
                                         <span className="text-lg font-black text-gray-400">{row.fd}</span>
                                     </div>
                                     <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
-                                        <span className="text-[10px] font-black text-[#1B8A9F]/40 uppercase tracking-widest md:hidden">TRADERG WEALTH</span>
+                                        <span className="text-[10px] font-black text-[#1B8A9F]/40 uppercase tracking-widest md:hidden">SHREE G WEALTH</span>
                                         <span className="text-lg font-black text-gray-900 group-hover:text-[#1B8A9F] transition-colors">{row.traderg}</span>
                                     </div>
                                 </div>
@@ -178,7 +178,7 @@ export default function ComparisonMatrix() {
                                                 textAnchor="end"
                                                 className="text-[14px] font-black fill-[#3DD2E5] tracking-tight uppercase"
                                             >
-                                                TRADERG WEALTH ₹{(investmentAmount * 2.8 / 10000000).toFixed(2)}Cr
+                                                SHREE G WEALTH ₹{(investmentAmount * 2.8 / 10000000).toFixed(2)}Cr
                                             </text>
                                         </g>
                                         <path

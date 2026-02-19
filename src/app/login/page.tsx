@@ -41,7 +41,7 @@ export default function LoginPage() {
                 await supabase.auth.setSession(data.session);
 
                 // Redirect based on role
-                if (data.user.role === 'admin') {
+                if (data.user.role === 'admin' || data.user.role === 'manager') {
                     router.push('/admin/dashboard');
                 } else {
                     router.push('/client/dashboard');

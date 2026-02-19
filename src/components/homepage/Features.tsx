@@ -54,7 +54,7 @@ const coreFeatures = [
 const hierarchyFeatures = [
     {
         title: 'Secured Ledger',
-        desc: 'Real-time audit trailing on all capital movement within the TraderG Wealth ecosystem.',
+        desc: 'Real-time audit trailing on all capital movement within the Shree G Wealth ecosystem.',
         icon: Shield
     },
     {
@@ -93,12 +93,12 @@ export default function Features() {
                     <div className="max-w-2xl">
                         <div className="flex items-center space-x-3 mb-6">
                             <Cpu className="w-4 h-4 text-[#1B8A9F]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1B8A9F]">TRADERG WEALTH FUND ARCHITECTURE</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1B8A9F]">SHREE G WEALTH FUND ARCHITECTURE</span>
                         </div>
                         <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tighter leading-[0.9] uppercase">
                             Four key points <br />
                             with <br />
-                            <span className="text-[#1B8A9F]">TraderG Wealth Fund</span>
+                            <span className="text-[#1B8A9F]">Shree G Wealth Fund</span>
                         </h2>
                     </div>
                     <p className="max-w-xs text-gray-500 font-medium text-lg leading-relaxed italic">

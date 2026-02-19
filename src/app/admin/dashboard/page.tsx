@@ -122,6 +122,16 @@ export default function AdminDashboard() {
     const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
     const [approving, setApproving] = useState(false);
     const [updateLoading, setUpdateLoading] = useState(false);
+    const [staff, setStaff] = useState<any[]>([]);
+    const [staffLoading, setStaffLoading] = useState(false);
+    const [showStaffModal, setShowStaffModal] = useState(false);
+    const [newStaff, setNewStaff] = useState({
+        email: '',
+        password: '',
+        name: '',
+        role: 'manager'
+    });
+    const [creatingStaff, setCreatingStaff] = useState(false);
 
     const handleVerifyKYC = async (userId: string, verified: boolean) => {
         if (!confirm(`Are you sure you want to ${verified ? 'verify' : 'unverify'} this client's KYC?`)) return;
@@ -154,7 +164,7 @@ export default function AdminDashboard() {
             setKycLoading(false);
         }
     };
-    const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends' | 'referrals'>('investments');
+    const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends' | 'referrals' | 'staff'>('investments');
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [investmentLimit, setInvestmentLimit] = useState(20);
@@ -182,6 +192,21 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchStaff = async () => {
+        try {
+            setStaffLoading(true);
+            const response = await fetch('/api/admin/staff');
+            const data = await response.json();
+            if (response.ok) {
+                setStaff(data.staff);
+            }
+        } catch (error) {
+            console.error('Error fetching staff:', error);
+        } finally {
+            setStaffLoading(false);
+        }
+    };
+
     // Infinite Scroll Observer
     const observer = useRef<IntersectionObserver | null>(null);
     const lastElementRef = useCallback((node: HTMLDivElement | null) => {
@@ -202,6 +227,8 @@ export default function AdminDashboard() {
     useEffect(() => {
         if (activeTab === 'referrals') {
             fetchAdminReferrals();
+        } else if (activeTab === 'staff') {
+            fetchStaff();
         }
     }, [activeTab]);
 
@@ -223,7 +250,7 @@ export default function AdminDashboard() {
                     return;
                 }
                 const parsedUser = JSON.parse(userData);
-                if (parsedUser.role !== 'admin') {
+                if (parsedUser.role !== 'admin' && parsedUser.role !== 'manager') {
                     router.push('/login');
                     return;
                 }
@@ -244,7 +271,7 @@ export default function AdminDashboard() {
                     }
                 }
 
-                if (role !== 'admin') {
+                if (role !== 'admin' && role !== 'manager') {
                     router.push('/login');
                     return;
                 }
@@ -289,7 +316,7 @@ export default function AdminDashboard() {
                 router.push('/login');
             } else {
                 const userData = session.user.user_metadata;
-                if (userData.role === 'admin') {
+                if (userData.role === 'admin' || userData.role === 'manager') {
                     setUser({ ...session.user, ...userData });
                     localStorage.setItem('user', JSON.stringify({ ...session.user, ...userData }));
                 }
@@ -338,6 +365,37 @@ export default function AdminDashboard() {
             if (data?.signature_url) {
                 setAdminSignatureUrl(data.signature_url);
             }
+        }
+    };
+
+    const handleCreateStaff = async () => {
+        if (!newStaff.email || !newStaff.password || !newStaff.name) {
+            alert('Please fill all fields');
+            return;
+        }
+
+        setCreatingStaff(true);
+        try {
+            const response = await fetch('/api/admin/staff', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newStaff)
+            });
+
+            if (response.ok) {
+                setShowStaffModal(false);
+                setNewStaff({ email: '', password: '', name: '', role: 'manager' });
+                fetchStaff();
+                alert('Staff added successfully');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to add staff');
+            }
+        } catch (error) {
+            console.error('Error creating staff:', error);
+            alert('An error occurred');
+        } finally {
+            setCreatingStaff(false);
         }
     };
 
@@ -742,6 +800,17 @@ export default function AdminDashboard() {
                     >
                         Referrals
                     </button>
+                    {user?.role === 'admin' && (
+                        <button
+                            onClick={() => setActiveTab('staff')}
+                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'staff'
+                                ? 'bg-white text-[#1B8A9F] shadow-sm'
+                                : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                        >
+                            Staff
+                        </button>
+                    )}
                 </div>
 
                 {/* Management Section */}
@@ -756,7 +825,9 @@ export default function AdminDashboard() {
                                             ? 'Pending Dividend Payouts'
                                             : activeTab === 'referrals'
                                                 ? 'Referral Network'
-                                                : 'Global Financial Ledger'}
+                                                : activeTab === 'staff'
+                                                    ? 'Staff Management'
+                                                    : 'Global Financial Ledger'}
                                 </h3>
                                 <p className="text-sm text-gray-500 mt-1 font-medium">
                                     {activeTab === 'investments'
@@ -765,12 +836,14 @@ export default function AdminDashboard() {
                                             ? 'Track and manage dividends awaiting payment'
                                             : activeTab === 'referrals'
                                                 ? 'Global view of all client referrals and relationships'
-                                                : 'Chronological log of all debits and credits'}
+                                                : activeTab === 'staff'
+                                                    ? 'Manage administrators and managers'
+                                                    : 'Chronological log of all debits and credits'}
                                 </p>
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                                {(activeTab === 'ledger' || activeTab === 'pending_dividends') && (
+                                {(activeTab === 'ledger' || activeTab === 'pending_dividends') && user?.role === 'admin' && (
                                     <>
                                         <button
                                             onClick={handleSyncDividends}
@@ -788,6 +861,15 @@ export default function AdminDashboard() {
                                             Export CSV
                                         </button>
                                     </>
+                                )}
+                                {activeTab === 'staff' && user?.role === 'admin' && (
+                                    <button
+                                        onClick={() => setShowStaffModal(true)}
+                                        className="inline-flex items-center justify-center bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition-all"
+                                    >
+                                        <Users className="w-4 h-4 mr-2" />
+                                        Add Staff
+                                    </button>
                                 )}
                                 <div className="relative">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -835,6 +917,46 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="overflow-x-auto">
+                        {activeTab === 'staff' && user?.role === 'admin' && (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gray-50/50">
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Name</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Role</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Added On</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {staff.map((member) => (
+                                            <tr key={member.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-8 py-5">
+                                                    <span className="text-sm font-bold text-gray-900">{member.name}</span>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <span className="text-sm text-gray-500 font-medium">{member.email}</span>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${member.role === 'admin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                        {member.role}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <span className="text-sm text-gray-500 font-medium">{formatDate(member.created_at)}</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {staffLoading && (
+                                    <div className="p-8 text-center">
+                                        <Loader2 className="w-6 h-6 animate-spin text-[#1B8A9F] mx-auto" />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === 'referrals' ? (
                             <table className="w-full">
                                 <thead>
@@ -967,8 +1089,9 @@ export default function AdminDashboard() {
                                                     </button>
                                                     <button
                                                         onClick={() => handleAddDividend(investment)}
-                                                        className="p-2.5 bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all"
-                                                        title="Add Dividend"
+                                                        disabled={user?.role === 'manager'}
+                                                        className="p-2.5 bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all disabled:opacity-50"
+                                                        title={user?.role === 'manager' ? 'Admin Only' : 'Add Dividend'}
                                                     >
                                                         <DollarSign className="w-4 h-4" />
                                                     </button>
@@ -1092,7 +1215,7 @@ export default function AdminDashboard() {
                         <div ref={lastElementRef} className="h-4 w-full" />
                     </div>
 
-                    {(activeTab === 'investments' ? filteredInvestments.length : activeTab === 'referrals' ? referrals.length : getLedgerData().length) === 0 && (
+                    {(activeTab === 'investments' ? filteredInvestments.length : activeTab === 'referrals' ? referrals.length : activeTab === 'staff' ? staff.length : getLedgerData().length) === 0 && (
                         <div className="p-20 text-center">
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Search className="w-8 h-8 text-gray-200" />
@@ -1487,6 +1610,7 @@ export default function AdminDashboard() {
                                     </h4>
                                     <div className="space-y-4">
                                         <button
+                                            disabled={user?.role === 'manager'}
                                             onClick={async () => {
                                                 const newStatus = !selectedInvestment.payment_verified;
                                                 const { error } = await supabase
@@ -1522,7 +1646,7 @@ export default function AdminDashboard() {
                                         {selectedInvestment.product_name === 'Unlisted Shares' && (
                                             !selectedInvestment.admin_signed_at ? (
                                                 <button
-                                                    disabled={!selectedInvestment.payment_verified || !adminSignatureUrl || approving}
+                                                    disabled={!!selectedInvestment.admin_signed_at || !selectedInvestment.payment_verified || !adminSignatureUrl || approving || user?.role === 'manager'}
                                                     onClick={async () => {
                                                         setApproving(true);
                                                         try {
@@ -1555,7 +1679,7 @@ export default function AdminDashboard() {
                                                     className="w-full bg-[#1B8A9F] text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
                                                 >
                                                     {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                                                    Confirm & Digitally Sign
+                                                    {user?.role === 'manager' ? 'Admin Only' : 'Confirm & Digitally Sign'}
                                                 </button>
                                             ) : (
                                                 <div className="bg-white rounded-2xl p-4 border border-teal-200 shadow-sm flex items-center justify-between">
@@ -1563,11 +1687,13 @@ export default function AdminDashboard() {
                                                         <span className="text-[8px] font-black text-[#1B8A9F] uppercase tracking-[0.2em] mb-1">Approved & Signed</span>
                                                         <p className="text-[10px] font-bold text-gray-500">{formatDate(selectedInvestment.admin_signed_at)}</p>
                                                     </div>
-                                                    <img
-                                                        src={adminSignatureUrl || ''}
-                                                        alt="Admin Signature"
-                                                        className="h-10 w-auto opacity-80"
-                                                    />
+                                                    {adminSignatureUrl && (
+                                                        <img
+                                                            src={adminSignatureUrl}
+                                                            alt="Admin Signature"
+                                                            className="h-10 w-auto opacity-80"
+                                                        />
+                                                    )}
                                                 </div>
                                             )
                                         )}
@@ -1586,25 +1712,26 @@ export default function AdminDashboard() {
                                 {selectedInvestment.users?.kyc_verified ? (
                                     <button
                                         onClick={() => handleVerifyKYC(selectedInvestment.user_id, false)}
-                                        disabled={kycLoading}
+                                        disabled={kycLoading || user?.role === 'manager'}
                                         className="px-6 py-2.5 bg-red-50 border-2 border-red-100 rounded-xl text-[10px] font-black text-red-600 hover:bg-red-100 transition-all uppercase tracking-widest flex items-center"
                                     >
                                         {kycLoading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <X className="w-3 h-3 mr-2" />}
-                                        Unverify KYC
+                                        {user?.role === 'manager' ? 'Admin Only' : 'Unverify KYC'}
                                     </button>
                                 ) : (
                                     <button
                                         onClick={() => handleVerifyKYC(selectedInvestment.user_id, true)}
-                                        disabled={kycLoading}
+                                        disabled={kycLoading || user?.role === 'manager'}
                                         className="px-6 py-2.5 bg-green-50 border-2 border-green-100 rounded-xl text-[10px] font-black text-green-600 hover:bg-green-100 transition-all uppercase tracking-widest flex items-center"
                                     >
                                         {kycLoading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <ShieldCheck className="w-3 h-3 mr-2" />}
-                                        Verify KYC
+                                        {user?.role === 'manager' ? 'Admin Only' : 'Verify KYC'}
                                     </button>
                                 )}
                                 <button
                                     onClick={handleUpdateInvestment}
-                                    className="px-6 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-[10px] font-black text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all uppercase tracking-widest"
+                                    disabled={user?.role === 'manager'}
+                                    className="px-6 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-[10px] font-black text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all uppercase tracking-widest disabled:opacity-50"
                                 >
                                     Guard Changes
                                 </button>
@@ -1703,9 +1830,10 @@ export default function AdminDashboard() {
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={submitDividend}
-                                    className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all"
+                                    disabled={user?.role === 'manager'}
+                                    className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all disabled:opacity-50"
                                 >
-                                    Confirm Credit
+                                    {user?.role === 'manager' ? 'Admin Only' : 'Confirm Credit'}
                                 </button>
                                 <button
                                     onClick={() => setShowDividendModal(false)}
@@ -1718,6 +1846,83 @@ export default function AdminDashboard() {
                     </div>
                 )
             }
+
+            {/* Staff Management Modal */}
+            {showStaffModal && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border border-gray-100 animate-fade-in-up">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 tracking-tight">Add Staff Member</h3>
+                                <p className="text-xs text-gray-500 mt-1">Create an admin or manager account</p>
+                            </div>
+                            <button onClick={() => setShowStaffModal(false)} className="text-gray-400 hover:text-gray-900">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Full Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. John Doe"
+                                    value={newStaff.name}
+                                    onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Email Address</label>
+                                <input
+                                    type="email"
+                                    placeholder="email@example.com"
+                                    value={newStaff.email}
+                                    onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Password</label>
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={newStaff.password}
+                                    onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">System Role</label>
+                                <select
+                                    value={newStaff.role}
+                                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#1B8A9F] outline-none transition-all appearance-none"
+                                >
+                                    <option value="manager">Manager (Read-only)</option>
+                                    <option value="admin">Administrator (Full Access)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={handleCreateStaff}
+                                disabled={creatingStaff}
+                                className="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-gray-200 hover:bg-black transition-all disabled:opacity-50"
+                            >
+                                {creatingStaff ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Create Staff Account'}
+                            </button>
+                            <button
+                                onClick={() => setShowStaffModal(false)}
+                                className="w-full bg-gray-50 text-gray-500 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center border-t border-gray-200 mt-10">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">

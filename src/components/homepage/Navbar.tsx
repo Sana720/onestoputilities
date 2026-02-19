@@ -143,7 +143,7 @@ export default function Navbar() {
 
                             {userRole ? (
                                 <Link
-                                    href={userRole === 'admin' ? '/admin/dashboard' : '/client/dashboard'}
+                                    href={userRole === 'admin' || userRole === 'manager' ? '/admin/dashboard' : '/client/dashboard'}
                                     className="group relative px-6 py-3 bg-[#1B8A9F] text-white rounded-xl flex items-center space-x-3 overflow-hidden transition-all hover:bg-[#156d7d] hover:shadow-xl shadow-teal-100"
                                 >
                                     <LayoutDashboard className="w-4 h-4 relative z-10" />

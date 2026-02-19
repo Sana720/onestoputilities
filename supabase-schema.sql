@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'client')),
+  role TEXT NOT NULL CHECK (role IN ('admin', 'client', 'manager')),
   name TEXT NOT NULL,
   password_reset_required BOOLEAN DEFAULT TRUE,
   kyc_verified BOOLEAN DEFAULT FALSE,
@@ -123,16 +123,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Create a function to check if a user is staff (admin or manager)
+CREATE OR REPLACE FUNCTION public.is_staff()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = auth.uid() AND role IN ('admin', 'manager')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Users table policies
 DROP POLICY IF EXISTS "Users can view their own data" ON users;
 CREATE POLICY "Users can view their own data"
   ON users FOR SELECT
   USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Admins can view all users" ON users;
-CREATE POLICY "Admins can view all users"
+DROP POLICY IF EXISTS "Admins/Managers can view all users" ON users;
+CREATE POLICY "Admins/Managers can view all users"
   ON users FOR SELECT
-  USING (is_admin());
+  USING (is_staff());
 
 DROP POLICY IF EXISTS "Users can update their own data" ON users;
 CREATE POLICY "Users can update their own data"
@@ -150,10 +161,10 @@ CREATE POLICY "Users can view their own investments"
   ON investments FOR SELECT
   USING (user_id = auth.uid());
 
-DROP POLICY IF EXISTS "Admins can view all investments" ON investments;
-CREATE POLICY "Admins can view all investments"
+DROP POLICY IF EXISTS "Admins/Managers can view all investments" ON investments;
+CREATE POLICY "Admins/Managers can view all investments"
   ON investments FOR SELECT
-  USING (is_admin());
+  USING (is_staff());
 
 DROP POLICY IF EXISTS "Admins can update investments" ON investments;
 CREATE POLICY "Admins can update investments"

@@ -33,7 +33,7 @@ const steps = [
         title: 'Demat-Linked Integration',
         subtitle: 'Secure Bond Issuance',
         icon: Database,
-        desc: 'TraderG Wealth Preference Bonds are issued and held directly in your Demat account through authorized depository mechanisms. No third-party holding, no pooled accounts—your investment remains fully mapped to your Demat.',
+        desc: 'Shree G Wealth Preference Bonds are issued and held directly in your Demat account through authorized depository mechanisms. No third-party holding, no pooled accounts—your investment remains fully mapped to your Demat.',
         color: 'teal'
     },
     {
@@ -41,7 +41,7 @@ const steps = [
         title: 'Structured Monitoring',
         subtitle: 'Capital Deployment',
         icon: MonitorSmartphone,
-        desc: 'Once the bonds are credited, TraderG Wealth manages capital deployment through a research-driven and risk-controlled framework. Your holdings remain visible at all times and can be monitored just like any listed security.',
+        desc: 'Once the bonds are credited, Shree G Wealth manages capital deployment through a research-driven and risk-controlled framework. Your holdings remain visible at all times and can be monitored just like any listed security.',
         color: 'blue'
     },
     {
@@ -72,7 +72,7 @@ export default function BrokerSection() {
                         Universal Demat Connectivity
                     </h2>
                     <p className="text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed italic">
-                        No new account required. TraderG Wealth integrates seamlessly with India's most trusted brokerage platforms via your existing Demat infrastructure.
+                        No new account required. Shree G Wealth integrates seamlessly with India's most trusted brokerage platforms via your existing Demat infrastructure.
                     </p>
                 </div>
 
@@ -184,7 +184,7 @@ export default function BrokerSection() {
                                     <MonitorSmartphone className="w-10 h-10 text-[#3DD2E5]" />
                                 </div>
                                 <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Real-time Visibility</h4>
-                                <p className="text-gray-400 text-sm font-medium">Monitor your TraderG Wealth portfolio alongside your equity holdings in any trading app.</p>
+                                <p className="text-gray-400 text-sm font-medium">Monitor your Shree G Wealth portfolio alongside your equity holdings in any trading app.</p>
                                 <div className="mt-8 flex items-center space-x-4">
                                     <div className="h-0.5 w-12 bg-teal-500/30"></div>
                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400">Total Transparency</span>

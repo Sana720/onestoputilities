@@ -341,7 +341,7 @@ export default function AboutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         {[
                             { year: '2011', event: 'Sub-Broking Origins', desc: 'Laying the foundation of market intelligence.' },
-                            { year: '2016', event: 'Public Limited Inc.', desc: 'Incorporated as a Public Limited entity.' },
+                            { year: '2016', event: 'Shree G Public Ltd.', desc: 'Incorporated as a Public Limited entity.' },
                             { year: '2018', event: 'NSE/BSE Membership', desc: 'Acquired direct national exchange licenses.' },
                             { year: '2019', event: 'ISIN Integration', desc: 'Secure settlement with CDSL registration.' },
                             { year: '2022', event: '100 CR+ AUM', desc: 'Surpassed significant portfolio milestones.' },

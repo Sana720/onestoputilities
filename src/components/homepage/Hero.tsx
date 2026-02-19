@@ -42,7 +42,7 @@ const SOLUTIONS = {
         icon: <Clock className="w-6 h-6" />,
         color: 'from-purple-500 to-pink-500'
     },
-    'TraderG': {
+    'ShreeG': {
         series: 'Unlisted Shares',
         horizon: '3 year',
         risk: 'Very Low (secured structure)',
@@ -58,7 +58,7 @@ const SOLUTIONS = {
 };
 
 export default function Hero() {
-    const [activeTab, setActiveTab] = useState<keyof typeof SOLUTIONS>('TraderG');
+    const [activeTab, setActiveTab] = useState<keyof typeof SOLUTIONS>('ShreeG');
     const data = SOLUTIONS[activeTab];
 
     return (
@@ -78,7 +78,7 @@ export default function Hero() {
                     </h1>
 
                     <p className="text-lg text-slate-500 max-w-xl leading-relaxed font-medium">
-                        TraderG Wealth Preference Bond Equity offers the rare combination of <span className="text-slate-900 font-bold underline decoration-[#4ADE80]">Fixed Yearly Dividends</span> and long-term capital appreciation.
+                        Shree G Wealth Preference Bond Equity offers the rare combination of <span className="text-slate-900 font-bold underline decoration-[#4ADE80]">Fixed Yearly Dividends</span> and long-term capital appreciation.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -143,13 +143,13 @@ export default function Hero() {
                         <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom duration-700">
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">
-                                    {activeTab === 'TraderG' ? 'Maturity' : 'Horizon'}
+                                    {activeTab === 'ShreeG' ? 'Maturity' : 'Horizon'}
                                 </p>
                                 <p className="text-sm font-black text-slate-900">{data.horizon}</p>
                             </div>
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">
-                                    {activeTab === 'TraderG' ? 'Dividend' : 'Guaranteed'}
+                                    {activeTab === 'ShreeG' ? 'Dividend' : 'Guaranteed'}
                                 </p>
                                 <p className={`text-sm font-black ${data.guaranteed === 'No' ? 'text-slate-400' : 'text-[#1B8A9F]'}`}>{data.guaranteed}</p>
                             </div>
@@ -175,7 +175,7 @@ export default function Hero() {
                             <div className="flex justify-between items-center mb-3">
                                 <span className="text-xs font-bold opacity-60">Management Fees</span>
                                 <span className="text-xs font-bold bg-white/20 backdrop-blur-md px-2 py-0.5 rounded">
-                                    {activeTab === 'TraderG' ? 'Tier-1' : 'Professional'}
+                                    {activeTab === 'ShreeG' ? 'Tier-1' : 'Professional'}
                                 </span>
                             </div>
                             <div className="flex items-end gap-2">

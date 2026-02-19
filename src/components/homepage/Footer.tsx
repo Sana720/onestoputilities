@@ -142,13 +142,13 @@ export default function Footer() {
                                 Rajarhat Newtown, Kolkata - 700156 WB
                             </p>
                         </div>
-                        <div className="space-y-3">
+                        {/* <div className="space-y-3">
                             <p className="text-[10px] font-black text-gray-900 uppercase tracking-[0.3em]">Registered Office</p>
                             <p className="text-[11px] font-bold text-gray-500 leading-relaxed uppercase">
                                 Shop No. 353, 3rd Floor, Progressive Point, <br />
                                 Lalpur Dhamtari Road, Raipur - 492001 CT
                             </p>
-                        </div>
+                        </div> */}
                         <div className="flex flex-wrap items-center justify-center md:justify-end gap-6 h-fit pt-2">
                             {[
                                 { label: 'CIN', val: 'U74140CT2016PLC002054' },

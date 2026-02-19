@@ -17,8 +17,9 @@ export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFile = (file: File) => {
-        if (!file.type.startsWith('image/')) {
-            alert('Please upload an image file (PNG, JPG)');
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Please upload a PNG or JPG signature image.');
             return;
         }
 
@@ -75,7 +76,7 @@ export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label
                         type="file"
                         ref={fileInputRef}
                         onChange={onFileChange}
-                        accept="image/*"
+                        accept=".png, .jpg, .jpeg"
                         className="hidden"
                     />
                 </div>
