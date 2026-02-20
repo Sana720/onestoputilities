@@ -17,6 +17,14 @@ export async function POST(request: NextRequest) {
         let newUserReferralCode = '';
 
         // Helper to generate a unique referral code
+        const normalizeGender = (gender: string) => {
+            const g = (gender || '').trim().toLowerCase();
+            if (g.startsWith('m')) return 'Male';
+            if (g.startsWith('f')) return 'Female';
+            if (g.startsWith('o')) return 'Other';
+            return 'Male'; // Default
+        };
+
         const generateCode = () => {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let result = '';
@@ -107,7 +115,7 @@ export async function POST(request: NextRequest) {
                 father_name: data.fatherName,
                 dob: data.dob,
                 age: parseInt(data.age) || 0,
-                gender: data.gender,
+                gender: normalizeGender(data.gender),
                 occupation: data.occupation,
                 permanent_address: data.permanentAddress,
                 contact_number: data.contactNumber,

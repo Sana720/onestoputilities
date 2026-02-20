@@ -15,6 +15,14 @@ export async function POST(request: NextRequest) {
             errors: [] as any[]
         };
 
+        const normalizeGender = (gender: string) => {
+            const g = (gender || '').trim().toLowerCase();
+            if (g.startsWith('m')) return 'Male';
+            if (g.startsWith('f')) return 'Female';
+            if (g.startsWith('o')) return 'Other';
+            return 'Male'; // Default
+        };
+
         const generateCode = () => {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let result = '';
@@ -102,7 +110,7 @@ export async function POST(request: NextRequest) {
                         father_name: record.fatherName || 'N/A',
                         dob: record.dob || '1990-01-01',
                         age: parseInt(record.age) || 0,
-                        gender: record.gender || 'Male',
+                        gender: normalizeGender(record.gender),
                         occupation: record.occupation || 'N/A',
                         permanent_address: record.permanentAddress || 'N/A',
                         contact_number: record.contactNumber || 'N/A',
