@@ -19,20 +19,20 @@ export async function GET(request: NextRequest) {
         const host = request.headers.get('host');
         const loginUrl = `${protocol}://${host}/login`;
 
-        let subject = 'Trader G Wealth - SMTP Test';
+        let subject = 'TraderG Wealth - SMTP Test';
         let html = '';
 
         switch (type) {
             case 'welcome':
-                subject = 'Welcome to Trader G Wealth - Application Received';
+                subject = 'Welcome to TraderG Wealth - Application Received';
                 html = getWelcomeEmailTemplate('Test User', to, 'Last 6 digits of your mobile', loginUrl);
                 break;
             case 'approved':
-                subject = 'Investment Approved - Trader G Wealth';
+                subject = 'Investment Approved - TraderG Wealth';
                 html = getInvestmentApprovedTemplate('Test User', 'Unlisted Shares', 500000, new Date().toISOString(), loginUrl);
                 break;
             case 'referral_applied':
-                subject = 'New Referral Activity at Trader G Wealth';
+                subject = 'New Referral Activity at TraderG Wealth';
                 html = getReferralAppliedTemplate('Referrer Name', 'Applicant Name');
                 break;
             case 'referral_onboarded':

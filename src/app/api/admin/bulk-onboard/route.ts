@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
                 console.log(`[BULK_ONBOARD] Sending welcome email to: ${record.email}`);
                 await sendEmail({
                     to: record.email,
-                    subject: 'Welcome to Trader G Wealth - Account Created',
+                    subject: 'Welcome to TraderG Wealth - Account Created',
                     html: getWelcomeEmailTemplate(record.fullName, record.email, tempPassword || 'Last 6 digits of your mobile', loginUrl)
                 });
 

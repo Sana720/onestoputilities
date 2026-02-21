@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
         console.log(`[INVESTMENT_APPLY] Sending welcome email to user: ${data.email}`);
         await sendEmail({
             to: data.email,
-            subject: 'Welcome to Trader G Wealth - Application Received',
+            subject: 'Welcome to TraderG Wealth - Application Received',
             html: getWelcomeEmailTemplate(data.fullName, data.email, tempPassword || 'Last 6 digits of your mobile', loginUrl)
         });
 
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
         if (referrerEmail) {
             await sendEmail({
                 to: referrerEmail,
-                subject: 'New Referral Activity at Trader G Wealth',
+                subject: 'New Referral Activity at TraderG Wealth',
                 html: getReferralAppliedTemplate(referrerName, data.fullName)
             });
         }

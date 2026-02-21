@@ -57,7 +57,7 @@ export async function PATCH(
             if (clientEmail) {
                 await sendEmail({
                     to: clientEmail,
-                    subject: 'Investment Approved - Trader G Wealth',
+                    subject: 'Investment Approved - TraderG Wealth',
                     html: getInvestmentApprovedTemplate(
                         currentInv.full_name,
                         currentInv.product_name || 'Unlisted Shares',
