@@ -74,6 +74,28 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "TraderG Wealth Advisory Limited",
+              "url": "https://tradergwealth.com",
+              "logo": "https://tradergwealth.com/logo.png",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "email": "connect@tradergwealth.com",
+                "contactType": "customer service"
+              },
+              "description": "Securely manage your preference bond investments with TraderG Wealth. Track dividends and view real-time portfolio data.",
+              "sameAs": [
+                "https://twitter.com/tradergwealth",
+                "https://linkedin.com/company/tradergwealth"
+              ]
+            })
+          }}
+        />
         {children}
       </body>
     </html>

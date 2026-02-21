@@ -512,6 +512,7 @@ function ApplyForm() {
             </div>
 
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+                <h1 className="sr-only">Apply for Investment Allocation - TraderG Wealth</h1>
                 <div className="max-w-4xl mx-auto">
                     {/* Progress Steps */}
                     <div className="mb-8 md:mb-12">
@@ -1498,8 +1499,11 @@ function ApplyForm() {
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="space-y-8">
-                                            <div className="text-center space-y-4">
+                                        <div className="max-w-4xl mx-auto">
+                                            {/* SEO Title - Hidden but present for crawlers */}
+                                            <h1 className="sr-only">Apply for Investment Allocation - TraderG Wealth</h1>
+
+                                            <div className="text-center mb-12 space-y-4">
                                                 <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
                                                     <ShieldCheck className="w-8 h-8 text-[#1B8A9F]" />
                                                 </div>
