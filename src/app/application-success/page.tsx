@@ -171,7 +171,7 @@ function SuccessContent() {
                             <span className="text-xs font-semibold uppercase tracking-wider">Secure Investment Portal</span>
                         </div>
                         <p className="text-sm text-gray-500">
-                            Questions? Email us at <a href="mailto:gauravd113@gmail.com" className="text-[#1B8A9F] font-bold hover:underline">gauravd113@gmail.com</a> or visit <a href="https://www.tradergwealth.com" target="_blank" rel="noopener noreferrer" className="text-[#1B8A9F] font-bold hover:underline">tradergwealth.com</a>
+                            Questions? Email us at <a href="mailto:connect@tradergwealth.com" className="text-[#1B8A9F] font-bold hover:underline">connect@tradergwealth.com</a> or visit <a href="https://www.tradergwealth.com" target="_blank" rel="noopener noreferrer" className="text-[#1B8A9F] font-bold hover:underline">tradergwealth.com</a>
                         </p>
                     </div>
                 </div>

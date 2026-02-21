@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(request: NextRequest) {
     try {
-        const { email, contactNumber, aadharNumber, panNumber } = await request.json();
+        const { email, contactNumber, aadharNumber, panNumber, userId } = await request.json();
 
         const errors: Record<string, string> = {};
 
@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
                 .from('users')
                 .select('id')
                 .eq('email', email)
+                .neq('id', userId || '')
                 .maybeSingle();
 
             if (userByEmail) {
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
             const { data: invByPhone } = await supabaseAdmin
                 .from('investments')
                 .select('id')
+                .neq('user_id', userId || '')
                 .or(`contact_number.eq.${contactNumber},contact_number.eq.${cleanNumber}`)
                 .maybeSingle();
 
@@ -40,6 +42,7 @@ export async function POST(request: NextRequest) {
                 .from('investments')
                 .select('id')
                 .eq('aadhar_number', aadharNumber)
+                .neq('user_id', userId || '')
                 .maybeSingle();
 
             if (invByAadhar) {
@@ -53,6 +56,7 @@ export async function POST(request: NextRequest) {
                 .from('investments')
                 .select('id')
                 .eq('pan_number', panNumber)
+                .neq('user_id', userId || '')
                 .maybeSingle();
 
             if (invByPan) {

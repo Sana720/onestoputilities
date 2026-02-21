@@ -1,10 +1,10 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye, PenTool, X, Lock } from 'lucide-react';
+import { ArrowLeft, User, Users as UsersIcon, Building2, DollarSign, CheckCircle2, Loader2, Sparkles, ShieldCheck, Eye, PenTool, X, Lock, LayoutGrid } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SignatureUpload } from '@/components/SignatureUpload';
 
@@ -80,6 +80,50 @@ function ApplyForm() {
     const [existingSignatureUrl, setExistingSignatureUrl] = useState<string | null>(null);
     const [isReferralLocked, setIsReferralLocked] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    const productOptions = [
+        {
+            id: 'Intraday Trading',
+            title: 'Intraday Trading',
+            horizon: '1 Month',
+            returns: 'Weekly up to 1%',
+            risk: 'High',
+            suitableFor: 'Active Traders',
+            icon: LayoutGrid,
+            color: 'teal'
+        },
+        {
+            id: 'Short-Term SIP',
+            title: 'Short-Term SIP',
+            horizon: '3 Months',
+            returns: 'Quarterly up to 6%',
+            risk: 'Moderate',
+            suitableFor: 'Short-term Planners',
+            icon: Sparkles,
+            color: 'blue'
+        },
+        {
+            id: 'Long-Term Holding',
+            title: 'Long-Term Holding',
+            horizon: '1 Year',
+            returns: 'Yearly up to 20%',
+            risk: 'Low',
+            suitableFor: 'Long Term Investors',
+            icon: ShieldCheck,
+            color: 'green'
+        },
+        {
+            id: 'Unlisted Shares',
+            title: 'Unlisted Shares',
+            horizon: '3 Years',
+            returns: 'Yearly up to 18%',
+            risk: 'Very Low',
+            suitableFor: 'HNI / NRI Investors',
+            icon: Lock,
+            color: 'teal'
+        }
+    ];
 
     const searchParams = useSearchParams();
 
@@ -93,6 +137,7 @@ function ApplyForm() {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
+                setUserId(session.user.id);
                 // Fetch the latest investment for this user to pre-fill details
                 const { data: investments, error } = await supabase
                     .from('investments')
@@ -264,6 +309,9 @@ function ApplyForm() {
 
         if (step === 1) {
             if (!formData.productName) newErrors.productName = 'Product selection is required';
+        }
+
+        if (step === 2) {
             if (!formData.fullName) newErrors.fullName = 'Full name is required';
             if (!formData.fatherName) newErrors.fatherName = 'Father\'s name is required';
             if (!formData.dob) newErrors.dob = 'Date of birth is required';
@@ -292,14 +340,14 @@ function ApplyForm() {
             }
         }
 
-        if (step === 2) {
+        if (step === 3) {
             if (!formData.nomineeName) newErrors.nomineeName = 'Nominee name is required';
             if (!formData.nomineeRelation) newErrors.nomineeRelation = 'Relation is required';
             if (!formData.nomineeDob) newErrors.nomineeDob = 'Nominee DOB is required';
             if (!formData.nomineeAddress) newErrors.nomineeAddress = 'Nominee address is required';
         }
 
-        if (step === 3) {
+        if (step === 4) {
             if (!formData.accountNumber) newErrors.accountNumber = 'Account number is required';
             else if (formData.accountNumber.length < 9 || formData.accountNumber.length > 18) newErrors.accountNumber = 'Invalid account number length';
             if (!formData.bankName) newErrors.bankName = 'Bank name is required';
@@ -311,18 +359,16 @@ function ApplyForm() {
             if (!formData.accountType) newErrors.accountType = 'Account type is required';
         }
 
-        if (step === 4) {
+        if (step === 5) {
             if (!formData.investmentAmount) newErrors.investmentAmount = 'Investment amount is required';
             else if (parseFloat(formData.investmentAmount) < 500000) newErrors.investmentAmount = 'Minimum investment is ₹5,00,000';
             if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
             if (!formData.paymentReference) newErrors.paymentReference = 'Payment reference is required';
             if (!formData.paymentDate) newErrors.paymentDate = 'Payment date is required';
             if (formData.dematAccount && formData.dematAccount.length !== 16) newErrors.dematAccount = 'Demat account must be 16 digits';
-            // if (!formData.brokerId) newErrors.brokerId = 'Broker ID is required';
-            // if (!formData.brokerName) newErrors.brokerName = 'Broker Name is required';
         }
 
-        if (step === 5) {
+        if (step === 6) {
             if (formData.productName === 'Unlisted Shares') {
                 if (!files.signatureFile) newErrors.signatureFile = 'Digital signature is required';
             } else {
@@ -337,7 +383,7 @@ function ApplyForm() {
     const handleNext = async () => {
         if (!validateStep(currentStep)) return;
 
-        if (currentStep === 1) {
+        if (currentStep === 2) {
             setIsValidating(true);
             setErrors({}); // Clear any previous dynamic errors
             try {
@@ -349,6 +395,7 @@ function ApplyForm() {
                         contactNumber: formData.contactNumber,
                         aadharNumber: formData.aadharNumber,
                         panNumber: formData.panNumber,
+                        userId: userId,
                     }),
                 });
 
@@ -378,7 +425,7 @@ function ApplyForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateStep(5)) return;
+        if (!validateStep(6)) return;
 
         setLoading(true);
 
@@ -435,11 +482,12 @@ function ApplyForm() {
     };
 
     const steps = [
-        { number: 1, title: 'Personal', icon: User },
-        { number: 2, title: 'Nominee', icon: UsersIcon },
-        { number: 3, title: 'Bank', icon: Building2 },
-        { number: 4, title: 'Investment', icon: DollarSign },
-        { number: 5, title: 'Signature', icon: PenTool },
+        { number: 1, title: 'Product', icon: LayoutGrid },
+        { number: 2, title: 'Personal', icon: User },
+        { number: 3, title: 'Nominee', icon: UsersIcon },
+        { number: 4, title: 'Bank', icon: Building2 },
+        { number: 5, title: 'Investment', icon: DollarSign },
+        { number: 6, title: 'Signature', icon: PenTool },
     ];
 
     return (
@@ -502,11 +550,77 @@ function ApplyForm() {
                     {/* Form */}
                     <div className="card p-8">
                         <form onSubmit={handleSubmit}>
-                            {/* Step 1: Personal Details */}
+                            {/* Step 1: Product Selection */}
                             {currentStep === 1 && (
+                                <div className="space-y-8 animate-fade-in-up">
+                                    <div className="text-center">
+                                        <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Select Your Product</h2>
+                                        <p className="text-gray-500 max-w-lg mx-auto">Choose an investment strategy that aligns with your financial goals and risk appetite.</p>
+                                    </div>
+
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        {productOptions.map((product) => (
+                                            <button
+                                                key={product.id}
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, productName: product.id }))}
+                                                className={`relative p-6 rounded-[28px] border transition-all duration-300 text-left overflow-hidden group ${formData.productName === product.id
+                                                    ? 'border-[#1B8A9F] bg-white shadow-xl shadow-[#1B8A9F]/5 ring-1 ring-[#1B8A9F]/10'
+                                                    : 'border-slate-100 bg-white hover:border-teal-100 hover:shadow-lg'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className={`p-2.5 rounded-xl transition-colors ${formData.productName === product.id ? 'bg-[#1B8A9F] text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-teal-50 group-hover:text-[#1B8A9F]'
+                                                        }`}>
+                                                        <product.icon className="w-5 h-5" />
+                                                    </div>
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${formData.productName === product.id ? 'bg-[#1B8A9F]/10 text-[#1B8A9F]' : 'bg-slate-50 text-slate-400'
+                                                        }`}>
+                                                        {product.horizon}
+                                                    </span>
+                                                </div>
+
+                                                <h3 className={`font-bold text-lg mb-1 tracking-tight ${formData.productName === product.id ? 'text-[#1B8A9F]' : 'text-slate-900'
+                                                    }`}>
+                                                    {product.title}
+                                                </h3>
+
+                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-1 h-1 rounded-full bg-[#1B8A9F]" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Returns:</span>
+                                                        <span className="text-[10px] font-black text-slate-600 tracking-tight">{product.returns}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className={`w-1 h-1 rounded-full ${product.risk.startsWith('High') ? 'bg-red-400' : 'bg-green-400'}`} />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Risk:</span>
+                                                        <span className="text-[10px] font-black text-slate-600 tracking-tight">{product.risk}</span>
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-[10px] font-medium text-slate-400 mt-2.5 line-clamp-1 italic">
+                                                    Suitable for {product.suitableFor.toLowerCase()}
+                                                </p>
+
+                                                {formData.productName === product.id && (
+                                                    <div className="absolute top-6 right-6 pointer-events-none">
+                                                        <div className="w-4 h-4 bg-[#1B8A9F] rounded-full flex items-center justify-center opacity-20">
+                                                            <CheckCircle2 className="w-2 h-2 text-white" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {errors.productName && <p className="text-red-500 text-sm text-center font-bold">{errors.productName}</p>}
+                                </div>
+                            )}
+
+                            {/* Step 2: Personal Details */}
+                            {currentStep === 2 && (
                                 <div className="space-y-6 animate-fade-in-up">
                                     <div>
-                                        <h2 className="text-2xl font-bold mb-2">Step 1: Product & Profile Information</h2>
+                                        <h2 className="text-2xl font-bold mb-2">Personal Information</h2>
                                         {formData.kycVerified ? (
                                             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium inline-flex border border-green-100">
                                                 <ShieldCheck className="w-4 h-4" />
@@ -518,44 +632,32 @@ function ApplyForm() {
                                                 Welcome back! Details pre-filled from your profile.
                                             </div>
                                         ) : (
-                                            <p className="text-text-secondary">Please select a product and provide your personal information</p>
+                                            <p className="text-text-secondary">Please provide your personal information for registration</p>
                                         )}
                                     </div>
 
-                                    {/* Product Selection Section */}
-                                    <div className="bg-teal-50/50 p-6 rounded-2xl border border-teal-100">
-                                        <label className="label text-[#1B8A9F] font-bold">Select Investment Product *</label>
-                                        <select
-                                            name="productName"
-                                            value={formData.productName}
-                                            onChange={handleChange}
-                                            className={`input bg-white border-[#1B8A9F]/30 ${errors.productName ? 'input-error' : ''}`}
+                                    {/* Selected Product Banner */}
+                                    <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-100 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-[#1B8A9F] text-white flex items-center justify-center">
+                                                {productOptions.find(p => p.id === formData.productName)?.icon && React.createElement(productOptions.find(p => p.id === formData.productName)!.icon, { className: "w-4 h-4" })}
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-teal-600 font-bold uppercase tracking-wider">Selected Strategy</p>
+                                                <p className="text-sm font-black text-gray-900">{formData.productName}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentStep(1)}
+                                            className="text-[10px] font-black underline uppercase text-[#1B8A9F] hover:text-[#156d7e]"
                                         >
-                                            <option value="">Select a product</option>
-                                            <option value="Intraday Trading">Intraday Trading (Monthly)</option>
-                                            <option value="Short-Term SIP">Short-Term SIP (Quarterly)</option>
-                                            <option value="Long-Term Holding">Long-Term Holding (Yearly)</option>
-                                            <option value="Unlisted Shares">Unlisted Shares (3-Year Lock-in)</option>
-                                        </select>
-                                        {errors.productName && <p className="text-red-500 text-sm mt-1">{errors.productName}</p>}
-                                        <p className="text-[10px] text-[#1B8A9F] mt-2 italic font-medium">
-                                            {formData.productName === 'Unlisted Shares'
-                                                ? 'Note: Unlisted Shares requires full KYC verification and digital signature.'
-                                                : 'Note: This product does not require manual KYC document uploads.'}
-                                        </p>
+                                            Change
+                                        </button>
                                     </div>
 
                                     {/* Personal Information Section */}
                                     <div className="pt-4">
-                                        <div className="flex items-center gap-4 mb-6">
-                                            <div className="h-px flex-1 bg-gray-100"></div>
-                                            <h3 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F] flex items-center gap-2">
-                                                <User className="w-4 h-4" />
-                                                Personal Information
-                                            </h3>
-                                            <div className="h-px flex-1 bg-gray-100"></div>
-                                        </div>
-
                                         <div className="grid md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="label">Full Name *</label>
@@ -964,8 +1066,8 @@ function ApplyForm() {
                                 </div>
                             )}
 
-                            {/* Step 2: Nominee Details */}
-                            {currentStep === 2 && (
+                            {/* Step 3: Nominee Details */}
+                            {currentStep === 3 && (
                                 <div className="space-y-6 animate-fade-in-up">
                                     <div>
                                         <h2 className="text-2xl font-bold mb-2">Nominee Details</h2>
@@ -1027,8 +1129,8 @@ function ApplyForm() {
                                 </div>
                             )}
 
-                            {/* Step 3: Bank Details */}
-                            {currentStep === 3 && (
+                            {/* Step 4: Bank Details */}
+                            {currentStep === 4 && (
                                 <div className="space-y-6 animate-fade-in-up">
                                     <div>
                                         <h2 className="text-2xl font-bold mb-2">Bank Details</h2>
@@ -1115,13 +1217,12 @@ function ApplyForm() {
                                             </select>
                                             {errors.accountType && <p className="text-red-500 text-sm mt-1">{errors.accountType}</p>}
                                         </div>
-
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 4: Investment Details */}
-                            {currentStep === 4 && (
+                            {/* Step 5: Investment Details */}
+                            {currentStep === 5 && (
                                 <div className="space-y-6 animate-fade-in-up">
                                     <div>
                                         <h2 className="text-2xl font-bold mb-2">Investment Details</h2>
@@ -1210,7 +1311,6 @@ function ApplyForm() {
                                             />
                                             {errors.paymentReference && <p className="text-red-500 text-sm mt-1">{errors.paymentReference}</p>}
                                         </div>
-
 
                                         <div>
                                             <label className="label">Payment Date *</label>
@@ -1314,7 +1414,6 @@ function ApplyForm() {
                                                 </div>
                                             )}
 
-                                            {/* Risk and Guarantee Section */}
                                             {formData.productName && (
                                                 <>
                                                     <div className="flex justify-between border-t border-blue-100 pt-2 mt-2">
@@ -1358,12 +1457,11 @@ function ApplyForm() {
                                             </div>
                                         </div>
                                     </div>
-
                                 </div>
                             )}
 
-                            {/* Step 5: Digital Signature or T&C */}
-                            {currentStep === 5 && (
+                            {/* Step 6: Signature */}
+                            {currentStep === 6 && (
                                 <div className="space-y-8 animate-fade-in-up">
                                     {formData.productName === 'Unlisted Shares' ? (
                                         <>
@@ -1375,7 +1473,6 @@ function ApplyForm() {
                                                     <h2 className="text-3xl font-bold text-gray-900">Final Step: Digital Signature</h2>
                                                     <p className="text-gray-500 max-w-md mx-auto">
                                                         Please provide your digital signature to authorize the investment agreement.
-                                                        You can always update this from your dashboard later.
                                                     </p>
                                                 </div>
                                             </div>
@@ -1399,19 +1496,9 @@ function ApplyForm() {
                                                     )}
                                                 </div>
                                             </div>
-
-                                            <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex gap-4">
-                                                <ShieldCheck className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                                                <div className="space-y-1">
-                                                    <p className="text-sm font-bold text-blue-900 uppercase tracking-widest">Legal Confirmation</p>
-                                                    <p className="text-sm text-blue-800/80 leading-relaxed">
-                                                        By signing above, you confirm that all information provided is accurate and you agree to the terms of the investment agreement.
-                                                    </p>
-                                                </div>
-                                            </div>
                                         </>
                                     ) : (
-                                        <>
+                                        <div className="space-y-8">
                                             <div className="text-center space-y-4">
                                                 <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
                                                     <ShieldCheck className="w-8 h-8 text-[#1B8A9F]" />
@@ -1450,10 +1537,11 @@ function ApplyForm() {
                                                     )}
                                                 </div>
                                             </div>
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             )}
+
 
                             {/* Navigation Buttons */}
                             <div className="flex flex-col-reverse sm:flex-row justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
@@ -1468,7 +1556,7 @@ function ApplyForm() {
                                 )}
 
                                 <div className="sm:ml-auto w-full sm:w-auto">
-                                    {currentStep < 5 ? (
+                                    {currentStep < 6 ? (
                                         <button
                                             type="button"
                                             onClick={handleNext}
@@ -1508,8 +1596,8 @@ function ApplyForm() {
                         </form>
                     </div>
                 </div>
-            </div>
-            {/* T&C Modal */}
+            </div >
+
             {showTCModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
                     <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-fade-in-up">
@@ -1600,11 +1688,11 @@ function ApplyForm() {
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
-
 export default function ApplyPage() {
     return (
         <Suspense fallback={

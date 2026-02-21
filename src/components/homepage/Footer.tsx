@@ -89,9 +89,9 @@ export default function Footer() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <Link href="mailto:info@tradergwealth.com" className="p-5 bg-white rounded-2xl border border-gray-100/50 shadow-sm transition-all hover:bg-[#1B8A9F] hover:text-white flex flex-col items-center justify-center space-y-2 group/btn text-center">
+                                <Link href="mailto:connect@tradergwealth.com" className="p-5 bg-white rounded-2xl border border-gray-100/50 shadow-sm transition-all hover:bg-[#1B8A9F] hover:text-white flex flex-col items-center justify-center space-y-2 group/btn text-center">
                                     <Mail className="w-5 h-5 text-[#1B8A9F] group-hover/btn:text-white" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Mail</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Support</span>
                                 </Link>
                                 <div
                                     onClick={() => typeof window !== 'undefined' && window.open('https://wa.me/917596044046', '_blank')}
