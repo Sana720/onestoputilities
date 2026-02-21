@@ -575,18 +575,27 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Props) 
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Assigned Broker</label>
                                         <select
-                                            value={formData.brokerId}
+                                            value={formData.brokerName}
                                             onChange={(e) => {
-                                                const broker = brokers.find(b => b.id === e.target.value);
-                                                setFormData({ ...formData, brokerId: e.target.value, brokerName: broker?.name || '' });
+                                                setFormData({ ...formData, brokerName: e.target.value });
                                             }}
                                             className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-teal-100 transition-all appearance-none"
                                         >
                                             <option value="">Select Broker</option>
                                             {brokers.map(broker => (
-                                                <option key={broker.id} value={broker.id}>{broker.name}</option>
+                                                <option key={broker.id} value={broker.name}>{broker.name}</option>
                                             ))}
                                         </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Broker ID / Code</label>
+                                        <input
+                                            type="text"
+                                            value={formData.brokerId}
+                                            onChange={(e) => setFormData({ ...formData, brokerId: e.target.value })}
+                                            className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-teal-100 transition-all uppercase"
+                                            placeholder="Enter Broker ID"
+                                        />
                                     </div>
                                 </div>
                             </section>
@@ -841,6 +850,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Props) 
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

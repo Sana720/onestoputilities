@@ -128,21 +128,33 @@ export default function AdminProfile() {
                     </div>
 
                     <div className="p-8 space-y-8">
-                        <div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F] mb-6 flex items-center gap-2">
-                                <ShieldCheck className="w-4 h-4" />
-                                Official Signature
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-6">
-                                Upload your official signature here. This signature will be automatically attached to all agreements you approve.
-                            </p>
+                        {admin?.role === 'admin' ? (
+                            <div>
+                                <h3 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F] mb-6 flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4" />
+                                    Official Signature
+                                </h3>
+                                <p className="text-sm text-gray-500 mb-6">
+                                    Upload your official signature here. This signature will be automatically attached to all agreements you approve.
+                                </p>
 
-                            <SignatureUpload
-                                onUpload={setSignatureFile}
-                                currentSignatureUrl={admin?.signature_url}
-                                label="Upload Official Signature"
-                            />
-                        </div>
+                                <SignatureUpload
+                                    onUpload={setSignatureFile}
+                                    currentSignatureUrl={admin?.signature_url}
+                                    label="Upload Official Signature"
+                                />
+                            </div>
+                        ) : (
+                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 flex items-center gap-4">
+                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-teal-400">
+                                    <ShieldCheck className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900 uppercase tracking-tight">Official Signature Protected</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">Only Administrators can update the official digital signature used for agreements.</p>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="pt-6 border-t border-gray-100 flex justify-end">
                             <button

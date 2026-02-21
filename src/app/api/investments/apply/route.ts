@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { sendEmail, ADMIN_EMAILS, getWelcomeEmailTemplate, getAdminNotificationTemplate, getReferralAppliedTemplate } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
     try {
@@ -15,6 +16,8 @@ export async function POST(request: NextRequest) {
         let userId = existingUser?.id;
         let tempPassword = '';
         let newUserReferralCode = '';
+        let referrerEmail = '';
+        let referrerName = '';
 
         // Helper to generate a unique referral code
         const normalizeGender = (gender: string) => {
@@ -66,11 +69,14 @@ export async function POST(request: NextRequest) {
             if (data.referralCode) {
                 const { data: referee } = await supabaseAdmin
                     .from('users')
-                    .select('id')
+                    .select('id, email, name')
                     .eq('referral_code', data.referralCode)
                     .single();
                 if (!referee) {
                     referredBy = 'ADMIN';
+                } else {
+                    referrerEmail = referee.email;
+                    referrerName = referee.name;
                 }
             }
 
@@ -164,9 +170,35 @@ export async function POST(request: NextRequest) {
         if (investmentError) {
             console.error('Investment insert error details:', JSON.stringify(investmentError, null, 2));
             return NextResponse.json(
-                { error: `Failed to create investment record: ${investmentError.message}` },
+                { error: 'Failed to submit investment application' },
                 { status: 500 }
             );
+        }
+
+        // Send Email Notifications
+        const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login`;
+
+        // 1. Welcome Email to User
+        await sendEmail({
+            to: data.email,
+            subject: 'Welcome to Trader G Wealth - Application Received',
+            html: getWelcomeEmailTemplate(data.fullName, data.email, tempPassword || 'Last 6 digits of your mobile', loginUrl)
+        });
+
+        // 2. Notification to Admins/Managers
+        await sendEmail({
+            to: ADMIN_EMAILS,
+            subject: `New Resource Registered: ${data.fullName}`,
+            html: getAdminNotificationTemplate(data.fullName, data.email)
+        });
+
+        // 3. Referral Applied notification
+        if (referrerEmail) {
+            await sendEmail({
+                to: referrerEmail,
+                subject: 'New Referral Activity at Trader G Wealth',
+                html: getReferralAppliedTemplate(referrerName, data.fullName)
+            });
         }
 
         return NextResponse.json({

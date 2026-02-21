@@ -68,6 +68,9 @@ interface Investment {
     client_signed_at?: string;
     admin_signed_at?: string;
     payment_verified?: boolean;
+    pan_verified?: boolean;
+    aadhar_verified?: boolean;
+    bank_cheque_verified?: boolean;
     users?: {
         kyc_verified: boolean;
         signature_url?: string;
@@ -105,6 +108,10 @@ export default function AdminDashboard() {
     const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
     const [approving, setApproving] = useState(false);
     const [updateLoading, setUpdateLoading] = useState(false);
+    const [showPaymentVerifyModal, setShowPaymentVerifyModal] = useState(false);
+    const [otp, setOtp] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpLoading, setOtpLoading] = useState(false);
     const [staff, setStaff] = useState<any[]>([]);
     const [staffLoading, setStaffLoading] = useState(false);
     const [showStaffModal, setShowStaffModal] = useState(false);
@@ -117,8 +124,8 @@ export default function AdminDashboard() {
     });
     const [creatingStaff, setCreatingStaff] = useState(false);
 
-    const handleVerifyKYC = async (userId: string, verified: boolean) => {
-        if (!confirm(`Are you sure you want to ${verified ? 'verify' : 'unverify'} this client's KYC?`)) return;
+    const handleVerifyKYC = async (userId: string, verified: boolean, silent: boolean = false) => {
+        if (!silent && !confirm(`Are you sure you want to ${verified ? 'verify' : 'unverify'} this client's KYC?`)) return;
 
         setKycLoading(true);
         try {
@@ -131,21 +138,128 @@ export default function AdminDashboard() {
             if (response.ok) {
                 // Update local state
                 setInvestments(prev => prev.map(inv =>
-                    inv.user_id === userId ? { ...inv, users: { kyc_verified: verified } } : inv
+                    inv.user_id === userId ? {
+                        ...inv,
+                        users: inv.users ? { ...inv.users, kyc_verified: verified } : { kyc_verified: verified }
+                    } : inv
                 ));
                 if (selectedInvestment && selectedInvestment.user_id === userId) {
-                    setSelectedInvestment({ ...selectedInvestment, users: { kyc_verified: verified } });
+                    setSelectedInvestment(prev => prev ? {
+                        ...prev,
+                        users: prev.users ? { ...prev.users, kyc_verified: verified } : { kyc_verified: verified }
+                    } : null);
                 }
-                alert(`KYC ${verified ? 'verified' : 'unverified'} successfully!`);
+                if (!silent) alert(`KYC ${verified ? 'verified' : 'unverified'} successfully!`);
             } else {
                 const error = await response.json();
-                alert(error.error || 'Failed to update KYC status');
+                if (!silent) alert(error.error || 'Failed to update KYC status');
             }
         } catch (error) {
             console.error('Error verifying KYC:', error);
-            alert('An error occurred while verifying KYC');
+            if (!silent) alert('An error occurred while verifying KYC');
         } finally {
             setKycLoading(false);
+        }
+    };
+
+    const handleGranularVerify = async (investmentId: string, field: 'pan' | 'aadhar' | 'bank_cheque', verified: boolean) => {
+        setKycLoading(true);
+        try {
+            const response = await fetch('/api/admin/kyc/granular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ investmentId, field, verified }),
+            });
+
+            if (response.ok) {
+                const column = `${field}_verified` as keyof Investment;
+                setInvestments(prev => prev.map(inv =>
+                    inv.id === investmentId ? { ...inv, [column]: verified } : inv
+                ));
+
+                if (selectedInvestment && selectedInvestment.id === investmentId) {
+                    const updated = { ...selectedInvestment, [column]: verified };
+                    setSelectedInvestment(updated);
+
+                    // Auto-update global KYC status based on document checks
+                    const allVerified = updated.pan_verified && updated.aadhar_verified && updated.bank_cheque_verified;
+
+                    if (allVerified && !updated.users?.kyc_verified) {
+                        handleVerifyKYC(updated.user_id, true, true);
+                    } else if (!allVerified && updated.users?.kyc_verified) {
+                        handleVerifyKYC(updated.user_id, false, true);
+                    }
+                }
+            } else {
+                const error = await response.json();
+                alert(error.error || `Failed to update ${field} verification`);
+            }
+        } catch (error) {
+            console.error(`Error verifying ${field}:`, error);
+            alert(`An error occurred while verifying ${field}`);
+        } finally {
+            setKycLoading(false);
+        }
+    };
+
+    const handleSendOTP = async () => {
+        if (!selectedInvestment) return;
+        setOtpLoading(true);
+        try {
+            const response = await fetch('/api/admin/otp/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    investmentId: selectedInvestment.id,
+                    managerName: user?.name || 'Manager'
+                }),
+            });
+            if (response.ok) {
+                setOtpSent(true);
+                alert('OTP has been sent to the Admin email.');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to send OTP');
+            }
+        } catch (error) {
+            console.error('Error sending OTP:', error);
+            alert('An error occurred while sending OTP');
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async () => {
+        if (!selectedInvestment || !otp) return;
+        setOtpLoading(true);
+        try {
+            const response = await fetch('/api/admin/otp/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    investmentId: selectedInvestment.id,
+                    otp
+                }),
+            });
+            if (response.ok) {
+                // Update local state
+                setSelectedInvestment(prev => prev ? { ...prev, payment_verified: true } : null);
+                setInvestments(prev => prev.map(inv =>
+                    inv.id === selectedInvestment.id ? { ...inv, payment_verified: true } : inv
+                ));
+                setShowPaymentVerifyModal(false);
+                setOtp('');
+                setOtpSent(false);
+                alert('Payment verified successfully!');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Invalid OTP');
+            }
+        } catch (error) {
+            console.error('Error verifying OTP:', error);
+            alert('An error occurred while verifying OTP');
+        } finally {
+            setOtpLoading(false);
         }
     };
     const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends' | 'referrals' | 'staff'>('investments');
@@ -267,7 +381,8 @@ export default function AdminDashboard() {
                 const { data: adminData, error: adminError } = await supabase
                     .from('users')
                     .select('signature_url')
-                    .eq('id', session.user.id)
+                    .eq('role', 'admin')
+                    .limit(1)
                     .maybeSingle();
 
                 if (adminError) {
@@ -344,7 +459,8 @@ export default function AdminDashboard() {
             const { data } = await supabase
                 .from('users')
                 .select('signature_url')
-                .eq('id', user?.id)
+                .eq('role', 'admin')
+                .limit(1)
                 .maybeSingle();
             if (data?.signature_url) {
                 setAdminSignatureUrl(data.signature_url);
@@ -785,7 +901,7 @@ export default function AdminDashboard() {
                         >
                             Referrals
                         </button>
-                        {user?.role === 'admin' && (
+                        {(user?.role === 'admin' || user?.role === 'manager') && (
                             <button
                                 onClick={() => setActiveTab('staff')}
                                 className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'staff'
@@ -828,7 +944,7 @@ export default function AdminDashboard() {
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row gap-4">
-                                    {(activeTab === 'ledger' || activeTab === 'pending_dividends') && user?.role === 'admin' && (
+                                    {(activeTab === 'ledger' || activeTab === 'pending_dividends') && (
                                         <>
                                             <button
                                                 onClick={handleSyncDividends}
@@ -856,7 +972,7 @@ export default function AdminDashboard() {
                                             Add Staff
                                         </button>
                                     )}
-                                    {activeTab === 'investments' && user?.role === 'admin' && (
+                                    {activeTab === 'investments' && (
                                         <button
                                             onClick={() => setShowBulkImportModal(true)}
                                             className="inline-flex items-center justify-center bg-[#1B8A9F] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#156d7d] transition-all"
@@ -869,7 +985,7 @@ export default function AdminDashboard() {
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
                                             type="text"
-                                            placeholder="Search clients..."
+                                            placeholder={activeTab === 'staff' ? "Search staff..." : "Search clients..."}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="bg-gray-50 border-none rounded-xl pl-12 pr-6 py-3 text-sm focus:ring-2 focus:ring-teal-100 transition-all w-full sm:w-64"
@@ -911,7 +1027,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="overflow-x-auto">
-                            {activeTab === 'staff' && user?.role === 'admin' && (
+                            {activeTab === 'staff' ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full">
                                         <thead>
@@ -923,7 +1039,12 @@ export default function AdminDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {staff.map((member) => (
+                                            {staff.filter(m => {
+                                                const isStaff = m.role === 'admin' || m.role === 'manager';
+                                                const matchesSearch = m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    m.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                                                return isStaff && matchesSearch;
+                                            }).map((member) => (
                                                 <tr key={member.id} className="hover:bg-gray-50/50 transition-colors">
                                                     <td className="px-8 py-5">
                                                         <span className="text-sm font-bold text-gray-900">{member.name}</span>
@@ -949,9 +1070,7 @@ export default function AdminDashboard() {
                                         </div>
                                     )}
                                 </div>
-                            )}
-
-                            {activeTab === 'referrals' ? (
+                            ) : activeTab === 'referrals' ? (
                                 <table className="w-full">
                                     <thead>
                                         <tr className="bg-gray-50/50">
@@ -1083,9 +1202,9 @@ export default function AdminDashboard() {
                                                         </button>
                                                         <button
                                                             onClick={() => handleAddDividend(investment)}
-                                                            disabled={user?.role === 'manager'}
+                                                            disabled={false}
                                                             className="p-2.5 bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all disabled:opacity-50"
-                                                            title={user?.role === 'manager' ? 'Admin Only' : 'Add Dividend'}
+                                                            title="Add Dividend"
                                                         >
                                                             <DollarSign className="w-4 h-4" />
                                                         </button>
@@ -1108,7 +1227,7 @@ export default function AdminDashboard() {
                                                             adminSignatureUrl) ? (
                                                             <PDFDownloadLink
                                                                 document={<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />}
-                                                                fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
+                                                                fileName={`Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`}
                                                                 className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
                                                             >
                                                                 {({ loading }) => (
@@ -1426,6 +1545,28 @@ export default function AdminDashboard() {
                                     </section>
                                 )}
 
+                                {/* Transaction Information */}
+                                <section>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full mr-2"></div>
+                                        Transaction Information
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-green-50/20 rounded-2xl p-6 border border-green-100/30">
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Payment Mode</p>
+                                            <p className="text-sm font-black text-gray-900 uppercase">{selectedInvestment.payment_mode || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Reference Number / UTR</p>
+                                            <p className="text-sm font-mono font-black text-[#1B8A9F]">{selectedInvestment.payment_reference || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Payment Date</p>
+                                            <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.payment_date || '')}</p>
+                                        </div>
+                                    </div>
+                                </section>
+
                                 {/* Fee Collection Tracking */}
                                 {selectedInvestment.product_name !== 'Unlisted Shares' && (
                                     <section>
@@ -1507,17 +1648,36 @@ export default function AdminDashboard() {
                                     </h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         {selectedInvestment.pan_url ? (
-                                            <a
-                                                href={selectedInvestment.pan_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
-                                            >
-                                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
-                                                    <Eye className="w-5 h-5" />
-                                                </div>
-                                                <p className="text-[10px] font-black uppercase text-gray-400 group-hover:text-[#1B8A9F]">View PAN Card</p>
-                                            </a>
+                                            <div className="flex flex-col gap-2">
+                                                <a
+                                                    href={selectedInvestment.pan_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`relative flex flex-col items-center justify-center p-4 border rounded-2xl transition-all group w-full ${selectedInvestment.pan_verified ? 'bg-teal-50 border-teal-100' : 'bg-gray-50 border-gray-100 hover:bg-teal-50 hover:border-teal-100'}`}
+                                                >
+                                                    {selectedInvestment.pan_verified && (
+                                                        <div className="absolute top-2 right-2 flex items-center bg-green-500 text-white rounded-full px-2 py-0.5 shadow-sm">
+                                                            <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                                                            <span className="text-[7px] font-black uppercase tracking-tighter transition-all whitespace-nowrap">Verified</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
+                                                        <Eye className="w-5 h-5" />
+                                                    </div>
+                                                    <p className={`text-[10px] font-black uppercase ${selectedInvestment.pan_verified ? 'text-[#1B8A9F]' : 'text-gray-400 group-hover:text-[#1B8A9F]'}`}>View PAN Card</p>
+                                                </a>
+                                                <button
+                                                    onClick={() => handleGranularVerify(selectedInvestment.id, 'pan', !selectedInvestment.pan_verified)}
+                                                    disabled={kycLoading}
+                                                    className={`py-2 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${selectedInvestment.pan_verified
+                                                        ? 'bg-green-500 text-white shadow-md shadow-green-100'
+                                                        : 'bg-white text-gray-400 border border-gray-100 hover:border-teal-200 hover:text-[#1B8A9F]'
+                                                        }`}
+                                                >
+                                                    {selectedInvestment.pan_verified ? <ShieldCheck className="w-3 h-3" /> : <div className="w-1 h-1 bg-gray-300 rounded-full mr-1" />}
+                                                    {selectedInvestment.pan_verified ? 'Verified' : 'Verify PAN'}
+                                                </button>
+                                            </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl opacity-50">
                                                 <p className="text-[10px] font-black uppercase text-gray-400">PAN Not Uploaded</p>
@@ -1525,17 +1685,36 @@ export default function AdminDashboard() {
                                         )}
 
                                         {selectedInvestment.aadhar_url ? (
-                                            <a
-                                                href={selectedInvestment.aadhar_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
-                                            >
-                                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
-                                                    <Eye className="w-5 h-5" />
-                                                </div>
-                                                <p className="text-[10px] font-black uppercase text-gray-400 group-hover:text-[#1B8A9F]">View Aadhaar</p>
-                                            </a>
+                                            <div className="flex flex-col gap-2">
+                                                <a
+                                                    href={selectedInvestment.aadhar_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`relative flex flex-col items-center justify-center p-4 border rounded-2xl transition-all group w-full ${selectedInvestment.aadhar_verified ? 'bg-teal-50 border-teal-100' : 'bg-gray-50 border-gray-100 hover:bg-teal-50 hover:border-teal-100'}`}
+                                                >
+                                                    {selectedInvestment.aadhar_verified && (
+                                                        <div className="absolute top-2 right-2 flex items-center bg-green-500 text-white rounded-full px-2 py-0.5 shadow-sm">
+                                                            <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                                                            <span className="text-[7px] font-black uppercase tracking-tighter transition-all whitespace-nowrap">Verified</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
+                                                        <Eye className="w-5 h-5" />
+                                                    </div>
+                                                    <p className={`text-[10px] font-black uppercase ${selectedInvestment.aadhar_verified ? 'text-[#1B8A9F]' : 'text-gray-400 group-hover:text-[#1B8A9F]'}`}>View Aadhaar</p>
+                                                </a>
+                                                <button
+                                                    onClick={() => handleGranularVerify(selectedInvestment.id, 'aadhar', !selectedInvestment.aadhar_verified)}
+                                                    disabled={kycLoading}
+                                                    className={`py-2 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${selectedInvestment.aadhar_verified
+                                                        ? 'bg-green-500 text-white shadow-md shadow-green-100'
+                                                        : 'bg-white text-gray-400 border border-gray-100 hover:border-teal-200 hover:text-[#1B8A9F]'
+                                                        }`}
+                                                >
+                                                    {selectedInvestment.aadhar_verified ? <ShieldCheck className="w-3 h-3" /> : <div className="w-1 h-1 bg-gray-300 rounded-full mr-1" />}
+                                                    {selectedInvestment.aadhar_verified ? 'Verified' : 'Verify Aadhaar'}
+                                                </button>
+                                            </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl opacity-50">
                                                 <p className="text-[10px] font-black uppercase text-gray-400">Aadhaar Not Uploaded</p>
@@ -1543,17 +1722,36 @@ export default function AdminDashboard() {
                                         )}
 
                                         {selectedInvestment.bank_cheque_url ? (
-                                            <a
-                                                href={selectedInvestment.bank_cheque_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-teal-50 hover:border-teal-100 transition-all group"
-                                            >
-                                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
-                                                    <Eye className="w-5 h-5" />
-                                                </div>
-                                                <p className="text-[10px] font-black uppercase text-gray-400 group-hover:text-[#1B8A9F]">View Cheque</p>
-                                            </a>
+                                            <div className="flex flex-col gap-2">
+                                                <a
+                                                    href={selectedInvestment.bank_cheque_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`relative flex flex-col items-center justify-center p-4 border rounded-2xl transition-all group w-full ${selectedInvestment.bank_cheque_verified ? 'bg-teal-50 border-teal-100' : 'bg-gray-50 border-gray-100 hover:bg-teal-50 hover:border-teal-100'}`}
+                                                >
+                                                    {selectedInvestment.bank_cheque_verified && (
+                                                        <div className="absolute top-2 right-2 flex items-center bg-green-500 text-white rounded-full px-2 py-0.5 shadow-sm">
+                                                            <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                                                            <span className="text-[7px] font-black uppercase tracking-tighter transition-all whitespace-nowrap">Verified</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mb-2 group-hover:text-[#1B8A9F]">
+                                                        <Eye className="w-5 h-5" />
+                                                    </div>
+                                                    <p className={`text-[10px] font-black uppercase ${selectedInvestment.bank_cheque_verified ? 'text-[#1B8A9F]' : 'text-gray-400 group-hover:text-[#1B8A9F]'}`}>View Cheque</p>
+                                                </a>
+                                                <button
+                                                    onClick={() => handleGranularVerify(selectedInvestment.id, 'bank_cheque', !selectedInvestment.bank_cheque_verified)}
+                                                    disabled={kycLoading}
+                                                    className={`py-2 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${selectedInvestment.bank_cheque_verified
+                                                        ? 'bg-green-500 text-white shadow-md shadow-green-100'
+                                                        : 'bg-white text-gray-400 border border-gray-100 hover:border-teal-200 hover:text-[#1B8A9F]'
+                                                        }`}
+                                                >
+                                                    {selectedInvestment.bank_cheque_verified ? <ShieldCheck className="w-3 h-3" /> : <div className="w-1 h-1 bg-gray-300 rounded-full mr-1" />}
+                                                    {selectedInvestment.bank_cheque_verified ? 'Verified' : 'Verify Cheque'}
+                                                </button>
+                                            </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center p-4 bg-gray-50 border border-gray-100 rounded-2xl opacity-50">
                                                 <p className="text-[10px] font-black uppercase text-gray-400">Cheque Not Uploaded</p>
@@ -1604,21 +1802,7 @@ export default function AdminDashboard() {
                                         </h4>
                                         <div className="space-y-4">
                                             <button
-                                                disabled={user?.role === 'manager'}
-                                                onClick={async () => {
-                                                    const newStatus = !selectedInvestment.payment_verified;
-                                                    const { error } = await supabase
-                                                        .from('investments')
-                                                        .update({ payment_verified: newStatus })
-                                                        .eq('id', selectedInvestment.id);
-
-                                                    if (!error) {
-                                                        setSelectedInvestment({ ...selectedInvestment, payment_verified: newStatus });
-                                                        setInvestments(prev => prev.map(inv =>
-                                                            inv.id === selectedInvestment.id ? { ...inv, payment_verified: newStatus } : inv
-                                                        ));
-                                                    }
-                                                }}
+                                                onClick={() => setShowPaymentVerifyModal(true)}
                                                 className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${selectedInvestment.payment_verified
                                                     ? 'bg-green-50 border-green-200 text-green-700'
                                                     : 'bg-white border-gray-100 text-gray-400 hover:border-teal-200'
@@ -1640,7 +1824,7 @@ export default function AdminDashboard() {
                                             {selectedInvestment.product_name === 'Unlisted Shares' && (
                                                 !selectedInvestment.admin_signed_at ? (
                                                     <button
-                                                        disabled={!!selectedInvestment.admin_signed_at || !selectedInvestment.payment_verified || !adminSignatureUrl || approving || user?.role === 'manager'}
+                                                        disabled={!!selectedInvestment.admin_signed_at || !selectedInvestment.payment_verified || !adminSignatureUrl || approving}
                                                         onClick={async () => {
                                                             setApproving(true);
                                                             try {
@@ -1673,7 +1857,7 @@ export default function AdminDashboard() {
                                                         className="w-full bg-[#1B8A9F] text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
                                                     >
                                                         {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                                                        {user?.role === 'manager' ? 'Admin Only' : 'Confirm & Digitally Sign'}
+                                                        Confirm & Digitally Sign
                                                     </button>
                                                 ) : (
                                                     <div className="bg-white rounded-2xl p-4 border border-teal-200 shadow-sm flex items-center justify-between">
@@ -1703,28 +1887,15 @@ export default function AdminDashboard() {
                                     <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">{selectedInvestment.status}</span>
                                 </div>
                                 <div className="flex items-center space-x-4">
-                                    {selectedInvestment.users?.kyc_verified ? (
-                                        <button
-                                            onClick={() => handleVerifyKYC(selectedInvestment.user_id, false)}
-                                            disabled={kycLoading || user?.role === 'manager'}
-                                            className="px-6 py-2.5 bg-red-50 border-2 border-red-100 rounded-xl text-[10px] font-black text-red-600 hover:bg-red-100 transition-all uppercase tracking-widest flex items-center"
-                                        >
-                                            {kycLoading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <X className="w-3 h-3 mr-2" />}
-                                            {user?.role === 'manager' ? 'Admin Only' : 'Unverify KYC'}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleVerifyKYC(selectedInvestment.user_id, true)}
-                                            disabled={kycLoading || user?.role === 'manager'}
-                                            className="px-6 py-2.5 bg-green-50 border-2 border-green-100 rounded-xl text-[10px] font-black text-green-600 hover:bg-green-100 transition-all uppercase tracking-widest flex items-center"
-                                        >
-                                            {kycLoading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <ShieldCheck className="w-3 h-3 mr-2" />}
-                                            {user?.role === 'manager' ? 'Admin Only' : 'Verify KYC'}
-                                        </button>
+                                    {selectedInvestment.users?.kyc_verified && (
+                                        <div className="flex items-center bg-green-50 px-4 py-2 rounded-xl border border-green-100 mr-2">
+                                            <ShieldCheck className="w-3.5 h-3.5 text-green-600 mr-2" />
+                                            <span className="text-[9px] font-black text-green-700 uppercase tracking-widest">KYC Verified</span>
+                                        </div>
                                     )}
                                     <button
                                         onClick={handleUpdateInvestment}
-                                        disabled={user?.role === 'manager'}
+                                        disabled={false}
                                         className="px-6 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-[10px] font-black text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all uppercase tracking-widest disabled:opacity-50"
                                     >
                                         Guard Changes
@@ -1736,6 +1907,137 @@ export default function AdminDashboard() {
                                         Dismiss
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+                {/* Payment Breakdown Modal */}
+                {showPaymentVerifyModal && selectedInvestment && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+                        <div className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 border border-teal-100/30">
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 className="text-xl font-black text-gray-900 tracking-tight">Verify Payment</h3>
+                                        <p className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest mt-1">Security Checkpoint</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowPaymentVerifyModal(false)}
+                                        className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full text-gray-400 hover:bg-gray-100 transition-all"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                                            <span className="text-[10px] font-black uppercase text-gray-400">Total Amount</span>
+                                            <span className="text-sm font-black text-gray-900">₹{selectedInvestment.investment_amount?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                                            <span className="text-[10px] font-black uppercase text-gray-400">Payment Mode</span>
+                                            <div className="flex items-center">
+                                                <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mr-2"></div>
+                                                <span className="text-[10px] font-bold text-gray-700">{selectedInvestment.payment_mode}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                                            <span className="text-[10px] font-black uppercase text-gray-400">Reference No</span>
+                                            <span className="text-[10px] font-mono font-bold text-gray-900 bg-white px-2 py-1 rounded-md border border-gray-200">
+                                                {selectedInvestment.payment_reference}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-black uppercase text-gray-400">Payment Date</span>
+                                            <span className="text-[10px] font-bold text-gray-700">{selectedInvestment.payment_date}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {user?.role === 'manager' ? (
+                                    <div className="space-y-6">
+                                        {!otpSent ? (
+                                            <div className="text-center">
+                                                <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                                                    As a manager, you need an OTP from the Admin to verify this payment.
+                                                </p>
+                                                <button
+                                                    onClick={handleSendOTP}
+                                                    disabled={otpLoading}
+                                                    className="w-full bg-[#1B8A9F] text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#156d7d] transition-all shadow-xl shadow-teal-100 flex items-center justify-center gap-3 disabled:opacity-50"
+                                                >
+                                                    {otpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                                                    Send OTP to Admin
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
+                                                <div>
+                                                    <label className="text-[10px] font-black uppercase text-[#1B8A9F] tracking-[0.2em] mb-4 block text-center">Enter 6-Digit OTP</label>
+                                                    <input
+                                                        type="text"
+                                                        maxLength={6}
+                                                        value={otp}
+                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                                        placeholder="000000"
+                                                        className="w-full text-center text-3xl font-black tracking-[0.5em] py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#1B8A9F] focus:ring-0 transition-all placeholder:text-gray-200"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={handleVerifyOTP}
+                                                    disabled={otpLoading || otp.length !== 6}
+                                                    className="w-full bg-green-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-600 transition-all shadow-xl shadow-green-100 flex items-center justify-center gap-3 disabled:opacity-50"
+                                                >
+                                                    {otpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                                    Verify & Confirm
+                                                </button>
+                                                <button
+                                                    onClick={() => setOtpSent(false)}
+                                                    className="w-full text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-all"
+                                                >
+                                                    Resend Code
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={async () => {
+                                            setUpdateLoading(true);
+                                            try {
+                                                const { error } = await supabase
+                                                    .from('investments')
+                                                    .update({ payment_verified: !selectedInvestment.payment_verified })
+                                                    .eq('id', selectedInvestment.id);
+
+                                                if (!error) {
+                                                    const newStatus = !selectedInvestment.payment_verified;
+                                                    setSelectedInvestment({ ...selectedInvestment, payment_verified: newStatus });
+                                                    setInvestments(prev => prev.map(inv =>
+                                                        inv.id === selectedInvestment.id ? { ...inv, payment_verified: newStatus } : inv
+                                                    ));
+                                                    setShowPaymentVerifyModal(false);
+                                                    alert(`Payment ${newStatus ? 'verified' : 'unverified'} successfully!`);
+                                                }
+                                            } catch (err) {
+                                                console.error(err);
+                                            } finally {
+                                                setUpdateLoading(false);
+                                            }
+                                        }}
+                                        disabled={updateLoading}
+                                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 ${selectedInvestment.payment_verified
+                                            ? 'bg-red-50 text-red-600 shadow-red-50 hover:bg-red-100'
+                                            : 'bg-green-500 text-white shadow-green-100 hover:bg-green-600'
+                                            }`}
+                                    >
+                                        {updateLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                        {selectedInvestment.payment_verified ? 'Unverify Payment' : 'Confirm Verification'}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1824,10 +2126,10 @@ export default function AdminDashboard() {
                                 <div className="flex flex-col gap-3">
                                     <button
                                         onClick={submitDividend}
-                                        disabled={user?.role === 'manager'}
+                                        disabled={false}
                                         className="w-full bg-[#1B8A9F] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-teal-100 hover:bg-[#156d7d] transition-all disabled:opacity-50"
                                     >
-                                        {user?.role === 'manager' ? 'Admin Only' : 'Confirm Credit'}
+                                        Confirm Credit
                                     </button>
                                     <button
                                         onClick={() => setShowDividendModal(false)}

@@ -141,7 +141,7 @@ function ApplyForm() {
                         // KYC Persistence
                         panUrl: latest.pan_url || '',
                         aadharUrl: latest.aadhar_url || '',
-                        bankChequeUrl: '',
+                        bankChequeUrl: latest.bank_cheque_url || '',
                         kycVerified: latest.users?.kyc_verified || false
                     }));
                     if (latest.client_signature_url) {
@@ -313,9 +313,6 @@ function ApplyForm() {
             if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
             if (!formData.paymentReference) newErrors.paymentReference = 'Payment reference is required';
             if (!formData.paymentDate) newErrors.paymentDate = 'Payment date is required';
-            if (formData.paymentMode === 'Cheque' && !files.bankChequeFile) {
-                newErrors.bankChequeFile = 'Cheque upload is required for cheque payments';
-            }
             if (formData.dematAccount && formData.dematAccount.length !== 16) newErrors.dematAccount = 'Demat account must be 16 digits';
             if (!formData.brokerId) newErrors.brokerId = 'Broker ID is required';
             if (!formData.brokerName) newErrors.brokerName = 'Broker Name is required';
@@ -863,6 +860,45 @@ function ApplyForm() {
                                                     </>
                                                 )}
                                             </div>
+
+                                            <div>
+                                                <label className="label">Cancelled Cheque (Photo/PDF) {formData.bankChequeUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
+                                                {formData.kycVerified && formData.bankChequeUrl ? (
+                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                            <ShieldCheck className="w-5 h-5 text-green-600" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-semibold text-gray-900">Previously Verified Cheque</p>
+                                                            <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => window.open(formData.bankChequeUrl, '_blank')}
+                                                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            View
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <input
+                                                            type="file"
+                                                            accept=".jpg,.jpeg,.png,.pdf"
+                                                            onChange={(e) => handleFileChange(e, 'bankChequeFile')}
+                                                            className={`input py-1.5 ${errors.bankChequeFile ? 'input-error' : ''} ${formData.bankChequeUrl && !files.bankChequeFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
+                                                        />
+                                                        {formData.bankChequeUrl && !files.bankChequeFile && (
+                                                            <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
+                                                                <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
+                                                            </p>
+                                                        )}
+                                                        {files.bankChequeFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.bankChequeFile.name}</p>}
+                                                        {errors.bankChequeFile && <p className="text-red-500 text-sm mt-1">{errors.bankChequeFile}</p>}
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1132,20 +1168,6 @@ function ApplyForm() {
                                             {errors.paymentReference && <p className="text-red-500 text-sm mt-1">{errors.paymentReference}</p>}
                                         </div>
 
-                                        {formData.paymentMode === 'Cheque' && (
-                                            <div className="md:col-span-2">
-                                                <label className="label">Upload Cheque *</label>
-                                                <input
-                                                    type="file"
-                                                    accept=".jpg,.jpeg,.png,.pdf"
-                                                    onChange={(e) => handleFileChange(e, 'bankChequeFile')}
-                                                    className={`input py-1.5 ${errors.bankChequeFile ? 'input-error' : ''}`}
-                                                />
-                                                <p className="text-[10px] text-gray-500 mt-1 italic">Please upload a clear image or PDF of your cheque.</p>
-                                                {files.bankChequeFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ {files.bankChequeFile.name}</p>}
-                                                {errors.bankChequeFile && <p className="text-red-500 text-sm mt-1">{errors.bankChequeFile}</p>}
-                                            </div>
-                                        )}
 
                                         <div>
                                             <label className="label">Payment Date *</label>

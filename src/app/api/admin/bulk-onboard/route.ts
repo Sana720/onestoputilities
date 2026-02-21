@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { sendEmail, ADMIN_EMAILS, getWelcomeEmailTemplate, getAdminNotificationTemplate, getReferralOnboardedTemplate } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
     try {
@@ -37,16 +38,18 @@ export async function POST(request: NextRequest) {
                 // Check if user already exists
                 const { data: existingUser } = await supabaseAdmin
                     .from('users')
-                    .select('id')
+                    .select('id, referred_by_code')
                     .eq('email', record.email)
                     .single();
 
                 let userId = existingUser?.id;
+                let tempPassword = '';
+                let referredByCode = existingUser?.referred_by_code || '';
 
                 if (!userId) {
                     // Create user with Supabase Auth
                     const sanitizedPhone = (record.contactNumber || '').replace(/\D/g, '');
-                    const tempPassword = sanitizedPhone.slice(-6) || '123456';
+                    tempPassword = sanitizedPhone.slice(-6) || '123456';
 
                     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
                         email: record.email,
@@ -61,17 +64,19 @@ export async function POST(request: NextRequest) {
                     if (authError) throw new Error(`Auth Error: ${authError.message}`);
                     userId = authData.user.id;
 
-                    // Handle referral code (referred_by)
-                    let referredBy = record.referralCode || 'ADMIN';
                     if (record.referralCode) {
                         const { data: referee } = await supabaseAdmin
                             .from('users')
                             .select('referral_code')
                             .eq('referral_code', record.referralCode)
                             .single();
-                        if (!referee) {
-                            referredBy = 'ADMIN';
+                        if (referee) {
+                            referredByCode = record.referralCode;
+                        } else {
+                            referredByCode = 'ADMIN';
                         }
+                    } else {
+                        referredByCode = 'ADMIN';
                     }
 
                     // Create user record in users table
@@ -83,7 +88,7 @@ export async function POST(request: NextRequest) {
                             role: 'client',
                             name: record.fullName,
                             referral_code: generateCode(),
-                            referred_by_code: referredBy,
+                            referred_by_code: referredByCode,
                             password_reset_required: true
                         });
 
@@ -157,6 +162,45 @@ export async function POST(request: NextRequest) {
                     });
 
                 if (invError) throw new Error(`Investment Error: ${invError.message}`);
+
+                // Send Email Notifications
+                const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login`;
+
+                // 1. Welcome Email to User
+                await sendEmail({
+                    to: record.email,
+                    subject: 'Welcome to Trader G Wealth - Account Created',
+                    html: getWelcomeEmailTemplate(record.fullName, record.email, tempPassword || 'Last 6 digits of your mobile', loginUrl)
+                });
+
+                // 2. Notification to Admins/Managers
+                await sendEmail({
+                    to: ADMIN_EMAILS,
+                    subject: `Historical Onboarding: ${record.fullName}`,
+                    html: getAdminNotificationTemplate(record.fullName, record.email)
+                });
+
+                // 3. Referral Onboarded notification
+                if (referredByCode && referredByCode !== 'ADMIN' && (record.status === 'active' || record.status === 'approved' || !record.status)) {
+                    // Fetch referrer details
+                    const { data: referrer } = await supabaseAdmin
+                        .from('users')
+                        .select('email, name')
+                        .eq('referral_code', referredByCode)
+                        .single();
+
+                    if (referrer) {
+                        await sendEmail({
+                            to: referrer.email,
+                            subject: 'Your Referral has been Onboarded!',
+                            html: getReferralOnboardedTemplate(
+                                referrer.name,
+                                record.fullName,
+                                parseFloat(record.investmentAmount) || 0
+                            )
+                        });
+                    }
+                }
 
                 results.success++;
             } catch (err: any) {

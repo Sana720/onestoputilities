@@ -273,3 +273,14 @@ CREATE POLICY "User Delete Access"
 ON storage.objects FOR DELETE
 TO public
 USING ( bucket_id = 'documents' );
+
+-- OTPs table for secure payment verification
+CREATE TABLE IF NOT EXISTS otps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  otp TEXT NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_otps_email_otp ON otps(email, otp);

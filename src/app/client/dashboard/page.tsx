@@ -890,7 +890,7 @@ export default function ClientDashboard() {
                                                     adminSignatureUrl) ? (
                                                     <PDFDownloadLink
                                                         document={<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />}
-                                                        fileName={`Agreement_${investment.id.slice(0, 8)}.pdf`}
+                                                        fileName={`Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`}
                                                         className="inline-flex items-center justify-center bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-100 transition-colors"
                                                     >
                                                         {({ loading }) => (

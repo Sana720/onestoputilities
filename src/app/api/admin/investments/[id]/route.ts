@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { sendEmail, getInvestmentApprovedTemplate, getReferralOnboardedTemplate } from '@/lib/email';
 
 export async function PATCH(
     request: NextRequest,
@@ -8,6 +9,13 @@ export async function PATCH(
     try {
         const { id } = await params;
         const data = await request.json();
+
+        // Fetch current investment to check status change and user details
+        const { data: currentInv } = await supabaseAdmin
+            .from('investments')
+            .select('*, users!inner(email, name, referred_by_code)')
+            .eq('id', id)
+            .single();
 
         const { data: investment, error } = await supabaseAdmin
             .from('investments')
@@ -26,6 +34,50 @@ export async function PATCH(
                 { error: error.message || 'Failed to update investment' },
                 { status: 500 }
             );
+        }
+
+        // Check if status changed to approved/active
+        const oldStatus = currentInv?.status;
+        const newStatus = data.status;
+        const isNowApproved = (newStatus === 'approved' || newStatus === 'active') && (oldStatus !== 'approved' && oldStatus !== 'active');
+
+        if (isNowApproved && currentInv) {
+            const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login`;
+
+            // 1. Send Approval Email to Client
+            await sendEmail({
+                to: currentInv.users.email,
+                subject: 'Investment Approved - Trader G Wealth',
+                html: getInvestmentApprovedTemplate(
+                    currentInv.full_name,
+                    currentInv.product_name || 'Unlisted Shares',
+                    currentInv.investment_amount,
+                    currentInv.lock_in_end_date,
+                    loginUrl
+                )
+            });
+
+            // 2. Send Referral Onboarded Email to Referrer (if exists and not ADMIN)
+            if (currentInv.users.referred_by_code && currentInv.users.referred_by_code !== 'ADMIN') {
+                // Fetch referrer details
+                const { data: referrer } = await supabaseAdmin
+                    .from('users')
+                    .select('email, name')
+                    .eq('referral_code', currentInv.users.referred_by_code)
+                    .single();
+
+                if (referrer) {
+                    await sendEmail({
+                        to: referrer.email,
+                        subject: 'Your Referral has been Onboarded!',
+                        html: getReferralOnboardedTemplate(
+                            referrer.name,
+                            currentInv.full_name,
+                            currentInv.investment_amount
+                        )
+                    });
+                }
+            }
         }
 
         return NextResponse.json({

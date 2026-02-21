@@ -3,14 +3,14 @@ import { Page, Text, View, Document, StyleSheet, Font, Svg, Path, Line, Image } 
 
 const styles = StyleSheet.create({
     page: {
-        padding: 18,
+        padding: 10,
         fontFamily: 'Helvetica',
-        fontSize: 9,
+        fontSize: 8.5,
         color: '#000',
     },
     headerWrapper: {
         paddingBottom: 2,
-        marginBottom: 6,
+        marginBottom: 4,
         borderBottom: '0.5pt solid #000',
     },
     headerTop: {
@@ -20,22 +20,22 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     companyName: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: 'extrabold',
     },
     headerInfo: {
-        fontSize: 8,
-        lineHeight: 1.3,
+        fontSize: 7.5,
+        lineHeight: 1.2,
     },
     logoContainer: {
-        width: 80,
+        width: 70,
         alignItems: 'flex-end',
     },
     mainTitle: {
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginVertical: 3,
+        marginVertical: 2,
         textTransform: 'uppercase',
     },
     subTitleBox: {
@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     paragraph: {
-        marginBottom: 1,
-        lineHeight: 1.2,
+        marginBottom: 0.5,
+        lineHeight: 1.1,
         textAlign: 'justify',
     },
     table: {
@@ -87,10 +87,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#fef3c7',
     },
     sectionHeading: {
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: 'bold',
-        marginTop: 6,
-        marginBottom: 2,
+        marginTop: 4,
+        marginBottom: 1,
     },
     signatureSection: {
         flexDirection: 'row',
@@ -121,7 +121,7 @@ const HeaderSnippet = ({ fixed = false }: { fixed?: boolean }) => (
     <View style={styles.headerWrapper} fixed={fixed}>
         <View style={styles.headerTop}>
             <View style={{ flex: 1 }}>
-                <Text style={styles.companyName}>TRADERG WEALTH ADVISORY LIMITED</Text>
+                <Text style={styles.companyName}>SHREEG EXPERT WEALTH ADVISORY LIMITED</Text>
                 <Text style={styles.headerInfo}><Text style={styles.bold}>Corp.Office : </Text>11WS2 Mani Casadona, Action Area 2 Rajarhat Newtown Kolkata(W.B)</Text>
                 <Text style={styles.headerInfo}><Text style={styles.bold}>CIN : </Text>U74140CT2016PLC002054</Text>
                 <Text style={styles.headerInfo}><Text style={styles.bold}>website : </Text>www.tradergwealth.com</Text>
@@ -129,7 +129,7 @@ const HeaderSnippet = ({ fixed = false }: { fixed?: boolean }) => (
                 <Text style={styles.headerInfo}><Text style={styles.bold}>Contact: </Text>91-7044520894</Text>
             </View>
             <View style={styles.logoContainer}>
-                <Image src="/logo.png" style={{ width: 80, height: 40 }} />
+                <Image src="/logo.png" style={{ width: 70, height: 35 }} />
             </View>
         </View>
     </View>
@@ -187,7 +187,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     <View>
                         <Text>To,</Text>
                         <Text style={styles.bold}>The Board of Directors,</Text>
-                        <Text>TRADERG WEALTH ADVISORY LIMITED</Text>
+                        <Text>SHREEG EXPERT WEALTH ADVISORY LIMITED</Text>
                         <View style={{ marginTop: 2 }}>
                             <Text style={styles.headerInfo}>Reg. Office : Shop No. 353, Third Floor, Progressive Point Near Fruit Market Lalpur Dhamtari Road Raipur CT 492001 IN</Text>
                         </View>
@@ -264,8 +264,21 @@ export const InvestmentAgreement = ({ data }: Props) => {
                         <View style={styles.tableCell}><Text>SAVING/CURRENT A/C NO. : {data.bank_details?.accountNumber}</Text></View>
                     </View>
                 </View>
+                <View style={styles.table}>
+                    <View style={[styles.tableRow, { backgroundColor: '#f3f4f6' }]}>
+                        <View style={[styles.tableCell, { flex: 2 }]}><Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text></View>
+                        <View style={styles.tableCell}><Text style={styles.bold}>{data.age}</Text></View>
+                        <View style={styles.tableCell}><Text style={styles.bold}>{data.marital_status || 'Married'}</Text></View>
+                        <View style={styles.tableCell}><Text style={styles.bold}>{formatDate(data.dob)}</Text></View>
+                        <View style={[styles.tableCell, { flex: 2 }]}><Text style={styles.bold}>{data.father_name?.toUpperCase()}</Text></View>
+                    </View>
+                    <View style={styles.tableRow}>
+                        <View style={[styles.tableCell, { borderRightWidth: 0 }]}><Text>Full Address :</Text></View>
+                        <View style={[styles.tableCell, { flex: 5 }]}><Text style={styles.bold}>{data.permanent_address?.toUpperCase()}</Text></View>
+                    </View>
+                </View>
                 {/* Signatures moved to Page 1 */}
-                <View style={styles.signatureSection}>
+                <View style={[styles.signatureSection, { marginTop: 2 }]}>
                     <View style={[styles.signatureBox, { borderRightWidth: 0 }]}>
                         <Text>Specimen Signature - First Holder</Text>
                         {data.client_signature_url && (
@@ -281,19 +294,6 @@ export const InvestmentAgreement = ({ data }: Props) => {
             {/* PAGE 2: PERSONAL DETAILS & AGREEMENT START */}
             <Page size="A4" style={styles.page}>
                 <HeaderSnippet fixed />
-                <View style={styles.table}>
-                    <View style={[styles.tableRow, { backgroundColor: '#f3f4f6' }]}>
-                        <View style={[styles.tableCell, { flex: 2 }]}><Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text></View>
-                        <View style={styles.tableCell}><Text style={styles.bold}>{data.age}</Text></View>
-                        <View style={styles.tableCell}><Text style={styles.bold}>{data.marital_status || 'Married'}</Text></View>
-                        <View style={styles.tableCell}><Text style={styles.bold}>{formatDate(data.dob)}</Text></View>
-                        <View style={[styles.tableCell, { flex: 2 }]}><Text style={styles.bold}>{data.father_name?.toUpperCase()}</Text></View>
-                    </View>
-                    <View style={styles.tableRow}>
-                        <View style={[styles.tableCell, { borderRightWidth: 0 }]}><Text>Full Address :</Text></View>
-                        <View style={[styles.tableCell, { flex: 5 }]}><Text style={styles.bold}>{data.permanent_address?.toUpperCase()}</Text></View>
-                    </View>
-                </View>
                 <Text style={[styles.mainTitle, { marginTop: 10 }]}>
                     {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name)
                         ? 'TRADE MANAGEMENT AGREEMENT'
@@ -303,17 +303,17 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 <Text style={styles.paragraph}>
                     THIS AGREEMENT made this <Text style={styles.bold}>{new Date().getDate()}TH day of {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}</Text> Place : <Text style={styles.bold}>Kolkata</Text>
                 </Text>
-                <Text style={[styles.bold, { textAlign: 'center', marginVertical: 8 }]}>BETWEEN</Text>
+                <Text style={[styles.bold, { textAlign: 'center', marginVertical: 4 }]}>BETWEEN</Text>
                 <Text style={styles.paragraph}>
-                    <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text> an Investor/proposed Loan Provider, residing at <Text style={styles.bold}>{data.permanent_address?.toUpperCase()}</Text> (hereinafter referred to as <Text style={styles.bold}>“Shareholding Applicant''</Text>) <Text style={styles.bold}>(which expression shall, unless repugnant to the context or meaning hereof, mean and include his heirs, executors, administrators and assigns) of the First Part.</Text>
+                    {data.full_name?.toUpperCase()} an Investor/proposed Loan Provider, residing at {data.permanent_address?.toUpperCase()} (hereinafter referred to as “Shareholding Applicant'') (which expression shall, unless repugnant to the context or meaning hereof, mean and include his heirs, executors, administrators and assigns) of the First Part.
                 </Text>
-                <Text style={[styles.bold, { textAlign: 'center', marginVertical: 8 }]}>And</Text>
+                <Text style={[styles.bold, { textAlign: 'center', marginVertical: 4 }]}>And</Text>
                 <Text style={styles.paragraph}>
-                    <Text style={styles.bold}>TRADERG WEALTH ADVISORY LTD</Text> a Company incorporated under the Companies Act, 2013 having its office Mani Casadona, 11WS2, 6th Floor Suit Number 9 Action Area IIF, Opposite EcoSpace, Kolkata - 700156, herein represented by its Directors (hereinafter referred to as <Text style={styles.bold}>“a company”</Text>) <Text style={styles.bold}>which expression shall, unless repugnant to the context or meaning hereof, include its successors and assigns) of the Second Part;</Text>
+                    SHREEG EXPERT WEALTH ADVISORY LIMITED a Company incorporated under the Companies Act, 2013 having its office Mani Casadona, 11WS2, 6th Floor Suit Number 9 Action Area IIF, Opposite EcoSpace, Kolkata - 700156, herein represented by its Directors (hereinafter referred to as “a company”) which expression shall, unless repugnant to the context or meaning hereof, include its successors and assigns) of the Second Part;
                 </Text>
-                <Text style={[styles.bold, { marginTop: 10 }]}>WHEREAS:</Text>
+                <Text style={[styles.bold, { marginTop: 6 }]}>WHEREAS:</Text>
                 <Text style={styles.paragraph}>
-                    (A) {data.full_name} desires to become a {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trading Client' : 'Preference bond Shareholder'} and {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'avail Trade Management services from' : 'invest in'} the Company TRADERG WEALTH ADVISORY LTD.
+                    (A) {data.full_name} desires to become a {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'Trading Client' : 'Preference bond Shareholder'} and {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(data.product_name) ? 'avail Trade Management services from' : 'invest in'} the Company SHREEG EXPERT WEALTH ADVISORY LIMITED.
                 </Text>
                 <Text style={styles.paragraph}>(C) The Company has agreed to join in the execution of this Agreement to be aware of the rights and obligations of {data.full_name} as a party hereto and ensure compliance with the same.</Text>
 
@@ -322,7 +322,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 <Text style={[styles.bold, { marginTop: 8, marginBottom: 8 }]}>NOW IT IS HEREBY AGREED BY AND BETWEEN THE PARTIES HERETO AS FOLLOWS:</Text>
                 <Text style={styles.sectionHeading}>1. Preference bond Shareholder</Text>
                 <Text style={styles.paragraph}>
-                    As a Preference bond Bond shareholder, <Text style={styles.bold}>{data.full_name}</Text> would have a preferred claim on the company's assets and dividends over common shareholders. However, Preference bond shareholders typically do not have voting rights in the company unless otherwise specified. <Text style={styles.bold}>The key benefit is that, in the event of profit distribution, Preference bond shareholders receive dividends before common shareholders, and these dividends are often at a fixed rate.</Text>
+                    As a Preference bond Bond shareholder, <Text style={styles.bold}>{data.full_name}</Text> would have a preferred claim on the company's assets and dividends over common shareholders. However, Preference bond shareholders typically do not have voting rights in the company unless otherwise specified. The key benefit is that, in the event of profit distribution, Preference bond shareholders receive dividends before common shareholders, and these dividends are often at a fixed rate.
                 </Text>
                 <Text style={styles.sectionHeading}>2. Long-Term Equity Growth</Text>
                 <Text style={styles.paragraph}>
@@ -371,21 +371,21 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 </Text>
 
                 <Text style={styles.sectionHeading}>6. Branch Office and Business:</Text>
-                <Text style={styles.paragraph}>(b) The branch office of the Company shall be situated at Mani Casadona, 11WS2, 6th Floor Suite Number 9, Action Area IIF, Opposite EcoSpace, Kolkata - 700156, <Text style={styles.bold}>or at such other places as may be mutually agreed upon in writing.</Text></Text>
-                <Text style={styles.paragraph}>(c) The Company shall engage in the business of Investment advisory & Investment in holding securities ,companies , bonds, either by itself or through other agencies or company industries, <Text style={styles.bold}>and may carry on any other business as decided by the Board of Directors.</Text></Text>
+                <Text style={styles.paragraph}>(b) The branch office of the Company shall be situated at Mani Casadona, 11WS2, 6th Floor Suite Number 9, Action Area IIF, Opposite EcoSpace, Kolkata - 700156, or at such other places as may be mutually agreed upon in writing.</Text>
+                <Text style={styles.paragraph}>(c) The Company shall engage in the business of Investment advisory & Investment in holding securities ,companies , bonds, either by itself or through other agencies or company industries, and may carry on any other business as decided by the Board of Directors.</Text>
                 <Text style={styles.paragraph}>(d) The paid-up capital value currently is Rs. 40,00,000/- with authorized share capital of Rs. 1,00,00,000/- consisting of 10,00,000 equity shares of Rs. 10/- each.</Text>
                 <Text style={styles.sectionHeading}>7. Rights of Shareholders:</Text>
-                <Text style={styles.paragraph}>(a) {data.full_name} is entitled to participate in the valuations and growth but can not vote as a member of the Company <Text style={styles.bold}>with respect to the shares held during voting times once the allotment processes are completed by the company.</Text></Text>
-                <Text style={styles.paragraph}>(b) The Company shall issue all Preference bond shares to the provided CDSL demat account. <Text style={styles.bold}>These shares will be credited to the demat account one month after the agreement process with the company.</Text></Text>
+                <Text style={styles.paragraph}>(a) {data.full_name} is entitled to participate in the valuations and growth but can not vote as a member of the Company with respect to the shares held during voting times once the allotment processes are completed by the company.</Text>
+                <Text style={styles.paragraph}>(b) The Company shall issue all Preference bond shares to the provided CDSL demat account. These shares will be credited to the demat account one month after the agreement process with the company.</Text>
                 <Text style={styles.sectionHeading}>8. Dividend:</Text>
-                <Text style={styles.paragraph}>(a) {data.full_name} is entitled to receive a monthly dividend, which is declared by the company from time to time, with a rate of {data.dividend_rate}% per annum, <Text style={styles.bold}>after the deduction of Tax Deducted at Source (TDS), which can be claimed by the shareholder.</Text></Text>
+                <Text style={styles.paragraph}>(a) {data.full_name} is entitled to receive a monthly dividend, which is declared by the company from time to time, with a rate of {data.dividend_rate}% per annum, after the deduction of Tax Deducted at Source (TDS), which can be claimed by the shareholder.</Text>
                 <Text style={styles.paragraph}>(b) The rate of change in the dividend or any bonus announcement will be determined based on the company's earnings during periods of liquidity or maturity, after a period of five years.</Text>
                 <Text style={styles.sectionHeading}>9. Share Transfer/Sell:</Text>
                 <Text style={styles.paragraph}>(a) {data.full_name} can transfer or otherwise dispose of any or all of her shares (referred to as the "Seller"). Other shareholders or investors (referred to as the "Offerees") have the right to purchase the shares.</Text>
                 <Text style={styles.paragraph}>(b) The Seller shall notify the Offerees in writing about her intention to sell shares. This notice shall be given through mail or registered letter and a copy to the company.</Text>
                 <Text style={styles.sectionHeading}>10. Nominee</Text>
                 <Text style={styles.paragraph}>
-                    A nominee is someone who is designated to act on behalf of the shareholder. If {data.full_name} is naming <Text style={styles.bold}>{data.nominee?.name}</Text> as the nominee, this would mean that, in the event he is unable to manage her investment, <Text style={styles.bold}>{data.nominee?.name}</Text> Would be the person who can claim the shares and manage them according to the terms of the investment.
+                    A nominee is someone who is designated to act on behalf of the shareholder. If {data.full_name} is naming <Text style={styles.bold}>{data.nominee?.name}</Text> as the nominee, this would mean that, in the event he is unable to manage her investment, {data.nominee?.name} Would be the person who can claim the shares and manage them according to the terms of the investment.
                 </Text>
 
                 <Text style={styles.sectionHeading}>11. Buyback, Lock-in & Maturity Valuation</Text>
@@ -408,57 +408,30 @@ export const InvestmentAgreement = ({ data }: Props) => {
                 <Text style={styles.paragraph}>(a) If the Company intends to issue further Preference bond shares, the Issued shares shall be offered to the Shareholders at a price and upon terms determined by the Board of Directors. The Company shall provide written notice to each existing Shareholder about the offer details.</Text>
                 <Text style={styles.paragraph}>(b) Shareholders interested in purchasing the Issued shares may apply by depositing the required amount with the company.</Text>
                 <Text style={styles.paragraph}>(c) Any unsubscribed Issued Shares may be offered to third parties at the price and terms decided by the board, in line with the provisions of the Companies Act, 2013.</Text>
-                <Text style={styles.sectionHeading}>13. Companies Act, 2013 Override:</Text>
-                <Text style={styles.paragraph}>
-                    If any provision of this Agreement conflicts with the Companies Act, 2013 or any amendments therein, the Companies Act, 2013 will prevail.
-                </Text>
                 <Text style={[styles.bold, { marginTop: 8 }]}>IN WITNESS WHEREOF, the parties hereto have executed this Agreement as of the date first above written.</Text>
-            </Page>
 
-            {/* PAGE 6: FINAL SIGNATURES */}
-            <Page size="A4" style={styles.page}>
-                <HeaderSnippet fixed />
-                <View style={styles.table}>
-                    <View style={[styles.tableRow, { minHeight: 100 }]}>
-                        <View style={styles.tableCell}>
-                            <Text>Name of Witness</Text>
-                        </View>
-                        <View style={styles.tableCell}>
-                            <Text>Name of Founder</Text>
-                            <Text style={styles.bold}>Shri.Gaurav Dewangan</Text>
-                        </View>
-                    </View>
-                    <View style={styles.tableRow}>
-                        <View style={styles.tableCell}>
-                            <Text>Address :</Text>
-                            <Text style={styles.bold}>{data.permanent_address}</Text>
-                        </View>
-                        <View style={styles.tableCell}>
-                            <Text>Address :</Text>
-                            <Text style={styles.bold}>Mani Casadona, 11WS2, 6th Floor Suite Number 9, Action Area IIF, Opposite EcoSpace, Kolkata - 700156</Text>
+                <View wrap={false}>
+                    <View style={[styles.table, { marginTop: 8 }]}>
+                        <View style={[styles.tableRow, { minHeight: 80 }]}>
+                            <View style={styles.tableCell}>
+                                <Text>Shareholding Applicant</Text>
+                                <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text>
+                                {data.client_signature_url && (
+                                    <Image src={data.client_signature_url} style={{ height: 40, width: 'auto', marginTop: 10 }} />
+                                )}
+                            </View>
+                            <View style={styles.tableCell}>
+                                <Text>For (Director)</Text>
+                                <Text style={styles.bold}>SHREEG EXPERT WEALTH ADVISORY LIMITED</Text>
+                                {data.admin_signature_url && (
+                                    <Image src={data.admin_signature_url} style={{ height: 40, width: 'auto', marginTop: 10 }} />
+                                )}
+                            </View>
                         </View>
                     </View>
-                </View>
-                <View style={[styles.table, { marginTop: 8 }]}>
-                    <View style={[styles.tableRow, { minHeight: 80 }]}>
-                        <View style={styles.tableCell}>
-                            <Text>Shareholding Applicant</Text>
-                            <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text>
-                            {data.client_signature_url && (
-                                <Image src={data.client_signature_url} style={{ height: 40, width: 'auto', marginTop: 10 }} />
-                            )}
-                        </View>
-                        <View style={styles.tableCell}>
-                            <Text>For (Director)</Text>
-                            <Text style={styles.bold}>TRADERG WEALTH ADVISORY LTD</Text>
-                            {data.admin_signature_url && (
-                                <Image src={data.admin_signature_url} style={{ height: 40, width: 'auto', marginTop: 10 }} />
-                            )}
-                        </View>
+                    <View style={{ marginTop: 20, borderTopWidth: 0.5, paddingTop: 10 }}>
+                        <Text style={{ textAlign: 'center', fontSize: 8, color: '#666' }}>Computer generated document. Digitally approved by SHREEG EXPERT WEALTH ADVISORY LIMITED.</Text>
                     </View>
-                </View>
-                <View style={{ marginTop: 40, borderTopWidth: 0.5, paddingTop: 10 }}>
-                    <Text style={{ textAlign: 'center', fontSize: 8, color: '#666' }}>Computer generated document. Digitally approved by TRADERG WEALTH ADVISORY LTD.</Text>
                 </View>
             </Page>
         </Document>
