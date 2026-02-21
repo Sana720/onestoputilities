@@ -82,6 +82,7 @@ interface Investment {
         status: string;
         created_at: string;
     }>;
+    demat_account?: string;
     user_id: string;
 }
 
@@ -95,7 +96,6 @@ export default function AdminDashboard() {
     const [productFilter, setProductFilter] = useState('all');
     const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
     const [showManagementModal, setShowManagementModal] = useState(false);
-    const [editData, setEditData] = useState({ dividend_rate: 0, status: '' });
     const [showDividendModal, setShowDividendModal] = useState(false);
     const [dividendData, setDividendData] = useState({
         amount: '',
@@ -104,6 +104,7 @@ export default function AdminDashboard() {
         payment_mode: 'NEFT',
         status: 'paid'
     });
+    const [editData, setEditData] = useState<any>({});
     const [kycLoading, setKycLoading] = useState(false);
     const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
     const [approving, setApproving] = useState(false);
@@ -123,6 +124,23 @@ export default function AdminDashboard() {
         role: 'manager'
     });
     const [creatingStaff, setCreatingStaff] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+
+    const handleEditChange = (field: string, value: any) => {
+        setEditData((prev: any) => {
+            if (field.includes('.')) {
+                const [parent, child] = field.split('.');
+                return {
+                    ...prev,
+                    [parent]: {
+                        ...(prev[parent] || {}),
+                        [child]: value
+                    }
+                };
+            }
+            return { ...prev, [field]: value };
+        });
+    };
 
     const handleVerifyKYC = async (userId: string, verified: boolean, silent: boolean = false) => {
         if (!silent && !confirm(`Are you sure you want to ${verified ? 'verify' : 'unverify'} this client's KYC?`)) return;
@@ -448,10 +466,11 @@ export default function AdminDashboard() {
     };
 
     const handleManageInvestment = async (investment: Investment) => {
+        setIsEditMode(false);
         setSelectedInvestment(investment);
         setEditData({
+            ...investment,
             dividend_rate: investment.product_name === 'Unlisted Shares' ? 18 : (Number(investment.dividend_rate) || 0),
-            status: investment.status,
         });
         setShowManagementModal(true);
         // Ensure admin signature is fresh
@@ -1360,9 +1379,36 @@ export default function AdminDashboard() {
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowManagementModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
-                                    <X className="w-6 h-6 text-gray-400" />
-                                </button>
+                                <div className="flex items-center space-x-3">
+                                    {user?.role === 'admin' && (
+                                        <button
+                                            onClick={() => {
+                                                if (isEditMode) {
+                                                    handleUpdateInvestment();
+                                                } else {
+                                                    setIsEditMode(true);
+                                                }
+                                            }}
+                                            disabled={updateLoading}
+                                            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isEditMode
+                                                ? 'bg-green-500 text-white shadow-lg shadow-green-100 hover:bg-green-600'
+                                                : 'bg-white text-[#1B8A9F] border-2 border-[#1B8A9F] hover:bg-[#1B8A9F] hover:text-white'
+                                                }`}
+                                        >
+                                            {updateLoading ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : isEditMode ? (
+                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                            ) : (
+                                                <Edit className="w-3.5 h-3.5" />
+                                            )}
+                                            <span>{isEditMode ? 'Guard Changes' : 'Edit Mode'}</span>
+                                        </button>
+                                    )}
+                                    <button onClick={() => setShowManagementModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+                                        <X className="w-6 h-6 text-gray-400" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Content */}
@@ -1376,39 +1422,123 @@ export default function AdminDashboard() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 rounded-2xl p-6 border border-gray-100">
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Full Legal Name</p>
-                                            <p className="text-sm font-black text-gray-900">{selectedInvestment.full_name}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.full_name || ''}
+                                                    onChange={(e) => handleEditChange('full_name', e.target.value)}
+                                                    className="w-full text-sm font-black text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-[#1B8A9F] focus:ring-1 focus:ring-[#1B8A9F] outline-none"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-black text-gray-900">{selectedInvestment.full_name}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Father's Name</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.father_name || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.father_name || ''}
+                                                    onChange={(e) => handleEditChange('father_name', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.father_name || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Date of Birth</p>
-                                            <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.dob || '')}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="date"
+                                                    value={editData.dob || ''}
+                                                    onChange={(e) => handleEditChange('dob', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.dob || '')}</p>
+                                            )}
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Gender / Age</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.gender || 'N/A'} {selectedInvestment.age ? `(${selectedInvestment.age} yrs)` : ''}</p>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Gender</p>
+                                            {isEditMode ? (
+                                                <select
+                                                    value={editData.gender || ''}
+                                                    onChange={(e) => handleEditChange('gender', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                >
+                                                    <option value="">Select Gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.gender || 'N/A'} {selectedInvestment.age ? `(${selectedInvestment.age} yrs)` : ''}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Email Address</p>
-                                            <p className="text-sm font-bold text-[#1B8A9F]">{selectedInvestment.email}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="email"
+                                                    value={editData.email || ''}
+                                                    onChange={(e) => handleEditChange('email', e.target.value)}
+                                                    className="w-full text-sm font-bold text-[#1B8A9F] bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-[#1B8A9F]">{selectedInvestment.email}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Contact Number</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.contact_number || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.contact_number || ''}
+                                                    onChange={(e) => handleEditChange('contact_number', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.contact_number || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">PAN Number</p>
-                                            <p className="text-sm font-bold text-gray-900 uppercase font-mono">{selectedInvestment.pan_number || 'Not Provided'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.pan_number || ''}
+                                                    onChange={(e) => handleEditChange('pan_number', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 uppercase bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900 uppercase font-mono">{selectedInvestment.pan_number || 'Not Provided'}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Aadhaar Number</p>
-                                            <p className="text-sm font-bold text-gray-900 font-mono">{selectedInvestment.aadhar_number || 'Not Provided'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.aadhar_number || ''}
+                                                    onChange={(e) => handleEditChange('aadhar_number', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900 font-mono">{selectedInvestment.aadhar_number || 'Not Provided'}</p>
+                                            )}
                                         </div>
                                         <div className="md:col-span-2">
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Permanent Address</p>
-                                            <p className="text-sm font-medium text-gray-700">{selectedInvestment.permanent_address || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <textarea
+                                                    value={editData.permanent_address || ''}
+                                                    onChange={(e) => handleEditChange('permanent_address', e.target.value)}
+                                                    className="w-full text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 min-h-[80px]"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-medium text-gray-700">{selectedInvestment.permanent_address || 'N/A'}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </section>
@@ -1424,19 +1554,46 @@ export default function AdminDashboard() {
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">
                                                 {selectedInvestment.product_name === 'Unlisted Shares' ? 'Principal Amount' : 'Trade Capital'}
                                             </p>
-                                            <p className="text-sm font-black text-green-600">{formatCurrency(selectedInvestment.investment_amount)}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="number"
+                                                    value={editData.investment_amount || 0}
+                                                    onChange={(e) => handleEditChange('investment_amount', Number(e.target.value))}
+                                                    className="w-full text-sm font-black text-green-600 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-black text-green-600">{formatCurrency(selectedInvestment.investment_amount)}</p>
+                                            )}
                                         </div>
                                         {selectedInvestment.product_name === 'Unlisted Shares' && (
                                             <div>
                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Units (Shares)</p>
-                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.number_of_shares}</p>
+                                                {isEditMode ? (
+                                                    <input
+                                                        type="number"
+                                                        value={editData.number_of_shares || 0}
+                                                        onChange={(e) => handleEditChange('number_of_shares', Number(e.target.value))}
+                                                        className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm font-bold text-gray-900">{selectedInvestment.number_of_shares}</p>
+                                                )}
                                             </div>
                                         )}
                                         {selectedInvestment.product_name === 'Unlisted Shares' ? (
                                             <>
                                                 <div>
                                                     <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Face Value / Unit</p>
-                                                    <p className="text-sm font-bold text-gray-900">₹{selectedInvestment.face_value_per_share}</p>
+                                                    {isEditMode ? (
+                                                        <input
+                                                            type="number"
+                                                            value={editData.face_value_per_share || 0}
+                                                            onChange={(e) => handleEditChange('face_value_per_share', Number(e.target.value))}
+                                                            className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-bold text-gray-900">₹{selectedInvestment.face_value_per_share}</p>
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Yield Rate (%)</p>
@@ -1470,16 +1627,60 @@ export default function AdminDashboard() {
                                         {selectedInvestment.product_name === 'Unlisted Shares' && (
                                             <>
                                                 <div>
-                                                    <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Lock-in Period</p>
-                                                    <p className="text-sm font-bold text-gray-900">
-                                                        {`${selectedInvestment.lock_in_period} Years`}
-                                                    </p>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Lock-in Period (Years)</p>
+                                                    {isEditMode ? (
+                                                        <input
+                                                            type="number"
+                                                            value={editData.lock_in_period || 0}
+                                                            onChange={(e) => handleEditChange('lock_in_period', Number(e.target.value))}
+                                                            className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-bold text-gray-900">
+                                                            {`${selectedInvestment.lock_in_period} Years`}
+                                                        </p>
+                                                    )}
                                                 </div>
                                                 <div className="md:col-span-1">
                                                     <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Maturity Date</p>
-                                                    <p className="text-sm font-bold text-orange-600">
-                                                        {formatDate(selectedInvestment.lock_in_end_date)}
-                                                    </p>
+                                                    {isEditMode ? (
+                                                        <input
+                                                            type="date"
+                                                            value={editData.lock_in_end_date || ''}
+                                                            onChange={(e) => handleEditChange('lock_in_end_date', e.target.value)}
+                                                            className="w-full text-sm font-bold text-orange-600 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-bold text-orange-600">
+                                                            {formatDate(selectedInvestment.lock_in_end_date)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Broker Name</p>
+                                                    {isEditMode ? (
+                                                        <input
+                                                            type="text"
+                                                            value={editData.broker_name || ''}
+                                                            onChange={(e) => handleEditChange('broker_name', e.target.value)}
+                                                            className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.broker_name || 'Direct'}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Broker ID</p>
+                                                    {isEditMode ? (
+                                                        <input
+                                                            type="text"
+                                                            value={editData.broker_id || ''}
+                                                            onChange={(e) => handleEditChange('broker_id', e.target.value)}
+                                                            className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-bold text-gray-900">{selectedInvestment.broker_id || 'N/A'}</p>
+                                                    )}
                                                 </div>
                                             </>
                                         )}
@@ -1496,23 +1697,85 @@ export default function AdminDashboard() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-blue-50/30 rounded-2xl p-6 border border-blue-50">
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Bank Name</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.bankName || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.bank_details?.bankName || ''}
+                                                    onChange={(e) => handleEditChange('bank_details.bankName', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.bankName || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div className="md:col-span-1">
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Account Number</p>
-                                            <p className="text-sm font-mono font-bold text-gray-900">{selectedInvestment.bank_details?.accountNumber || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.bank_details?.accountNumber || ''}
+                                                    onChange={(e) => handleEditChange('bank_details.accountNumber', e.target.value)}
+                                                    className="w-full text-sm font-mono font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-mono font-bold text-gray-900">{selectedInvestment.bank_details?.accountNumber || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">IFSC Code</p>
-                                            <p className="text-sm font-bold text-gray-900 uppercase">{selectedInvestment.bank_details?.ifscCode || 'N/A'}</p>
+                                            <p className="text-[9px) font-bold text-gray-400 uppercase mb-1">IFSC Code</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.bank_details?.ifscCode || ''}
+                                                    onChange={(e) => handleEditChange('bank_details.ifscCode', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 uppercase bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900 uppercase">{selectedInvestment.bank_details?.ifscCode || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Branch</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.branch || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.bank_details?.branch || ''}
+                                                    onChange={(e) => handleEditChange('bank_details.branch', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.branch || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Account Type</p>
-                                            <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.accountType || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <select
+                                                    value={editData.bank_details?.accountType || ''}
+                                                    onChange={(e) => handleEditChange('bank_details.accountType', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                >
+                                                    <option value="">Select Type</option>
+                                                    <option value="Savings">Savings</option>
+                                                    <option value="Current">Current</option>
+                                                </select>
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.bank_details?.accountType || 'N/A'}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Demat Account No.</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.demat_account || ''}
+                                                    onChange={(e) => handleEditChange('demat_account', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                    placeholder="Enter Demat ID"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.demat_account || 'N/A'}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </section>
@@ -1527,19 +1790,54 @@ export default function AdminDashboard() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-purple-50/30 rounded-2xl p-6 border border-purple-50">
                                             <div>
                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee Name</p>
-                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.name || selectedInvestment.nominee.fullName || 'N/A'}</p>
+                                                {isEditMode ? (
+                                                    <input
+                                                        type="text"
+                                                        value={editData.nominee?.name || editData.nominee?.fullName || ''}
+                                                        onChange={(e) => handleEditChange('nominee.name', e.target.value)}
+                                                        className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.name || selectedInvestment.nominee.fullName || 'N/A'}</p>
+                                                )}
                                             </div>
                                             <div>
                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Relationship</p>
-                                                <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.relation || selectedInvestment.nominee.relationship || 'N/A'}</p>
+                                                {isEditMode ? (
+                                                    <input
+                                                        type="text"
+                                                        value={editData.nominee?.relation || editData.nominee?.relationship || ''}
+                                                        onChange={(e) => handleEditChange('nominee.relation', e.target.value)}
+                                                        className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm font-bold text-gray-900">{selectedInvestment.nominee.relation || selectedInvestment.nominee.relationship || 'N/A'}</p>
+                                                )}
                                             </div>
                                             <div>
                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee DOB</p>
-                                                <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.nominee.dob || '')}</p>
+                                                {isEditMode ? (
+                                                    <input
+                                                        type="date"
+                                                        value={editData.nominee?.dob || ''}
+                                                        onChange={(e) => handleEditChange('nominee.dob', e.target.value)}
+                                                        className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.nominee.dob || '')}</p>
+                                                )}
                                             </div>
                                             <div className="md:col-span-3">
                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Nominee Address</p>
-                                                <p className="text-sm font-medium text-gray-700">{selectedInvestment.nominee.address || 'N/A'}</p>
+                                                {isEditMode ? (
+                                                    <textarea
+                                                        value={editData.nominee?.address || ''}
+                                                        onChange={(e) => handleEditChange('nominee.address', e.target.value)}
+                                                        className="w-full text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm font-medium text-gray-700">{selectedInvestment.nominee.address || 'N/A'}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </section>
@@ -1554,15 +1852,42 @@ export default function AdminDashboard() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-green-50/20 rounded-2xl p-6 border border-green-100/30">
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Payment Mode</p>
-                                            <p className="text-sm font-black text-gray-900 uppercase">{selectedInvestment.payment_mode || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.payment_mode || ''}
+                                                    onChange={(e) => handleEditChange('payment_mode', e.target.value)}
+                                                    className="w-full text-sm font-black text-gray-900 uppercase bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-black text-gray-900 uppercase">{selectedInvestment.payment_mode || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Reference Number / UTR</p>
-                                            <p className="text-sm font-mono font-black text-[#1B8A9F]">{selectedInvestment.payment_reference || 'N/A'}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    value={editData.payment_reference || ''}
+                                                    onChange={(e) => handleEditChange('payment_reference', e.target.value)}
+                                                    className="w-full text-sm font-mono font-black text-[#1B8A9F] bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-mono font-black text-[#1B8A9F]">{selectedInvestment.payment_reference || 'N/A'}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Payment Date</p>
-                                            <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.payment_date || '')}</p>
+                                            {isEditMode ? (
+                                                <input
+                                                    type="date"
+                                                    value={editData.payment_date || ''}
+                                                    onChange={(e) => handleEditChange('payment_date', e.target.value)}
+                                                    className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
+                                                />
+                                            ) : (
+                                                <p className="text-sm font-bold text-gray-900">{formatDate(selectedInvestment.payment_date || '')}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </section>

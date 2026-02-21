@@ -79,6 +79,7 @@ function ApplyForm() {
     const [agreedToTC, setAgreedToTC] = useState(false);
     const [existingSignatureUrl, setExistingSignatureUrl] = useState<string | null>(null);
     const [isReferralLocked, setIsReferralLocked] = useState(false);
+    const [isValidating, setIsValidating] = useState(false);
 
     const searchParams = useSearchParams();
 
@@ -262,6 +263,7 @@ function ApplyForm() {
         const newErrors: Record<string, string> = {};
 
         if (step === 1) {
+            if (!formData.productName) newErrors.productName = 'Product selection is required';
             if (!formData.fullName) newErrors.fullName = 'Full name is required';
             if (!formData.fatherName) newErrors.fatherName = 'Father\'s name is required';
             if (!formData.dob) newErrors.dob = 'Date of birth is required';
@@ -280,11 +282,14 @@ function ApplyForm() {
             else if (!/^[0-9]{10}$/.test(formData.contactNumber)) newErrors.contactNumber = 'Invalid contact (enter 10 digits)';
             if (!formData.email) newErrors.email = 'Email is required';
             else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
-            if (!formData.panNumber) newErrors.panNumber = 'PAN number is required';
-            else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber.toUpperCase())) newErrors.panNumber = 'Invalid PAN format';
-            if (!formData.aadharNumber) newErrors.aadharNumber = 'Aadhar number is required';
-            else if (!/^[0-9]{12}$/.test(formData.aadharNumber)) newErrors.aadharNumber = 'Invalid Aadhar (enter 12 digits)';
-            if (!formData.maritalStatus) newErrors.maritalStatus = 'Marital status is required';
+
+            if (formData.productName === 'Unlisted Shares') {
+                if (!formData.panNumber) newErrors.panNumber = 'PAN number is required';
+                else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber.toUpperCase())) newErrors.panNumber = 'Invalid PAN format';
+                if (!formData.aadharNumber) newErrors.aadharNumber = 'Aadhar number is required';
+                else if (!/^[0-9]{12}$/.test(formData.aadharNumber)) newErrors.aadharNumber = 'Invalid Aadhar (enter 12 digits)';
+                if (!formData.maritalStatus) newErrors.maritalStatus = 'Marital status is required';
+            }
         }
 
         if (step === 2) {
@@ -309,13 +314,12 @@ function ApplyForm() {
         if (step === 4) {
             if (!formData.investmentAmount) newErrors.investmentAmount = 'Investment amount is required';
             else if (parseFloat(formData.investmentAmount) < 500000) newErrors.investmentAmount = 'Minimum investment is ₹5,00,000';
-            if (!formData.productName) newErrors.productName = 'Product selection is required';
             if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
             if (!formData.paymentReference) newErrors.paymentReference = 'Payment reference is required';
             if (!formData.paymentDate) newErrors.paymentDate = 'Payment date is required';
             if (formData.dematAccount && formData.dematAccount.length !== 16) newErrors.dematAccount = 'Demat account must be 16 digits';
-            if (!formData.brokerId) newErrors.brokerId = 'Broker ID is required';
-            if (!formData.brokerName) newErrors.brokerName = 'Broker Name is required';
+            // if (!formData.brokerId) newErrors.brokerId = 'Broker ID is required';
+            // if (!formData.brokerName) newErrors.brokerName = 'Broker Name is required';
         }
 
         if (step === 5) {
@@ -330,11 +334,40 @@ function ApplyForm() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleNext = () => {
-        if (validateStep(currentStep)) {
-            setCurrentStep(prev => prev + 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+    const handleNext = async () => {
+        if (!validateStep(currentStep)) return;
+
+        if (currentStep === 1) {
+            setIsValidating(true);
+            setErrors({}); // Clear any previous dynamic errors
+            try {
+                const response = await fetch('/api/validate-registration', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: formData.email,
+                        contactNumber: formData.contactNumber,
+                        aadharNumber: formData.aadharNumber,
+                        panNumber: formData.panNumber,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    if (data.errors) {
+                        setErrors(prev => ({ ...prev, ...data.errors }));
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+            } finally {
+                setIsValidating(false);
+            }
         }
+
+        setCurrentStep(prev => prev + 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handlePrevious = () => {
@@ -473,7 +506,7 @@ function ApplyForm() {
                             {currentStep === 1 && (
                                 <div className="space-y-6 animate-fade-in-up">
                                     <div>
-                                        <h2 className="text-2xl font-bold mb-2">Step 1: Profile Information</h2>
+                                        <h2 className="text-2xl font-bold mb-2">Step 1: Product & Profile Information</h2>
                                         {formData.kycVerified ? (
                                             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium inline-flex border border-green-100">
                                                 <ShieldCheck className="w-4 h-4" />
@@ -485,8 +518,31 @@ function ApplyForm() {
                                                 Welcome back! Details pre-filled from your profile.
                                             </div>
                                         ) : (
-                                            <p className="text-text-secondary">Please provide your personal information</p>
+                                            <p className="text-text-secondary">Please select a product and provide your personal information</p>
                                         )}
+                                    </div>
+
+                                    {/* Product Selection Section */}
+                                    <div className="bg-teal-50/50 p-6 rounded-2xl border border-teal-100">
+                                        <label className="label text-[#1B8A9F] font-bold">Select Investment Product *</label>
+                                        <select
+                                            name="productName"
+                                            value={formData.productName}
+                                            onChange={handleChange}
+                                            className={`input bg-white border-[#1B8A9F]/30 ${errors.productName ? 'input-error' : ''}`}
+                                        >
+                                            <option value="">Select a product</option>
+                                            <option value="Intraday Trading">Intraday Trading (Monthly)</option>
+                                            <option value="Short-Term SIP">Short-Term SIP (Quarterly)</option>
+                                            <option value="Long-Term Holding">Long-Term Holding (Yearly)</option>
+                                            <option value="Unlisted Shares">Unlisted Shares (3-Year Lock-in)</option>
+                                        </select>
+                                        {errors.productName && <p className="text-red-500 text-sm mt-1">{errors.productName}</p>}
+                                        <p className="text-[10px] text-[#1B8A9F] mt-2 italic font-medium">
+                                            {formData.productName === 'Unlisted Shares'
+                                                ? 'Note: Unlisted Shares requires full KYC verification and digital signature.'
+                                                : 'Note: This product does not require manual KYC document uploads.'}
+                                        </p>
                                     </div>
 
                                     {/* Personal Information Section */}
@@ -616,22 +672,24 @@ function ApplyForm() {
                                                 {errors.occupation && <p className="text-red-500 text-sm mt-1">{errors.occupation}</p>}
                                             </div>
 
-                                            <div>
-                                                <label className="label">Marital Status *</label>
-                                                <select
-                                                    name="maritalStatus"
-                                                    value={formData.maritalStatus}
-                                                    onChange={handleChange}
-                                                    className={`input ${errors.maritalStatus ? 'input-error' : ''}`}
-                                                >
-                                                    <option value="">Select status</option>
-                                                    <option value="Single">Single</option>
-                                                    <option value="Married">Married</option>
-                                                    <option value="Divorced">Divorced</option>
-                                                    <option value="Widowed">Widowed</option>
-                                                </select>
-                                                {errors.maritalStatus && <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>}
-                                            </div>
+                                            {formData.productName === 'Unlisted Shares' && (
+                                                <div>
+                                                    <label className="label">Marital Status *</label>
+                                                    <select
+                                                        name="maritalStatus"
+                                                        value={formData.maritalStatus}
+                                                        onChange={handleChange}
+                                                        className={`input ${errors.maritalStatus ? 'input-error' : ''}`}
+                                                    >
+                                                        <option value="">Select status</option>
+                                                        <option value="Single">Single</option>
+                                                        <option value="Married">Married</option>
+                                                        <option value="Divorced">Divorced</option>
+                                                        <option value="Widowed">Widowed</option>
+                                                    </select>
+                                                    {errors.maritalStatus && <p className="text-red-500 text-sm mt-1">{errors.maritalStatus}</p>}
+                                                </div>
+                                            )}
 
                                             <div className="md:col-span-2">
                                                 <label className="label">Permanent Address *</label>
@@ -718,189 +776,191 @@ function ApplyForm() {
                                         </div>
                                     </div>
 
-                                    {/* Identity Verification (KYC) Section */}
-                                    <div className="pt-8">
-                                        <div className="flex items-center gap-4 mb-6">
-                                            <div className="h-px flex-1 bg-gray-100"></div>
-                                            <h3 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F] flex items-center gap-2">
-                                                <ShieldCheck className="w-4 h-4" />
-                                                Identity Verification (KYC)
-                                            </h3>
-                                            <div className="h-px flex-1 bg-gray-100"></div>
-                                        </div>
-                                        <div className="grid md:grid-cols-2 gap-6 pb-4">
-                                            <div>
-                                                <label className="label">PAN Number *</label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        name="panNumber"
-                                                        value={formData.panNumber}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.toUpperCase();
-                                                            setFormData(prev => ({ ...prev, panNumber: val }));
-                                                        }}
-                                                        readOnly={formData.kycVerified}
-                                                        className={`input ${errors.panNumber ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24 font-mono' : 'font-mono'}`}
-                                                        placeholder="ABCDE1234F"
-                                                        maxLength={10}
-                                                    />
-                                                    {formData.kycVerified && (
-                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
-                                                            <ShieldCheck className="w-3 h-3 mr-1" />
-                                                            Verified
+                                    {/* Identity Verification (KYC) Section - Only for Unlisted Shares */}
+                                    {formData.productName === 'Unlisted Shares' && (
+                                        <div className="pt-8 animate-fade-in">
+                                            <div className="flex items-center gap-4 mb-6">
+                                                <div className="h-px flex-1 bg-gray-100"></div>
+                                                <h3 className="text-sm font-black uppercase tracking-widest text-[#1B8A9F] flex items-center gap-2">
+                                                    <ShieldCheck className="w-4 h-4" />
+                                                    Identity Verification (KYC)
+                                                </h3>
+                                                <div className="h-px flex-1 bg-gray-100"></div>
+                                            </div>
+                                            <div className="grid md:grid-cols-2 gap-6 pb-4">
+                                                <div>
+                                                    <label className="label">PAN Number *</label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            name="panNumber"
+                                                            value={formData.panNumber}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.toUpperCase();
+                                                                setFormData(prev => ({ ...prev, panNumber: val }));
+                                                            }}
+                                                            readOnly={formData.kycVerified}
+                                                            className={`input ${errors.panNumber ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24 font-mono' : 'font-mono'}`}
+                                                            placeholder="ABCDE1234F"
+                                                            maxLength={10}
+                                                        />
+                                                        {formData.kycVerified && (
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                                <ShieldCheck className="w-3 h-3 mr-1" />
+                                                                Verified
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {errors.panNumber && <p className="text-red-500 text-sm mt-1">{errors.panNumber}</p>}
+                                                </div>
+
+                                                <div>
+                                                    <label className="label">PAN Card (Photo/PDF) {formData.panUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
+                                                    {formData.kycVerified && formData.panUrl ? (
+                                                        <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                                                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                                <ShieldCheck className="w-5 h-5 text-green-600" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-gray-900">Previously Verified PAN</p>
+                                                                <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => window.open(formData.panUrl, '_blank')}
+                                                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                                View
+                                                            </button>
                                                         </div>
+                                                    ) : (
+                                                        <>
+                                                            <input
+                                                                type="file"
+                                                                accept=".jpg,.jpeg,.png,.pdf"
+                                                                onChange={(e) => handleFileChange(e, 'panFile')}
+                                                                className={`input py-1.5 ${errors.panFile ? 'input-error' : ''} ${formData.panUrl && !files.panFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
+                                                            />
+                                                            {formData.panUrl && !files.panFile && (
+                                                                <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
+                                                                    <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
+                                                                </p>
+                                                            )}
+                                                            {files.panFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.panFile.name}</p>}
+                                                            {errors.panFile && <p className="text-red-500 text-sm mt-1">{errors.panFile}</p>}
+                                                        </>
                                                     )}
                                                 </div>
-                                                {errors.panNumber && <p className="text-red-500 text-sm mt-1">{errors.panNumber}</p>}
-                                            </div>
 
-                                            <div>
-                                                <label className="label">PAN Card (Photo/PDF) {formData.panUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
-                                                {formData.kycVerified && formData.panUrl ? (
-                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                                                            <ShieldCheck className="w-5 h-5 text-green-600" />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-sm font-semibold text-gray-900">Previously Verified PAN</p>
-                                                            <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => window.open(formData.panUrl, '_blank')}
-                                                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                            View
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <>
+                                                <div>
+                                                    <label className="label">Aadhar Number *</label>
+                                                    <div className="relative">
                                                         <input
-                                                            type="file"
-                                                            accept=".jpg,.jpeg,.png,.pdf"
-                                                            onChange={(e) => handleFileChange(e, 'panFile')}
-                                                            className={`input py-1.5 ${errors.panFile ? 'input-error' : ''} ${formData.panUrl && !files.panFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
+                                                            type="text"
+                                                            name="aadharNumber"
+                                                            value={formData.aadharNumber}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.replace(/\D/g, '');
+                                                                if (val.length <= 12) {
+                                                                    setFormData(prev => ({ ...prev, aadharNumber: val }));
+                                                                }
+                                                            }}
+                                                            readOnly={formData.kycVerified}
+                                                            className={`input ${errors.aadharNumber ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24 font-mono' : 'font-mono'}`}
+                                                            placeholder="12-digit Aadhar number"
+                                                            maxLength={12}
                                                         />
-                                                        {formData.panUrl && !files.panFile && (
-                                                            <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
-                                                                <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
-                                                            </p>
+                                                        {formData.kycVerified && (
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                                <ShieldCheck className="w-3 h-3 mr-1" />
+                                                                Verified
+                                                            </div>
                                                         )}
-                                                        {files.panFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.panFile.name}</p>}
-                                                        {errors.panFile && <p className="text-red-500 text-sm mt-1">{errors.panFile}</p>}
-                                                    </>
-                                                )}
-                                            </div>
+                                                    </div>
+                                                    {errors.aadharNumber && <p className="text-red-500 text-sm mt-1">{errors.aadharNumber}</p>}
+                                                </div>
 
-                                            <div>
-                                                <label className="label">Aadhar Number *</label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        name="aadharNumber"
-                                                        value={formData.aadharNumber}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.replace(/\D/g, '');
-                                                            if (val.length <= 12) {
-                                                                setFormData(prev => ({ ...prev, aadharNumber: val }));
-                                                            }
-                                                        }}
-                                                        readOnly={formData.kycVerified}
-                                                        className={`input ${errors.aadharNumber ? 'input-error' : ''} ${formData.kycVerified ? 'bg-gray-50 cursor-not-allowed pr-24 font-mono' : 'font-mono'}`}
-                                                        placeholder="12-digit Aadhar number"
-                                                        maxLength={12}
-                                                    />
-                                                    {formData.kycVerified && (
-                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-green-100">
-                                                            <ShieldCheck className="w-3 h-3 mr-1" />
-                                                            Verified
+                                                <div>
+                                                    <label className="label">Aadhaar Card (Photo/PDF) {formData.aadharUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
+                                                    {formData.kycVerified && formData.aadharUrl ? (
+                                                        <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                                                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                                <ShieldCheck className="w-5 h-5 text-green-600" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-gray-900">Previously Verified Aadhaar</p>
+                                                                <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => window.open(formData.aadharUrl, '_blank')}
+                                                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                                View
+                                                            </button>
                                                         </div>
+                                                    ) : (
+                                                        <>
+                                                            <input
+                                                                type="file"
+                                                                accept=".jpg,.jpeg,.png,.pdf"
+                                                                onChange={(e) => handleFileChange(e, 'aadharFile')}
+                                                                className={`input py-1.5 ${errors.aadharFile ? 'input-error' : ''} ${formData.aadharUrl && !files.aadharFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
+                                                            />
+                                                            {formData.aadharUrl && !files.aadharFile && (
+                                                                <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
+                                                                    <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
+                                                                </p>
+                                                            )}
+                                                            {files.aadharFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.aadharFile.name}</p>}
+                                                            {errors.aadharFile && <p className="text-red-500 text-sm mt-1">{errors.aadharFile}</p>}
+                                                        </>
                                                     )}
                                                 </div>
-                                                {errors.aadharNumber && <p className="text-red-500 text-sm mt-1">{errors.aadharNumber}</p>}
-                                            </div>
 
-                                            <div>
-                                                <label className="label">Aadhaar Card (Photo/PDF) {formData.aadharUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
-                                                {formData.kycVerified && formData.aadharUrl ? (
-                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                                                            <ShieldCheck className="w-5 h-5 text-green-600" />
+                                                <div>
+                                                    <label className="label">Cancelled Cheque (Photo/PDF) {formData.bankChequeUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
+                                                    {formData.kycVerified && formData.bankChequeUrl ? (
+                                                        <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                                                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                                                                <ShieldCheck className="w-5 h-5 text-green-600" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-gray-900">Previously Verified Cheque</p>
+                                                                <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => window.open(formData.bankChequeUrl, '_blank')}
+                                                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                                View
+                                                            </button>
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-sm font-semibold text-gray-900">Previously Verified Aadhaar</p>
-                                                            <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => window.open(formData.aadharUrl, '_blank')}
-                                                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                            View
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <input
-                                                            type="file"
-                                                            accept=".jpg,.jpeg,.png,.pdf"
-                                                            onChange={(e) => handleFileChange(e, 'aadharFile')}
-                                                            className={`input py-1.5 ${errors.aadharFile ? 'input-error' : ''} ${formData.aadharUrl && !files.aadharFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
-                                                        />
-                                                        {formData.aadharUrl && !files.aadharFile && (
-                                                            <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
-                                                                <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
-                                                            </p>
-                                                        )}
-                                                        {files.aadharFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.aadharFile.name}</p>}
-                                                        {errors.aadharFile && <p className="text-red-500 text-sm mt-1">{errors.aadharFile}</p>}
-                                                    </>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="label">Cancelled Cheque (Photo/PDF) {formData.bankChequeUrl && <span className="text-green-600 font-bold text-[10px] ml-1 uppercase">(Verified)</span>}</label>
-                                                {formData.kycVerified && formData.bankChequeUrl ? (
-                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                                                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                                                            <ShieldCheck className="w-5 h-5 text-green-600" />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-sm font-semibold text-gray-900">Previously Verified Cheque</p>
-                                                            <p className="text-[10px] text-text-secondary uppercase">Securely stored and locked</p>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => window.open(formData.bankChequeUrl, '_blank')}
-                                                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-[#1B8A9F] font-bold text-xs rounded-lg transition-all shadow-sm"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                            View
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <input
-                                                            type="file"
-                                                            accept=".jpg,.jpeg,.png,.pdf"
-                                                            onChange={(e) => handleFileChange(e, 'bankChequeFile')}
-                                                            className={`input py-1.5 ${errors.bankChequeFile ? 'input-error' : ''} ${formData.bankChequeUrl && !files.bankChequeFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
-                                                        />
-                                                        {formData.bankChequeUrl && !files.bankChequeFile && (
-                                                            <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
-                                                                <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
-                                                            </p>
-                                                        )}
-                                                        {files.bankChequeFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.bankChequeFile.name}</p>}
-                                                        {errors.bankChequeFile && <p className="text-red-500 text-sm mt-1">{errors.bankChequeFile}</p>}
-                                                    </>
-                                                )}
+                                                    ) : (
+                                                        <>
+                                                            <input
+                                                                type="file"
+                                                                accept=".jpg,.jpeg,.png,.pdf"
+                                                                onChange={(e) => handleFileChange(e, 'bankChequeFile')}
+                                                                className={`input py-1.5 ${errors.bankChequeFile ? 'input-error' : ''} ${formData.bankChequeUrl && !files.bankChequeFile ? 'border-[#1B8A9F]/30 bg-teal-50/20' : ''}`}
+                                                            />
+                                                            {formData.bankChequeUrl && !files.bankChequeFile && (
+                                                                <p className="text-[#1B8A9F] text-[10px] mt-1 font-bold italic flex items-center">
+                                                                    <Eye className="w-3 h-3 mr-1" /> Previously uploaded document will be used
+                                                                </p>
+                                                            )}
+                                                            {files.bankChequeFile && <p className="text-teal-600 text-[10px] mt-1 font-bold italic">✓ New file selected: {files.bankChequeFile.name}</p>}
+                                                            {errors.bankChequeFile && <p className="text-red-500 text-sm mt-1">{errors.bankChequeFile}</p>}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1069,23 +1129,6 @@ function ApplyForm() {
                                     </div>
 
                                     <div className="grid md:grid-cols-2 gap-6">
-                                        <div className="md:col-span-2">
-                                            <label className="label">Select Investment Product *</label>
-                                            <select
-                                                name="productName"
-                                                value={formData.productName}
-                                                onChange={handleChange}
-                                                className={`input ${errors.productName ? 'input-error' : ''}`}
-                                            >
-                                                <option value="">Select a product</option>
-                                                <option value="Intraday Trading">Intraday Trading (Monthly)</option>
-                                                <option value="Short-Term SIP">Short-Term SIP (Quarterly)</option>
-                                                <option value="Long-Term Holding">Long-Term Holding (Yearly)</option>
-                                                <option value="Unlisted Shares">Unlisted Shares (3-Year Lock-in)</option>
-                                            </select>
-                                            {errors.productName && <p className="text-red-500 text-sm mt-1">{errors.productName}</p>}
-                                        </div>
-
                                         <div>
                                             <label className="label">
                                                 {['Intraday Trading', 'Short-Term SIP', 'Long-Term Holding'].includes(formData.productName)
@@ -1202,7 +1245,7 @@ function ApplyForm() {
                                                 </h4>
                                             </div>
                                             <div>
-                                                <label className="label">Broker ID *</label>
+                                                <label className="label">Broker ID (Optional)</label>
                                                 <input
                                                     type="text"
                                                     name="brokerId"
@@ -1214,7 +1257,7 @@ function ApplyForm() {
                                                 {errors.brokerId && <p className="text-red-500 text-sm mt-1">{errors.brokerId}</p>}
                                             </div>
                                             <div>
-                                                <label className="label">Broker Name *</label>
+                                                <label className="label">Broker Name (Optional)</label>
                                                 <select
                                                     name="brokerName"
                                                     value={formData.brokerName}
@@ -1429,9 +1472,17 @@ function ApplyForm() {
                                         <button
                                             type="button"
                                             onClick={handleNext}
-                                            className="w-full sm:w-auto px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+                                            disabled={isValidating}
+                                            className="w-full sm:w-auto px-6 py-3 bg-[#1B8A9F] text-white rounded-lg font-semibold hover:bg-[#156d7d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
-                                            Next Step
+                                            {isValidating ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Validating...
+                                                </>
+                                            ) : (
+                                                'Next Step'
+                                            )}
                                         </button>
                                     ) : (
                                         <button

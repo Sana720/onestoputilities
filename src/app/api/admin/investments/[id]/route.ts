@@ -24,7 +24,34 @@ export async function PATCH(
             .update({
                 dividend_rate: data.dividend_rate,
                 status: data.status,
-                fees: data.fees, // Support fee updates
+                fees: data.fees,
+                // Comprehensive Client Data Support
+                full_name: data.full_name,
+                father_name: data.father_name,
+                dob: data.dob,
+                gender: data.gender,
+                marital_status: data.marital_status,
+                occupation: data.occupation,
+                email: data.email,
+                contact_number: data.contact_number,
+                pan_number: data.pan_number,
+                aadhar_number: data.aadhar_number,
+                permanent_address: data.permanent_address,
+                investment_amount: data.investment_amount,
+                number_of_shares: data.number_of_shares,
+                product_name: data.product_name,
+                broker_id: data.broker_id,
+                broker_name: data.broker_name,
+                nominee: data.nominee,
+                bank_details: data.bank_details,
+                payment_mode: data.payment_mode,
+                payment_reference: data.payment_reference,
+                payment_date: data.payment_date,
+                demat_account: data.demat_account,
+                face_value_per_share: data.face_value_per_share,
+                lock_in_period: data.lock_in_period,
+                lock_in_start_date: data.lock_in_start_date,
+                lock_in_end_date: data.lock_in_end_date
             })
             .eq('id', id)
             .select()
