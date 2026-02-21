@@ -164,9 +164,13 @@ export async function POST(request: NextRequest) {
                 if (invError) throw new Error(`Investment Error: ${invError.message}`);
 
                 // Send Email Notifications
-                const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login`;
+                const protocol = request.headers.get('x-forwarded-proto') || 'http';
+                const host = request.headers.get('host');
+                const loginUrl = `${protocol}://${host}/login`;
+                console.log(`[BULK_ONBOARD] Generated Login URL for ${record.email}: ${loginUrl}`);
 
                 // 1. Welcome Email to User
+                console.log(`[BULK_ONBOARD] Sending welcome email to: ${record.email}`);
                 await sendEmail({
                     to: record.email,
                     subject: 'Welcome to Trader G Wealth - Account Created',

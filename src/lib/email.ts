@@ -3,10 +3,10 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'mail.tradergwealth.com',
     port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
+    secure: (process.env.SMTP_PORT || '465') === '465', // true for 465, false for other ports
     auth: {
         user: process.env.SMTP_USER || 'connect@tradergwealth.com',
-        pass: process.env.SMTP_PASS || '',
+        pass: process.env.SMTP_PASS || 'connect@123456',
     },
 });
 
@@ -17,27 +17,31 @@ interface EmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
+    console.log(`[EMAIL] Attempting to send to: ${to} | Subject: ${subject}`);
+
     // If no password, we just log to console (development/placeholder mode)
     if (!process.env.SMTP_PASS) {
+        console.warn('[EMAIL] SMTP_PASS is missing. Email will NOT be sent (Simulation mode).');
         console.log('--- EMAIL SIMULATION ---');
         console.log(`To: ${to}`);
         console.log(`Subject: ${subject}`);
-        console.log('Content:', html);
         console.log('------------------------');
         return { success: true, simulated: true };
     }
 
     try {
+        const fromEmail = process.env.SMTP_USER || 'connect@tradergwealth.com';
         const info = await transporter.sendMail({
-            from: `"Trader G Wealth" <${process.env.SMTP_USER || 'connect@tradergwealth.com'}>`,
+            from: `"Trader G Wealth" <${fromEmail}>`,
             to,
             subject,
             html,
         });
-        console.log('Email sent: %s', info.messageId);
+        console.log(`[EMAIL] Success! Message ID: ${info.messageId} | Recipient: ${to}`);
         return { success: true, messageId: info.messageId };
-    } catch (error) {
-        console.error('Email sending failed:', error);
+    } catch (error: any) {
+        console.error(`[EMAIL] FAILED for ${to}:`, error.message);
+        console.error('[EMAIL] Full Error Details:', JSON.stringify(error, null, 2));
         return { success: false, error };
     }
 }

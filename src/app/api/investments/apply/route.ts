@@ -176,9 +176,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Send Email Notifications
-        const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login`;
+        const protocol = request.headers.get('x-forwarded-proto') || 'http';
+        const host = request.headers.get('host');
+        const loginUrl = `${protocol}://${host}/login`;
+        console.log(`[INVESTMENT_APPLY] Generated Login URL: ${loginUrl}`);
 
         // 1. Welcome Email to User
+        console.log(`[INVESTMENT_APPLY] Sending welcome email to user: ${data.email}`);
         await sendEmail({
             to: data.email,
             subject: 'Welcome to Trader G Wealth - Application Received',
@@ -186,6 +190,7 @@ export async function POST(request: NextRequest) {
         });
 
         // 2. Notification to Admins/Managers
+        console.log(`[INVESTMENT_APPLY] Sending admin notification to: ${ADMIN_EMAILS.join(', ')}`);
         await sendEmail({
             to: ADMIN_EMAILS,
             subject: `New Resource Registered: ${data.fullName}`,

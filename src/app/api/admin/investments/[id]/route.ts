@@ -17,6 +17,8 @@ export async function PATCH(
             .eq('id', id)
             .single();
 
+        console.log(`[ADMIN_INV_UPDATE] Found investment ${id}. Current Status: ${currentInv?.status} | New Status: ${data.status}`);
+
         const { data: investment, error } = await supabaseAdmin
             .from('investments')
             .update({
@@ -42,20 +44,31 @@ export async function PATCH(
         const isNowApproved = (newStatus === 'approved' || newStatus === 'active') && (oldStatus !== 'approved' && oldStatus !== 'active');
 
         if (isNowApproved && currentInv) {
-            const loginUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login`;
+            console.log(`[ADMIN_INV_UPDATE] Triggering approval emails for ${id}`);
 
-            // 1. Send Approval Email to Client
-            await sendEmail({
-                to: currentInv.users.email,
-                subject: 'Investment Approved - Trader G Wealth',
-                html: getInvestmentApprovedTemplate(
-                    currentInv.full_name,
-                    currentInv.product_name || 'Unlisted Shares',
-                    currentInv.investment_amount,
-                    currentInv.lock_in_end_date,
-                    loginUrl
-                )
-            });
+            // Generate Login URL dynamically
+            const protocol = request.headers.get('x-forwarded-proto') || 'http';
+            const host = request.headers.get('host');
+            const loginUrl = `${protocol}://${host}/login`;
+
+            console.log(`[ADMIN_INV_UPDATE] Dynamic Login URL: ${loginUrl}`);
+
+            const clientEmail = (currentInv.users as any)?.email;
+            if (clientEmail) {
+                await sendEmail({
+                    to: clientEmail,
+                    subject: 'Investment Approved - Trader G Wealth',
+                    html: getInvestmentApprovedTemplate(
+                        currentInv.full_name,
+                        currentInv.product_name || 'Unlisted Shares',
+                        currentInv.investment_amount,
+                        currentInv.lock_in_end_date,
+                        loginUrl
+                    )
+                });
+            } else {
+                console.error(`[ADMIN_INV_UPDATE] ERROR: Client email not found in currentInv for ${id}`);
+            }
 
             // 2. Send Referral Onboarded Email to Referrer (if exists and not ADMIN)
             if (currentInv.users.referred_by_code && currentInv.users.referred_by_code !== 'ADMIN') {
