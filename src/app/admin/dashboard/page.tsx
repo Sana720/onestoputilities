@@ -618,12 +618,14 @@ export default function AdminDashboard() {
                     });
                 }
                 setHasMoreInvestments((data.investments || []).length === 20);
+                setIsInvestmentTabReady(true);
             }
         } catch (error) {
             console.error('Error fetching investments:', error);
         } finally {
             setIsFetchingInvestments(false);
             setLoading(false);
+            setIsInvestmentTabReady(true);
         }
     };
 

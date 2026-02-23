@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
         let query = supabaseAdmin
             .from('investments')
-            .select('investment_amount, status, product_name, email, id, dividends(amount, status), historical_dividends(amount, status)');
+            .select('investment_amount, status, product_name, email, id, dividends');
 
         if (search) {
             query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,payment_reference.ilike.%${search}%,id.ilike.%${search}%`);
@@ -29,22 +29,23 @@ export async function GET(request: NextRequest) {
         const { data: investments, error } = await query;
 
         if (error) {
+            console.error('Database query error:', error);
             throw error;
         }
 
-        const totalInvestment = investments.reduce((sum, inv) => sum + Number(inv.investment_amount), 0);
-        const totalClients = new Set(investments.map((inv: any) => inv.email)).size;
-        const activeInvestmentsCount = investments.filter((inv: any) => inv.status === 'active').length;
+        const totalInvestment = investments?.reduce((sum, inv) => sum + Number(inv.investment_amount || 0), 0) || 0;
+        const totalClients = new Set(investments?.map((inv: any) => inv.email)).size;
+        const activeInvestmentsCount = investments?.filter((inv: any) => inv.status === 'active').length || 0;
 
         let totalDividendsPaid = 0;
-        investments.forEach((inv: any) => {
-            const divs = [...(inv.dividends || []), ...(inv.historical_dividends || [])];
+        investments?.forEach((inv: any) => {
+            const divs = inv.dividends || [];
             divs.forEach((d: any) => {
                 if (d.status === 'paid') totalDividendsPaid += Number(d.amount || 0);
             });
         });
 
-        const products = Array.from(new Set(investments.map((inv: any) => inv.product_name || 'TRADERG ASSET')));
+        const products = Array.from(new Set(investments?.map((inv: any) => inv.product_name || 'TRADERG ASSET')));
 
         return NextResponse.json({
             success: true,
