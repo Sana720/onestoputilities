@@ -91,6 +91,8 @@ export default function AdminDashboard() {
     const [user, setUser] = useState<any>(null);
     const [investments, setInvestments] = useState<Investment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [bulkProgress, setBulkProgress] = useState({ total: 0, current: 0, status: 'idle' as 'idle' | 'processing' | 'completed' | 'error' });
+    const [isInvestmentTabReady, setIsInvestmentTabReady] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [productFilter, setProductFilter] = useState('all');
@@ -363,6 +365,20 @@ export default function AdminDashboard() {
         });
         if (node) observer.current.observe(node);
     }, [loading, activeTab]);
+
+    useEffect(() => {
+        let isMounted = true;
+        if (activeTab === 'investments') {
+            setIsInvestmentTabReady(false);
+            const timer = setTimeout(() => {
+                if (isMounted) setIsInvestmentTabReady(true);
+            }, 300); // Give the UI a moment to breathe before rendering the heavy table
+            return () => {
+                isMounted = false;
+                clearTimeout(timer);
+            };
+        }
+    }, [activeTab]);
 
     useEffect(() => {
         if (activeTab === 'investments') {
@@ -1233,7 +1249,13 @@ export default function AdminDashboard() {
                                                 </td>
                                             </tr>
                                         ) : referrals.length > 0 ? (
-                                            referrals.map((referral) => (
+                                            referrals.filter(r => {
+                                                const matchesSearch = r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    r.referrer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    r.referred_by_code?.toLowerCase().includes(searchTerm.toLowerCase());
+                                                return matchesSearch;
+                                            }).map((referral) => (
                                                 <tr key={referral.id} className="hover:bg-gray-50/50 transition-colors group">
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-3">
@@ -1282,138 +1304,147 @@ export default function AdminDashboard() {
                                     </tbody>
                                 </table>
                             ) : activeTab === 'investments' ? (
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-gray-50/50">
-                                            <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client / Contact</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Position</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Yield %</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Maturity</th>
-                                            <th className="px-8 py-5 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {filteredInvestments.slice(0, investmentLimit).map((investment, idx) => (
-                                            <tr
-                                                key={investment.id}
-                                                ref={idx === filteredInvestments.slice(0, investmentLimit).length - 1 ? (node => lastElementRef(node as any)) : null}
-                                                className="hover:bg-gray-50/50 transition-colors group"
-                                            >
-                                                <td className="px-8 py-6">
-                                                    <button
-                                                        onClick={() => handleManageInvestment(investment)}
-                                                        className="text-sm font-bold text-gray-900 leading-none hover:text-[#1B8A9F] transition-colors text-left"
+                                !isInvestmentTabReady ? (
+                                    <div className="flex flex-col items-center justify-center py-20">
+                                        <Loader2 className="w-12 h-12 text-[#1B8A9F] animate-spin" />
+                                        <p className="text-gray-500 mt-4 font-medium">Loading investments table...</p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="bg-gray-50/50">
+                                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client / Contact</th>
+                                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Position</th>
+                                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Yield %</th>
+                                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Maturity</th>
+                                                    <th className="px-8 py-5 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {filteredInvestments.slice(0, investmentLimit).map((investment, idx) => (
+                                                    <tr
+                                                        key={investment.id}
+                                                        ref={idx === filteredInvestments.slice(0, investmentLimit).length - 1 ? (node => lastElementRef(node as any)) : null}
+                                                        className="hover:bg-gray-50/50 transition-colors group"
                                                     >
-                                                        {investment.full_name}
-                                                    </button>
-                                                    <p className="text-[10px] text-[#1B8A9F] font-black uppercase tracking-widest mt-1.5">{investment.product_name || 'TRADERG ASSET'}</p>
-                                                    <p className="text-xs text-gray-400 mt-1 flex items-center">
-                                                        <Mail className="w-3 h-3 mr-1" />
-                                                        {investment.email}
-                                                    </p>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <p className="text-sm font-bold text-gray-900 leading-none">{formatCurrency(investment.investment_amount)}</p>
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1.5">
-                                                        {investment.number_of_shares || (investment.product_name === 'Unlisted Shares' ? Math.floor(investment.investment_amount / 100) : 0)} Units
-                                                    </p>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center">
-                                                        <span className="text-sm font-bold text-teal-600">{investment.dividend_rate}%</span>
-                                                        <ArrowUpRight className="w-3 h-3 ml-1 text-teal-300" />
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${investment.status === 'active' ? 'bg-green-100 text-green-700' :
-                                                        investment.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                                                            'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                        {investment.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <p className="text-sm font-medium text-gray-900">{formatDate(investment.lock_in_end_date)}</p>
-                                                </td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <div className="flex items-center justify-end space-x-2">
-                                                        <button
-                                                            onClick={() => handleManageInvestment(investment)}
-                                                            className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#1B8A9F] hover:bg-teal-50 rounded-xl transition-all"
-                                                        >
-                                                            <Edit className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleAddDividend(investment)}
-                                                            disabled={false}
-                                                            className="p-2.5 bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all disabled:opacity-50"
-                                                            title="Add Dividend"
-                                                        >
-                                                            <DollarSign className="w-4 h-4" />
-                                                        </button>
-                                                        {investment.contact_number && (
-                                                            <a
-                                                                href={`https://wa.me/${investment.contact_number.replace(/\D/g, '')}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#25D366] hover:bg-green-50 rounded-xl transition-all"
-                                                                title="WhatsApp Connection"
-                                                            >
-                                                                <MessageCircle className="w-4 h-4" />
-                                                            </a>
-                                                        )}
-                                                        {(investment.product_name === 'Unlisted Shares' &&
-                                                            (investment.status === 'approved' || investment.status === 'active') &&
-                                                            investment.payment_verified &&
-                                                            investment.client_signature_url &&
-                                                            investment.admin_signed_at &&
-                                                            adminSignatureUrl) ? (
+                                                        <td className="px-8 py-6">
                                                             <button
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        const { pdf } = await import('@react-pdf/renderer');
-                                                                        const blob = await pdf(<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />).toBlob();
-                                                                        const url = URL.createObjectURL(blob);
-                                                                        const link = document.createElement('a');
-                                                                        link.href = url;
-                                                                        link.download = `Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`;
-                                                                        document.body.appendChild(link);
-                                                                        link.click();
-                                                                        document.body.removeChild(link);
-                                                                        URL.revokeObjectURL(url);
-                                                                    } catch (error) {
-                                                                        console.error("PDF generation failed", error);
-                                                                        alert("Failed to generate PDF. Please try again.");
-                                                                    }
-                                                                }}
-                                                                className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
-                                                                title="Download Agreement"
+                                                                onClick={() => handleManageInvestment(investment)}
+                                                                className="text-sm font-bold text-gray-900 leading-none hover:text-[#1B8A9F] transition-colors text-left"
                                                             >
-                                                                <Download className="w-4 h-4" />
+                                                                {investment.full_name}
                                                             </button>
-                                                        ) : investment.product_name === 'Unlisted Shares' ? (
-                                                            <button
-                                                                disabled
-                                                                className="p-2.5 bg-gray-50 text-gray-200 rounded-xl cursor-not-allowed"
-                                                                title={!(investment.status === 'approved' || investment.status === 'active') ? "Application pending approval" :
-                                                                    !investment.payment_verified ? "Pending payment verification" :
-                                                                        !investment.client_signature_url ? "Client signature pending" :
-                                                                            "Admin signature pending"}
-                                                            >
-                                                                <Lock className="w-4 h-4" />
-                                                            </button>
-                                                        ) : (
-                                                            <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100" title="T&C Agreed">
-                                                                <CheckCircle2 className="w-4 h-4" />
+                                                            <p className="text-[10px] text-[#1B8A9F] font-black uppercase tracking-widest mt-1.5">{investment.product_name || 'TRADERG ASSET'}</p>
+                                                            <p className="text-xs text-gray-400 mt-1 flex items-center">
+                                                                <Mail className="w-3 h-3 mr-1" />
+                                                                {investment.email}
+                                                            </p>
+                                                        </td>
+                                                        <td className="px-8 py-6">
+                                                            <p className="text-sm font-bold text-gray-900 leading-none">{formatCurrency(investment.investment_amount)}</p>
+                                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1.5">
+                                                                {investment.number_of_shares || (investment.product_name === 'Unlisted Shares' ? Math.floor(investment.investment_amount / 100) : 0)} Units
+                                                            </p>
+                                                        </td>
+                                                        <td className="px-8 py-6">
+                                                            <div className="flex items-center">
+                                                                <span className="text-sm font-bold text-teal-600">{investment.dividend_rate}%</span>
+                                                                <ArrowUpRight className="w-3 h-3 ml-1 text-teal-300" />
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                        </td>
+                                                        <td className="px-8 py-6">
+                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${investment.status === 'active' ? 'bg-green-100 text-green-700' :
+                                                                investment.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-gray-100 text-gray-700'
+                                                                }`}>
+                                                                {investment.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-8 py-6">
+                                                            <p className="text-sm font-medium text-gray-900">{formatDate(investment.lock_in_end_date)}</p>
+                                                        </td>
+                                                        <td className="px-8 py-6 text-right">
+                                                            <div className="flex items-center justify-end space-x-2">
+                                                                <button
+                                                                    onClick={() => handleManageInvestment(investment)}
+                                                                    className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#1B8A9F] hover:bg-teal-50 rounded-xl transition-all"
+                                                                >
+                                                                    <Edit className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleAddDividend(investment)}
+                                                                    disabled={false}
+                                                                    className="p-2.5 bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all disabled:opacity-50"
+                                                                    title="Add Dividend"
+                                                                >
+                                                                    <DollarSign className="w-4 h-4" />
+                                                                </button>
+                                                                {investment.contact_number && (
+                                                                    <a
+                                                                        href={`https://wa.me/${investment.contact_number.replace(/\D/g, '')}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#25D366] hover:bg-green-50 rounded-xl transition-all"
+                                                                        title="WhatsApp Connection"
+                                                                    >
+                                                                        <MessageCircle className="w-4 h-4" />
+                                                                    </a>
+                                                                )}
+                                                                {(investment.product_name === 'Unlisted Shares' &&
+                                                                    (investment.status === 'approved' || investment.status === 'active') &&
+                                                                    investment.payment_verified &&
+                                                                    investment.client_signature_url &&
+                                                                    investment.admin_signed_at &&
+                                                                    adminSignatureUrl) ? (
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                const { pdf } = await import('@react-pdf/renderer');
+                                                                                const blob = await pdf(<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />).toBlob();
+                                                                                const url = URL.createObjectURL(blob);
+                                                                                const link = document.createElement('a');
+                                                                                link.href = url;
+                                                                                link.download = `Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`;
+                                                                                document.body.appendChild(link);
+                                                                                link.click();
+                                                                                document.body.removeChild(link);
+                                                                                URL.revokeObjectURL(url);
+                                                                            } catch (error) {
+                                                                                console.error("PDF generation failed", error);
+                                                                                alert("Failed to generate PDF. Please try again.");
+                                                                            }
+                                                                        }}
+                                                                        className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                                                                        title="Download Agreement"
+                                                                    >
+                                                                        <Download className="w-4 h-4" />
+                                                                    </button>
+                                                                ) : investment.product_name === 'Unlisted Shares' ? (
+                                                                    <button
+                                                                        disabled
+                                                                        className="p-2.5 bg-gray-50 text-gray-200 rounded-xl cursor-not-allowed"
+                                                                        title={!(investment.status === 'approved' || investment.status === 'active') ? "Application pending approval" :
+                                                                            !investment.payment_verified ? "Pending payment verification" :
+                                                                                !investment.client_signature_url ? "Client signature pending" :
+                                                                                    "Admin signature pending"}
+                                                                    >
+                                                                        <Lock className="w-4 h-4" />
+                                                                    </button>
+                                                                ) : (
+                                                                    <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100" title="T&C Agreed">
+                                                                        <CheckCircle2 className="w-4 h-4" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )
                             ) : activeTab === 'logs' ? (
                                 <table className="w-full">
                                     <thead>
