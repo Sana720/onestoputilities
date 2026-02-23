@@ -284,3 +284,33 @@ CREATE TABLE IF NOT EXISTS otps (
 );
 
 CREATE INDEX IF NOT EXISTS idx_otps_email_otp ON otps(email, otp);
+
+-- Create staff_activity_logs table
+CREATE TABLE IF NOT EXISTS public.staff_activity_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    role TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('LOGIN', 'LOGOUT')),
+    user_agent TEXT,
+    ip_address TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_staff_activity_logs_user_id ON public.staff_activity_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_staff_activity_logs_created_at ON public.staff_activity_logs(created_at DESC);
+
+ALTER TABLE public.staff_activity_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Staff can view logs" ON public.staff_activity_logs;
+CREATE POLICY "Staff can view logs"
+    ON public.staff_activity_logs FOR SELECT
+    USING (is_staff());
+
+DROP POLICY IF EXISTS "Anyone can insert logs" ON public.staff_activity_logs;
+CREATE POLICY "Anyone can insert logs"
+    ON public.staff_activity_logs FOR INSERT
+    WITH CHECK (true);
+
+GRANT SELECT, INSERT ON public.staff_activity_logs TO authenticated, anon;
+GRANT ALL ON public.staff_activity_logs TO service_role;

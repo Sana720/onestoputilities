@@ -1486,7 +1486,7 @@ function ApplyForm() {
                                                             setFiles(prev => ({ ...prev, signatureFile: null }));
                                                             setExistingSignatureUrl(null);
                                                         }}
-                                                        currentSignatureUrl={existingSignatureUrl || undefined}
+                                                        currentUrl={existingSignatureUrl || undefined}
                                                         label="Digital Signature *"
                                                     />
                                                     {errors.signatureFile && (

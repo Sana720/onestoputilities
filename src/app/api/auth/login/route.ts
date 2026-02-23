@@ -52,6 +52,23 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        // Record staff activity log
+        if (userData.role === 'admin' || userData.role === 'manager') {
+            const userAgent = request.headers.get('user-agent') || 'unknown';
+            const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
+
+            await supabaseAdmin
+                .from('staff_activity_logs')
+                .insert({
+                    user_id: data.user.id,
+                    email: userData.email,
+                    role: userData.role,
+                    action: 'LOGIN',
+                    user_agent: userAgent,
+                    ip_address: ipAddress
+                });
+        }
+
         return NextResponse.json({
             success: true,
             user: responseUser,

@@ -140,7 +140,7 @@ export default function AdminProfile() {
 
                                 <SignatureUpload
                                     onUpload={setSignatureFile}
-                                    currentSignatureUrl={admin?.signature_url}
+                                    currentUrl={admin?.signature_url}
                                     label="Upload Official Signature"
                                 />
                             </div>

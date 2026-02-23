@@ -9,7 +9,7 @@ import {
     Clock, Lock, X, Search, Download, Filter, Briefcase,
     Loader2, Trash2, AlertCircle, ArrowRight, ShieldCheck,
     Sparkles, Upload, User, Mail, MessageCircle, AlertTriangle,
-    ArrowUpRight, Edit, Eye, MoreHorizontal
+    ArrowUpRight, Edit, Eye, MoreHorizontal, FileText
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
@@ -125,6 +125,8 @@ export default function AdminDashboard() {
     });
     const [creatingStaff, setCreatingStaff] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [staffLogs, setStaffLogs] = useState<any[]>([]);
+    const [staffLogsLoading, setStaffLogsLoading] = useState(false);
 
     const handleEditChange = (field: string, value: any) => {
         setEditData((prev: any) => {
@@ -296,7 +298,7 @@ export default function AdminDashboard() {
             setOtpLoading(false);
         }
     };
-    const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends' | 'referrals' | 'staff'>('investments');
+    const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends' | 'referrals' | 'staff' | 'logs'>('investments');
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [investmentLimit, setInvestmentLimit] = useState(20);
@@ -357,10 +359,14 @@ export default function AdminDashboard() {
     }, [loading, activeTab]);
 
     useEffect(() => {
-        if (activeTab === 'referrals') {
+        if (activeTab === 'investments') {
+            fetchAllInvestments();
+        } else if (activeTab === 'referrals') {
             fetchAdminReferrals();
         } else if (activeTab === 'staff') {
             fetchStaff();
+        } else if (activeTab === 'logs') {
+            fetchStaffLogs();
         }
     }, [activeTab]);
 
@@ -475,6 +481,22 @@ export default function AdminDashboard() {
     };
 
     const handleLogout = async () => {
+        if (user) {
+            try {
+                // Try to record logout event before signing out
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        email: user.email,
+                        role: user.role
+                    })
+                });
+            } catch (err) {
+                console.error('Error logging logout:', err);
+            }
+        }
         await supabase.auth.signOut();
         localStorage.removeItem('user');
         localStorage.removeItem('session');
@@ -639,6 +661,21 @@ export default function AdminDashboard() {
             alert('An error occurred during sync');
         } finally {
             setSyncing(false);
+        }
+    };
+
+    const fetchStaffLogs = async () => {
+        setStaffLogsLoading(true);
+        try {
+            const response = await fetch('/api/admin/logs?limit=100');
+            const data = await response.json();
+            if (data.success) {
+                setStaffLogs(data.logs);
+            }
+        } catch (error) {
+            console.error('Error fetching logs:', error);
+        } finally {
+            setStaffLogsLoading(false);
         }
     };
 
@@ -945,6 +982,17 @@ export default function AdminDashboard() {
                                     }`}
                             >
                                 Staff
+                            </button>
+                        )}
+                        {user?.role === 'admin' && (
+                            <button
+                                onClick={() => setActiveTab('logs')}
+                                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'logs'
+                                    ? 'bg-white text-[#1B8A9F] shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-900'
+                                    }`}
+                            >
+                                Activity Logs
                             </button>
                         )}
                     </div>
@@ -1291,6 +1339,81 @@ export default function AdminDashboard() {
                                         ))}
                                     </tbody>
                                 </table>
+                            ) : activeTab === 'logs' ? (
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gray-50/50">
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Staff Member</th>
+                                            <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Action</th>
+                                            <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Timestamp</th>
+                                            <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">IP Address</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">System Info</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {staffLogsLoading ? (
+                                            <tr>
+                                                <td colSpan={5} className="py-20 text-center">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <Loader2 className="w-12 h-12 text-[#1B8A9F] animate-spin" />
+                                                        <p className="text-gray-500 mt-4 font-medium italic">Fetching activity logs...</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ) : staffLogs.length > 0 ? (
+                                            staffLogs.filter(log => {
+                                                const matchesSearch = log.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    log.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    log.user_agent?.toLowerCase().includes(searchTerm.toLowerCase());
+                                                return matchesSearch;
+                                            }).map((log) => (
+                                                <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center">
+                                                            <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 mr-3">
+                                                                <User className="w-4 h-4" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-black text-gray-900">{log.email}</p>
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{log.role}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${log.action === 'LOGIN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                            {log.action}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <p className="text-xs font-bold text-gray-700">{formatDate(log.created_at)}</p>
+                                                        <p className="text-[10px] text-gray-400 mt-0.5">{new Date(log.created_at).toLocaleTimeString()}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <p className="text-[10px] font-mono text-gray-500">{log.ip_address}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <p className="text-[10px] text-gray-400 truncate max-w-xs" title={log.user_agent}>
+                                                            {log.user_agent}
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} className="py-20 text-center">
+                                                    <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 mx-8">
+                                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                                            <FileText className="w-8 h-8 text-gray-300" />
+                                                        </div>
+                                                        <h4 className="text-gray-900 font-bold uppercase tracking-tight">No Activity Logs Found</h4>
+                                                        <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">Staff activity and system events will be recorded here.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             ) : (
                                 <table className="w-full">
                                     <thead>
@@ -1308,7 +1431,7 @@ export default function AdminDashboard() {
                                         {getLedgerData().filter(item => {
                                             const matchesSearch = item.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                 item.reference.toLowerCase().includes(searchTerm.toLowerCase());
-                                            const matchesTab = activeTab === 'pending_dividends'
+                                            const matchesTab = (activeTab as string) === 'pending_dividends'
                                                 ? (item.type === 'DEBIT' && item.status === 'pending')
                                                 : (item.type === 'DEBIT' ? item.status === 'paid' : true);
                                             return matchesSearch && matchesTab;
@@ -1363,7 +1486,7 @@ export default function AdminDashboard() {
                             <div ref={lastElementRef} className="h-4 w-full" />
                         </div>
 
-                        {(activeTab === 'investments' ? filteredInvestments.length : activeTab === 'referrals' ? referrals.length : activeTab === 'staff' ? staff.length : getLedgerData().length) === 0 && (
+                        {(activeTab === 'investments' ? filteredInvestments.length : activeTab === 'referrals' ? referrals.length : activeTab === 'staff' ? staff.length : activeTab === 'logs' ? staffLogs.length : getLedgerData().length) === 0 && (
                             <div className="p-20 text-center">
                                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Search className="w-8 h-8 text-gray-200" />
