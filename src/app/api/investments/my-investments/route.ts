@@ -13,11 +13,13 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        const normalizedEmail = (email || '').trim().toLowerCase();
+
         // Fetch investments for the user
         const { data: investments, error } = await supabaseAdmin
             .from('investments')
             .select('*, users(kyc_verified)')
-            .eq('email', email)
+            .ilike('email', normalizedEmail)
             .order('created_at', { ascending: false });
 
         if (error) {

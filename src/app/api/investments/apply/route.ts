@@ -6,11 +6,13 @@ export async function POST(request: NextRequest) {
     try {
         const data = await request.json();
 
+        const normalizedEmail = (data.email || '').trim().toLowerCase();
+
         // Check if user already exists
         const { data: existingUser } = await supabaseAdmin
             .from('users')
             .select('id')
-            .eq('email', data.email)
+            .eq('email', normalizedEmail)
             .single();
 
         let userId = existingUser?.id;
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
             tempPassword = sanitizedPhone.slice(-6);
 
             const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-                email: data.email,
+                email: normalizedEmail,
                 password: tempPassword,
                 email_confirm: true,
                 user_metadata: {
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
                 .from('users')
                 .insert({
                     id: userId,
-                    email: data.email,
+                    email: normalizedEmail,
                     role: 'client',
                     name: data.fullName,
                     referral_code: newUserReferralCode,
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
                 occupation: data.occupation,
                 permanent_address: data.permanentAddress,
                 contact_number: data.contactNumber,
-                email: data.email,
+                email: normalizedEmail,
                 nominee: {
                     name: data.nomineeName,
                     relation: data.nomineeRelation,
@@ -187,9 +189,9 @@ export async function POST(request: NextRequest) {
         // 1. Welcome Email to User
         console.log(`[INVESTMENT_APPLY] Sending welcome email to user: ${data.email}`);
         await sendEmail({
-            to: data.email,
+            to: normalizedEmail,
             subject: 'Welcome to TraderG Wealth - Application Received',
-            html: getWelcomeEmailTemplate(data.fullName, data.email, tempPassword || 'Last 6 digits of your mobile', loginUrl)
+            html: getWelcomeEmailTemplate(data.fullName, normalizedEmail, tempPassword || 'Last 6 digits of your mobile', loginUrl)
         });
 
         // 2. Notification to Admins/Managers
@@ -197,7 +199,7 @@ export async function POST(request: NextRequest) {
         await sendEmail({
             to: ADMIN_EMAILS,
             subject: `New Resource Registered: ${data.fullName}`,
-            html: getAdminNotificationTemplate(data.fullName, data.email)
+            html: getAdminNotificationTemplate(data.fullName, normalizedEmail)
         });
 
         // 3. Referral Applied notification
@@ -214,7 +216,7 @@ export async function POST(request: NextRequest) {
             message: 'Application submitted successfully',
             applicationId: investmentData.id,
             credentials: {
-                email: data.email,
+                email: normalizedEmail,
                 tempPassword: tempPassword,
             },
         });

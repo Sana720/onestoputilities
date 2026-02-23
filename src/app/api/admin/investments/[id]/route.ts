@@ -65,6 +65,10 @@ export async function PATCH(
             );
         }
 
+        if (data.email) {
+            data.email = data.email.trim().toLowerCase();
+        }
+
         // Sync email update with users table and Supabase Auth if it changed
         const oldEmail = (currentInv.users as any)?.email;
         const newEmail = data.email;

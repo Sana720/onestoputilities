@@ -36,11 +36,14 @@ export async function POST(request: NextRequest) {
 
         for (const record of records) {
             try {
+                // Normalize email
+                const normalizedEmail = (record.email || '').trim().toLowerCase();
+
                 // Check if user already exists
                 const { data: existingUser } = await supabaseAdmin
                     .from('users')
                     .select('id, referred_by_code')
-                    .eq('email', record.email)
+                    .eq('email', normalizedEmail)
                     .single();
 
                 let userId = existingUser?.id;
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
                     tempPassword = sanitizedPhone.slice(-6) || '123456';
 
                     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-                        email: record.email,
+                        email: normalizedEmail,
                         password: tempPassword,
                         email_confirm: true,
                         user_metadata: {
@@ -85,7 +88,7 @@ export async function POST(request: NextRequest) {
                         .from('users')
                         .insert({
                             id: userId,
-                            email: record.email,
+                            email: normalizedEmail,
                             role: 'client',
                             name: record.fullName,
                             referral_code: generateCode(),
@@ -125,7 +128,7 @@ export async function POST(request: NextRequest) {
                         occupation: record.occupation || 'N/A',
                         permanent_address: record.permanentAddress || 'N/A',
                         contact_number: record.contactNumber || 'N/A',
-                        email: record.email,
+                        email: normalizedEmail,
                         marital_status: record.maritalStatus || 'Single',
                         pan_number: record.panNumber || null,
                         aadhar_number: record.aadharNumber || null,
@@ -191,16 +194,16 @@ export async function POST(request: NextRequest) {
                 // 1. Welcome Email to User
                 console.log(`[BULK_ONBOARD] Sending welcome email to: ${record.email}`);
                 await sendEmail({
-                    to: record.email,
+                    to: normalizedEmail,
                     subject: 'Welcome to TraderG Wealth - Account Created',
-                    html: getWelcomeEmailTemplate(record.fullName, record.email, tempPassword || 'Last 6 digits of your mobile', loginUrl)
+                    html: getWelcomeEmailTemplate(record.fullName, normalizedEmail, tempPassword || 'Last 6 digits of your mobile', loginUrl)
                 });
 
                 // 2. Notification to Admins/Managers
                 await sendEmail({
                     to: ADMIN_EMAILS,
                     subject: `Historical Onboarding: ${record.fullName}`,
-                    html: getAdminNotificationTemplate(record.fullName, record.email)
+                    html: getAdminNotificationTemplate(record.fullName, normalizedEmail)
                 });
 
                 // 3. Referral Onboarded notification
