@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
 
         const { data: logs, error, count } = await supabaseAdmin
             .from('staff_activity_logs')
-            .select('*', { count: 'exact' })
+            .select('*, users(name)', { count: 'exact' })
+            .neq('role', 'admin')
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
 

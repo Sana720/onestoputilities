@@ -128,6 +128,12 @@ export default function AdminDashboard() {
     const [staffLogs, setStaffLogs] = useState<any[]>([]);
     const [staffLogsLoading, setStaffLogsLoading] = useState(false);
 
+    // Password Change State
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+    const [newPassword, setNewPassword] = useState('');
+    const [changingPassword, setChangingPassword] = useState(false);
+
     const handleEditChange = (field: string, value: any) => {
         setEditData((prev: any) => {
             let updated = { ...prev };
@@ -553,6 +559,40 @@ export default function AdminDashboard() {
             alert('An error occurred');
         } finally {
             setCreatingStaff(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (!selectedStaffId || !newPassword || newPassword.length < 6) {
+            alert('Please enter a valid password (minimum 6 characters).');
+            return;
+        }
+
+        setChangingPassword(true);
+        try {
+            const response = await fetch(`/api/admin/staff/${selectedStaffId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    password: newPassword,
+                    adminId: user?.id
+                })
+            });
+
+            if (response.ok) {
+                setShowPasswordModal(false);
+                setNewPassword('');
+                setSelectedStaffId(null);
+                alert('Password updated successfully');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to update password');
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+            alert('An error occurred');
+        } finally {
+            setChangingPassword(false);
         }
     };
 
@@ -1011,7 +1051,9 @@ export default function AdminDashboard() {
                                                     ? 'Referral Network'
                                                     : activeTab === 'staff'
                                                         ? 'Staff Management'
-                                                        : 'Global Financial Ledger'}
+                                                        : activeTab === 'logs'
+                                                            ? 'Staff Activity Logs'
+                                                            : 'Global Financial Ledger'}
                                     </h3>
                                     <p className="text-sm text-gray-500 mt-1 font-medium">
                                         {activeTab === 'investments'
@@ -1022,7 +1064,9 @@ export default function AdminDashboard() {
                                                     ? 'Global view of all client referrals and relationships'
                                                     : activeTab === 'staff'
                                                         ? 'Manage administrators and managers'
-                                                        : 'Chronological log of all debits and credits'}
+                                                        : activeTab === 'logs'
+                                                            ? 'System log of staff actions'
+                                                            : 'Chronological log of all debits and credits'}
                                     </p>
                                 </div>
 
@@ -1068,7 +1112,7 @@ export default function AdminDashboard() {
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
                                             type="text"
-                                            placeholder={activeTab === 'staff' ? "Search staff..." : "Search clients..."}
+                                            placeholder={activeTab === 'staff' ? "Search staff..." : activeTab === 'logs' ? "Search activities..." : "Search clients..."}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="bg-gray-50 border-none rounded-xl pl-12 pr-6 py-3 text-sm focus:ring-2 focus:ring-teal-100 transition-all w-full sm:w-64"
@@ -1119,6 +1163,7 @@ export default function AdminDashboard() {
                                                 <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
                                                 <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Role</th>
                                                 <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Added On</th>
+                                                <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
@@ -1142,6 +1187,20 @@ export default function AdminDashboard() {
                                                     </td>
                                                     <td className="px-8 py-5">
                                                         <span className="text-sm text-gray-500 font-medium">{formatDate(member.created_at)}</span>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-right">
+                                                        {user?.role === 'admin' && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedStaffId(member.id);
+                                                                    setShowPasswordModal(true);
+                                                                }}
+                                                                className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#1B8A9F] hover:bg-teal-50 rounded-xl transition-all"
+                                                                title="Change Password"
+                                                            >
+                                                                <Lock className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -1363,6 +1422,7 @@ export default function AdminDashboard() {
                                         ) : staffLogs.length > 0 ? (
                                             staffLogs.filter(log => {
                                                 const matchesSearch = log.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    log.users?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     log.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     log.user_agent?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -1375,8 +1435,8 @@ export default function AdminDashboard() {
                                                                 <User className="w-4 h-4" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-sm font-black text-gray-900">{log.email}</p>
-                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{log.role}</p>
+                                                                <p className="text-sm font-black text-gray-900">{log.users?.name || log.email}</p>
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{log.role} • {log.email}</p>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -2948,6 +3008,50 @@ export default function AdminDashboard() {
                     fetchAllInvestments();
                 }}
             />
+
+            {/* Change Password Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+                        <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">Change Password</h3>
+                                <p className="text-sm text-gray-500 mt-1 font-medium">Enter a new password for the selected staff member.</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowPasswordModal(false);
+                                    setNewPassword('');
+                                    setSelectedStaffId(null);
+                                }}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">New Password</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-teal-100 transition-all font-medium"
+                                    placeholder="Enter new password"
+                                />
+                            </div>
+                            <button
+                                onClick={handleChangePassword}
+                                disabled={changingPassword || !newPassword || newPassword.length < 6}
+                                className="w-full bg-[#1B8A9F] text-white py-4 rounded-2xl font-bold hover:bg-[#156d7d] transition-all disabled:opacity-50 flex justify-center items-center"
+                            >
+                                {changingPassword && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+                                Update Password
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
