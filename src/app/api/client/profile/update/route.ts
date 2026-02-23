@@ -30,20 +30,26 @@ export async function POST(req: Request) {
         const isKycVerified = user?.kyc_verified || false;
         const existingGlobalSignature = user?.signature_url;
 
-        // Fetch existing signature from investments to be sure
+        // Fetch existing documents from investments
         const { data: investment, error: invFetchError } = await supabase
             .from('investments')
-            .select('client_signature_url')
+            .select('client_signature_url, pan_url, aadhar_url, bank_cheque_url, pan_number, aadhar_number')
             .eq('email', email)
             .limit(1)
             .maybeSingle();
 
         if (invFetchError) {
-            console.error('Error fetching investment signature:', invFetchError);
+            console.error('Error fetching investment docs:', invFetchError);
         }
 
-        const existingInvestmentSignature = investment?.client_signature_url;
-        const hasExistingSignature = !!(existingGlobalSignature || existingInvestmentSignature);
+        const hasExistingSignature = !!(existingGlobalSignature || investment?.client_signature_url);
+        const hasExistingPanUrl = !!investment?.pan_url;
+        const hasExistingAadharUrl = !!investment?.aadhar_url;
+        const hasExistingChequeUrl = !!investment?.bank_cheque_url;
+
+        // Use "Not Provided" check for numbers as well
+        const hasExistingPanNumber = !!(investment?.pan_number && investment.pan_number !== 'Not Provided' && investment.pan_number !== '—');
+        const hasExistingAadharNumber = !!(investment?.aadhar_number && investment.aadhar_number !== 'Not Provided' && investment.aadhar_number !== '—');
 
         // 1. Update the users table (name)
         // Only update name if NOT kyc_verified
@@ -81,11 +87,37 @@ export async function POST(req: Request) {
                 .eq('email', email);
         }
 
-        // Only include kyc-sensitive fields if NOT verified
+        // One-time update for KYC document URLs
+        if (profileData.pan_url && !hasExistingPanUrl) {
+            updateData.pan_url = profileData.pan_url;
+        }
+        if (profileData.aadhar_url && !hasExistingAadharUrl) {
+            updateData.aadhar_url = profileData.aadhar_url;
+        }
+        if (profileData.bank_cheque_url && !hasExistingChequeUrl) {
+            updateData.bank_cheque_url = profileData.bank_cheque_url;
+        }
+
+        // Only include kyc-sensitive fields if NOT verified OR if missing
         if (!isKycVerified) {
             updateData.full_name = profileData.full_name;
-            updateData.pan_number = profileData.pan_number;
-            updateData.aadhar_number = profileData.aadhar_number;
+
+            // Allow updating number if missing, even if we don't know kyc status strictly 
+            // but usually verified users will already have these.
+            if (!hasExistingPanNumber) {
+                updateData.pan_number = profileData.pan_number;
+            }
+            if (!hasExistingAadharNumber) {
+                updateData.aadhar_number = profileData.aadhar_number;
+            }
+        } else {
+            // If verified, still allow one-time update of numbers if they are missing
+            if (profileData.pan_number && !hasExistingPanNumber) {
+                updateData.pan_number = profileData.pan_number;
+            }
+            if (profileData.aadhar_number && !hasExistingAadharNumber) {
+                updateData.aadhar_number = profileData.aadhar_number;
+            }
         }
 
         // 2. Update all investment records for this client

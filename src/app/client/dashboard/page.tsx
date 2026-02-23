@@ -27,7 +27,7 @@ import {
     Edit2,
     KeyRound,
     Eye,
-    PenTool,
+    Upload,
     Sparkles
 } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -128,6 +128,9 @@ export default function ClientDashboard() {
     const [updateLoading, setUpdateLoading] = useState(false);
     const [profileData, setProfileData] = useState<any>(null);
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
+    const [panFile, setPanFile] = useState<File | null>(null);
+    const [aadharFile, setAadharFile] = useState<File | null>(null);
+    const [chequeFile, setChequeFile] = useState<File | null>(null);
 
     const [kycLoading, setKycLoading] = useState(false);
     const [adminSignatureUrl, setAdminSignatureUrl] = useState<string | null>(null);
@@ -395,6 +398,7 @@ export default function ClientDashboard() {
                         },
                         pan_url: inv.pan_url || '',
                         aadhar_url: inv.aadhar_url || '',
+                        bank_cheque_url: inv.bank_cheque_url || '',
                         bank_details: {
                             accountHolderName: inv.bank_details?.accountHolderName || inv.full_name || '',
                             bankName: inv.bank_details?.bankName || '',
@@ -446,6 +450,60 @@ export default function ClientDashboard() {
                 profileData.client_signature_url = publicUrl;
             }
 
+            if (panFile) {
+                const fileExt = panFile.name.split('.').pop();
+                const fileName = `pan_${user.id}_${Date.now()}.${fileExt}`;
+                const fullPath = `kyc_docs/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('documents')
+                    .upload(fullPath, panFile);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('documents')
+                    .getPublicUrl(fullPath);
+
+                profileData.pan_url = publicUrl;
+            }
+
+            if (aadharFile) {
+                const fileExt = aadharFile.name.split('.').pop();
+                const fileName = `aadhar_${user.id}_${Date.now()}.${fileExt}`;
+                const fullPath = `kyc_docs/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('documents')
+                    .upload(fullPath, aadharFile);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('documents')
+                    .getPublicUrl(fullPath);
+
+                profileData.aadhar_url = publicUrl;
+            }
+
+            if (chequeFile) {
+                const fileExt = chequeFile.name.split('.').pop();
+                const fileName = `cheque_${user.id}_${Date.now()}.${fileExt}`;
+                const fullPath = `kyc_docs/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('documents')
+                    .upload(fullPath, chequeFile);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('documents')
+                    .getPublicUrl(fullPath);
+
+                profileData.bank_cheque_url = publicUrl;
+            }
+
             const response = await fetch('/api/client/profile/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -458,6 +516,9 @@ export default function ClientDashboard() {
             if (response.ok) {
                 setIsEditing(false);
                 setSignatureFile(null);
+                setPanFile(null);
+                setAadharFile(null);
+                setChequeFile(null);
                 // Refresh investments to show updated info
                 await fetchInvestments();
                 alert('Profile updated successfully!');
@@ -1369,18 +1430,42 @@ export default function ClientDashboard() {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">PAN Number {profileData?.kyc_verified && '(Verified)'}</label>
-                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-bold cursor-not-allowed flex items-center">
-                                                            <ShieldCheck className={`w-4 h-4 mr-2 ${profileData?.kyc_verified ? 'text-teal-600' : 'text-teal-600/50'}`} />
-                                                            {profileData?.pan_number || 'Not Provided'}
-                                                        </div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                                            PAN Number {profileData?.pan_number && profileData.pan_number !== 'Not Provided' && profileData.pan_number !== '—' && '(Locked)'}
+                                                        </label>
+                                                        {profileData?.pan_number && profileData.pan_number !== 'Not Provided' && profileData.pan_number !== '—' ? (
+                                                            <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-bold cursor-not-allowed flex items-center">
+                                                                <ShieldCheck className={`w-4 h-4 mr-2 ${profileData?.kyc_verified ? 'text-teal-600' : 'text-teal-600/50'}`} />
+                                                                {profileData?.pan_number}
+                                                            </div>
+                                                        ) : (
+                                                            <input
+                                                                type="text"
+                                                                value={profileData?.pan_number ?? ''}
+                                                                onChange={(e) => setProfileData({ ...profileData, pan_number: e.target.value.toUpperCase() })}
+                                                                className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all font-mono uppercase"
+                                                                placeholder="Enter PAN Number"
+                                                            />
+                                                        )}
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Aadhaar Number {profileData?.kyc_verified && '(Verified)'}</label>
-                                                        <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-bold cursor-not-allowed flex items-center">
-                                                            <ShieldCheck className={`w-4 h-4 mr-2 ${profileData?.kyc_verified ? 'text-teal-600' : 'text-teal-600/50'}`} />
-                                                            {profileData?.aadhar_number || 'Not Provided'}
-                                                        </div>
+                                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                                            Aadhaar Number {profileData?.aadhar_number && profileData.aadhar_number !== 'Not Provided' && profileData.aadhar_number !== '—' && '(Locked)'}
+                                                        </label>
+                                                        {profileData?.aadhar_number && profileData.aadhar_number !== 'Not Provided' && profileData.aadhar_number !== '—' ? (
+                                                            <div className="p-3.5 bg-gray-100/80 border border-gray-200 rounded-xl text-gray-500 font-bold cursor-not-allowed flex items-center">
+                                                                <ShieldCheck className={`w-4 h-4 mr-2 ${profileData?.kyc_verified ? 'text-teal-600' : 'text-teal-600/50'}`} />
+                                                                {profileData?.aadhar_number}
+                                                            </div>
+                                                        ) : (
+                                                            <input
+                                                                type="text"
+                                                                value={profileData?.aadhar_number ?? ''}
+                                                                onChange={(e) => setProfileData({ ...profileData, aadhar_number: e.target.value })}
+                                                                className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1B8A9F] outline-none transition-all font-mono"
+                                                                placeholder="Enter Aadhaar Number"
+                                                            />
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div>
@@ -1528,23 +1613,54 @@ export default function ClientDashboard() {
                                             </div>
 
                                             {/* Digital Signature */}
-                                            <div className="space-y-6">
-                                                <h4 className="text-sm font-bold text-teal-600 uppercase tracking-wider flex items-center bg-teal-50/50 p-3 rounded-xl">
-                                                    <PenTool className="w-4 h-4 mr-2" />
-                                                    Digital Signature
+                                            <div className="space-y-6 pt-6 border-t border-gray-100">
+                                                <h4 className="text-sm font-bold text-amber-600 uppercase tracking-wider flex items-center bg-amber-50/50 p-3 rounded-xl">
+                                                    <Upload className="w-4 h-4 mr-2" />
+                                                    Documents & Signature
                                                 </h4>
-                                                <div className="max-w-md">
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                     <SignatureUpload
+                                                        label="One-Time Signature Upload"
+                                                        description="Upload your signature for agreements"
                                                         onUpload={(file) => setSignatureFile(file)}
-                                                        currentSignatureUrl={profileData?.client_signature_url}
+                                                        onRemove={() => setSignatureFile(null)}
+                                                        currentUrl={profileData?.client_signature_url}
                                                         disabled={!!profileData?.client_signature_url}
                                                     />
-                                                    <p className="text-xs text-gray-500 mt-2 italic px-1">
-                                                        {profileData?.client_signature_url
-                                                            ? "Signature is locked. To update it, please raise a request to the admin."
-                                                            : "One-time upload: Your signature will be used for all agreement documents and cannot be changed once saved."}
-                                                    </p>
+
+                                                    <SignatureUpload
+                                                        label="PAN Card Image"
+                                                        description="Upload a clear photo of your PAN Card"
+                                                        onUpload={(file) => setPanFile(file)}
+                                                        onRemove={() => setPanFile(null)}
+                                                        currentUrl={profileData?.pan_url}
+                                                        disabled={!!profileData?.pan_url}
+                                                    />
+
+                                                    <SignatureUpload
+                                                        label="Aadhaar Card Image"
+                                                        description="Upload a clear photo of your Aadhaar Card"
+                                                        onUpload={(file) => setAadharFile(file)}
+                                                        onRemove={() => setAadharFile(null)}
+                                                        currentUrl={profileData?.aadhar_url}
+                                                        disabled={!!profileData?.aadhar_url}
+                                                    />
+
+                                                    <SignatureUpload
+                                                        label="Cancelled Cheque photo"
+                                                        description="Upload a photo of your Cancelled Cheque"
+                                                        onUpload={(file) => setChequeFile(file)}
+                                                        onRemove={() => setChequeFile(null)}
+                                                        currentUrl={profileData?.bank_cheque_url}
+                                                        disabled={!!profileData?.bank_cheque_url}
+                                                    />
                                                 </div>
+
+                                                <p className="text-xs font-medium text-amber-600 flex items-center bg-amber-50 p-3 rounded-lg border border-amber-100">
+                                                    <ShieldCheck className="w-4 h-4 mr-2" />
+                                                    One-time upload: Documents and signature cannot be changed once saved.
+                                                </p>
                                             </div>
                                         </form>
                                     ) : (

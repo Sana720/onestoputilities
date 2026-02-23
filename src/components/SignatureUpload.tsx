@@ -6,20 +6,21 @@ import { Upload, X, Check, Image as ImageIcon, Loader2 } from 'lucide-react';
 interface Props {
     onUpload: (file: File) => void;
     onRemove?: () => void;
-    currentSignatureUrl?: string;
+    currentUrl?: string;
     label?: string;
+    description?: string;
     disabled?: boolean;
 }
 
-export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label = "Signature", disabled = false }: Props) => {
-    const [preview, setPreview] = useState<string | null>(currentSignatureUrl || null);
+export const SignatureUpload = ({ onUpload, onRemove, currentUrl, label = "Signature", description = "Click or drag a photo", disabled = false }: Props) => {
+    const [preview, setPreview] = useState<string | null>(currentUrl || null);
     const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFile = (file: File) => {
         const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
         if (!allowedTypes.includes(file.type)) {
-            alert('Please upload a PNG or JPG signature image.');
+            alert('Please upload a PNG or JPG image.');
             return;
         }
 
@@ -45,7 +46,7 @@ export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label
         }
     };
 
-    const clearSignature = () => {
+    const clearPreview = () => {
         setPreview(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         if (onRemove) onRemove();
@@ -70,7 +71,7 @@ export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label
                     `}
                 >
                     <Upload className={`w-8 h-8 mb-2 ${dragging ? 'text-[#1B8A9F]' : 'text-gray-400'}`} />
-                    <p className="text-sm text-gray-600">Click or drag a photo of your signature</p>
+                    <p className="text-sm text-gray-600">{description}</p>
                     <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2MB</p>
                     <input
                         type="file"
@@ -84,15 +85,15 @@ export const SignatureUpload = ({ onUpload, onRemove, currentSignatureUrl, label
                 <div className="relative group rounded-xl border border-gray-200 bg-white overflow-hidden p-4 flex items-center justify-center h-40">
                     <img
                         src={preview}
-                        alt="Signature Preview"
+                        alt="Document Preview"
                         className="max-w-full max-h-full object-contain"
                     />
                     {!disabled && (
                         <div className="absolute top-2 right-2 flex gap-2">
                             <button
-                                onClick={clearSignature}
+                                onClick={clearPreview}
                                 className="p-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors shadow-sm"
-                                title="Remove signature"
+                                title="Remove document"
                             >
                                 <X className="w-4 h-4" />
                             </button>
