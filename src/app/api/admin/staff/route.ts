@@ -3,15 +3,35 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(request: NextRequest) {
     try {
-        const { data: staff, error } = await supabaseAdmin
+        const { searchParams } = new URL(request.url);
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '20');
+        const search = searchParams.get('search') || '';
+
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        let query = supabaseAdmin
             .from('users')
-            .select('*')
+            .select('*', { count: 'exact' })
             .in('role', ['admin', 'manager'])
             .order('created_at', { ascending: false });
 
+        if (search) {
+            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+        }
+
+        const { data: staff, error, count } = await query.range(from, to);
+
         if (error) throw error;
 
-        return NextResponse.json({ staff });
+        return NextResponse.json({
+            success: true,
+            staff: staff || [],
+            total: count || 0,
+            page,
+            limit
+        });
     } catch (error) {
         console.error('Error fetching staff:', error);
         return NextResponse.json({ error: 'Failed to fetch staff' }, { status: 500 });

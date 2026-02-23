@@ -109,9 +109,17 @@ export default function ClientDashboard() {
     const [user, setUser] = useState<any>(null);
     const [investments, setInvestments] = useState<Investment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isFetchingInvestments, setIsFetchingInvestments] = useState(false);
+    const [investmentPage, setInvestmentPage] = useState(1);
+    const [hasMoreInvestments, setHasMoreInvestments] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [productFilter, setProductFilter] = useState('all');
-    const [overviewLimit, setOverviewLimit] = useState(10);
+    const [dashboardStats, setDashboardStats] = useState({
+        totalInvested: 0,
+        totalDividends: 0,
+        pendingGains: 0,
+        activeShares: 0
+    });
     const [dividendLimit, setDividendLimit] = useState(10);
     const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
     const [showResetModal, setShowResetModal] = useState(false);
@@ -147,14 +155,30 @@ export default function ClientDashboard() {
 
     const [referrals, setReferrals] = useState<any[]>([]);
     const [referralsLoading, setReferralsLoading] = useState(false);
+    const [referralsPage, setReferralsPage] = useState(1);
+    const [hasMoreReferrals, setHasMoreReferrals] = useState(true);
 
-    const fetchReferrals = async (referralCode: string) => {
+    const fetchReferrals = async (referralCode: string, page = 1, reset = false) => {
         try {
             setReferralsLoading(true);
-            const response = await fetch(`/api/referrals/my-referrals?code=${referralCode}`);
+            const queryParams = new URLSearchParams({
+                code: referralCode,
+                page: page.toString(),
+                limit: '20'
+            });
+            const response = await fetch(`/api/referrals/my-referrals?${queryParams}`);
             const data = await response.json();
             if (response.ok) {
-                setReferrals(data.referrals);
+                if (reset || page === 1) {
+                    setReferrals(data.referrals || []);
+                } else {
+                    setReferrals(prev => {
+                        const existingIds = new Set(prev.map(r => r.id));
+                        const newItems = (data.referrals || []).filter((r: any) => !existingIds.has(r.id));
+                        return [...prev, ...newItems];
+                    });
+                }
+                setHasMoreReferrals((data.referrals || []).length === 20);
             }
         } catch (error) {
             console.error('Error fetching referrals:', error);
@@ -256,25 +280,50 @@ export default function ClientDashboard() {
     // Infinite Scroll Observer
     const observer = useRef<IntersectionObserver | null>(null);
     const lastElementRef = useCallback((node: HTMLElement | null) => {
-        if (loading) return;
+        if (loading || isFetchingInvestments || referralsLoading) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting) {
-                if (activeTab === 'overview') {
-                    setOverviewLimit(prev => prev + 10);
+                if (activeTab === 'overview' && hasMoreInvestments) {
+                    setInvestmentPage(prev => prev + 1);
+                } else if (activeTab === 'referrals' && hasMoreReferrals) {
+                    setReferralsPage(prev => prev + 1);
                 } else if (activeTab === 'dividends') {
                     setDividendLimit(prev => prev + 10);
                 }
             }
         });
         if (node) observer.current.observe(node);
-    }, [loading, activeTab]);
+    }, [loading, isFetchingInvestments, referralsLoading, activeTab, hasMoreInvestments, hasMoreReferrals]);
 
-    // Reset limits on tab switch or filter change
     useEffect(() => {
-        setOverviewLimit(10);
-        setDividendLimit(10);
-    }, [activeTab, productFilter]);
+        if (activeTab === 'overview') {
+            setInvestmentPage(1);
+            setHasMoreInvestments(true);
+            fetchInvestments(1, true);
+        }
+        if (activeTab === 'referrals') {
+            setReferralsPage(1);
+            setHasMoreReferrals(true);
+            if (user?.referral_code) {
+                fetchReferrals(user.referral_code, 1, true);
+            }
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (user?.email) {
+            fetchDashboardStats();
+        }
+    }, [productFilter, user?.email]);
+
+    useEffect(() => {
+        if (activeTab === 'overview' && investmentPage > 1) {
+            fetchInvestments(investmentPage);
+        } else if (activeTab === 'referrals' && referralsPage > 1 && user?.referral_code) {
+            fetchReferrals(user.referral_code, referralsPage);
+        }
+    }, [investmentPage, referralsPage]);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -363,60 +412,107 @@ export default function ClientDashboard() {
         return () => subscription.unsubscribe();
     }, [router]);
 
-    const fetchInvestments = async () => {
+    const fetchInvestments = async (page = 1, reset = false) => {
+        try {
+            setIsFetchingInvestments(true);
+            const userData = localStorage.getItem('user');
+            if (!userData) return;
+
+            const parsedUser = JSON.parse(userData);
+            const queryParams = new URLSearchParams({
+                email: parsedUser.email,
+                page: page.toString(),
+                limit: '10'
+            });
+            const response = await fetch(`/api/investments/my-investments?${queryParams}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                if (reset || page === 1) {
+                    setInvestments(data.investments || []);
+                    // Initialize profile data from the most recent investment
+                    if ((data.investments || []).length > 0 && !profileData) {
+                        const inv = data.investments[0];
+                        setProfileData({
+                            full_name: inv.full_name || '',
+                            father_name: inv.father_name || '',
+                            dob: inv.dob || '',
+                            gender: inv.gender || 'Male',
+                            occupation: inv.occupation || '',
+                            permanent_address: inv.permanent_address || '',
+                            contact_number: inv.contact_number || '',
+                            pan_number: inv.pan_number || '',
+                            aadhar_number: inv.aadhar_number || '',
+                            nominee: {
+                                name: inv.nominee?.name || '',
+                                relation: inv.nominee?.relation || inv.nominee?.relationship || '',
+                                dob: inv.nominee?.dob || '',
+                                address: inv.nominee?.address || ''
+                            },
+                            pan_url: inv.pan_url || '',
+                            aadhar_url: inv.aadhar_url || '',
+                            bank_cheque_url: inv.bank_cheque_url || '',
+                            bank_details: {
+                                accountHolderName: inv.bank_details?.accountHolderName || inv.full_name || '',
+                                bankName: inv.bank_details?.bankName || '',
+                                accountNumber: inv.bank_details?.accountNumber || '',
+                                ifscCode: inv.bank_details?.ifscCode || '',
+                                branch: inv.bank_details?.branch || ''
+                            },
+                            client_signature_url: inv.client_signature_url || '',
+                            kyc_verified: inv.users?.kyc_verified || false
+                        });
+                    }
+                } else {
+                    setInvestments(prev => {
+                        const existingIds = new Set(prev.map(inv => inv.id));
+                        const newItems = (data.investments || []).filter((inv: any) => !existingIds.has(inv.id));
+                        return [...prev, ...newItems];
+                    });
+                }
+                setHasMoreInvestments((data.investments || []).length === 10);
+
+                if (data.admin_signature_url) {
+                    setAdminSignatureUrl(data.admin_signature_url);
+                }
+
+                // Check for due fees after setting investments
+                // Doing this safely using functional update pattern if needed, but doing directly using fetched current page payload for now is OK as it targets active/approved latest investemnts.
+                if (page === 1) {
+                    checkFees(data.investments || []);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching investments:', error);
+        } finally {
+            setIsFetchingInvestments(false);
+            setLoading(false);
+        }
+    };
+
+    const fetchDashboardStats = async () => {
         try {
             const userData = localStorage.getItem('user');
             if (!userData) return;
 
             const parsedUser = JSON.parse(userData);
-            const response = await fetch(`/api/investments/my-investments?email=${encodeURIComponent(parsedUser.email)}`);
+            const queryParams = new URLSearchParams({
+                email: parsedUser.email,
+                product: productFilter
+            });
+            const response = await fetch(`/api/investments/my-stats?${queryParams}`);
             const data = await response.json();
 
             if (response.ok) {
-                setInvestments(data.investments);
-                if (data.admin_signature_url) {
-                    setAdminSignatureUrl(data.admin_signature_url);
-                }
-                // Initialize profile data from the most recent investment
-                if (data.investments.length > 0 && !profileData) {
-                    const inv = data.investments[0];
-                    setProfileData({
-                        full_name: inv.full_name || '',
-                        father_name: inv.father_name || '',
-                        dob: inv.dob || '',
-                        gender: inv.gender || 'Male',
-                        occupation: inv.occupation || '',
-                        permanent_address: inv.permanent_address || '',
-                        contact_number: inv.contact_number || '',
-                        pan_number: inv.pan_number || '',
-                        aadhar_number: inv.aadhar_number || '',
-                        nominee: {
-                            name: inv.nominee?.name || '',
-                            relation: inv.nominee?.relation || inv.nominee?.relationship || '',
-                            dob: inv.nominee?.dob || '',
-                            address: inv.nominee?.address || ''
-                        },
-                        pan_url: inv.pan_url || '',
-                        aadhar_url: inv.aadhar_url || '',
-                        bank_cheque_url: inv.bank_cheque_url || '',
-                        bank_details: {
-                            accountHolderName: inv.bank_details?.accountHolderName || inv.full_name || '',
-                            bankName: inv.bank_details?.bankName || '',
-                            accountNumber: inv.bank_details?.accountNumber || '',
-                            ifscCode: inv.bank_details?.ifscCode || '',
-                            branch: inv.bank_details?.branch || ''
-                        },
-                        client_signature_url: inv.client_signature_url || '',
-                        kyc_verified: inv.users?.kyc_verified || false
-                    });
-                }
-                // Check for due fees after setting investments
-                checkFees(data.investments);
+                setDashboardStats({
+                    totalInvested: data.totalInvested || 0,
+                    totalDividends: data.totalDividends || 0,
+                    pendingGains: data.pendingGains || 0,
+                    activeShares: data.activeShares || 0
+                });
             }
         } catch (error) {
-            console.error('Error fetching investments:', error);
-        } finally {
-            setLoading(false);
+            console.error('Error fetching dashboard stats:', error);
         }
     };
 
@@ -589,28 +685,6 @@ export default function ClientDashboard() {
         productFilter === 'all' || inv.product_name === productFilter
     );
 
-    const calculateTotalDividends = () => {
-        return filteredInvestments.reduce((total, inv) => {
-            const paidDividends = (inv.dividends || [])
-                .filter(d => d.status === 'paid')
-                .reduce((sum, d) => sum + d.amount, 0);
-            return total + paidDividends;
-        }, 0);
-    };
-
-    const calculateTotalInvestment = () => {
-        return filteredInvestments.reduce((total, inv) => total + Number(inv.investment_amount), 0);
-    };
-
-    const calculatePendingDividends = () => {
-        return filteredInvestments.reduce((total, inv) => {
-            const pendingDividends = (inv.dividends || [])
-                .filter(d => d.status === 'pending')
-                .reduce((sum, d) => sum + d.amount, 0);
-            return total + pendingDividends;
-        }, 0);
-    };
-
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
@@ -731,17 +805,17 @@ export default function ClientDashboard() {
                             <Briefcase className="w-5 h-5" />
                         </div>
                         <p className="text-gray-500 text-xs md:text-sm font-medium">Total Invested</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{formatCurrency(calculateTotalInvestment())}</p>
+                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{formatCurrency(dashboardStats.totalInvested)}</p>
                     </div>
 
-                    {filteredInvestments.some(inv => inv.product_name === 'Unlisted Shares') && (
+                    {['all', 'Unlisted Shares'].includes(productFilter) && (
                         <>
                             <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                                 <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mb-4 text-[#4ADE80]">
                                     <ArrowUpRight className="w-5 h-5" />
                                 </div>
                                 <p className="text-gray-500 text-xs md:text-sm font-medium">Profit Earned</p>
-                                <p className="text-xl md:text-2xl font-bold text-[#4ADE80] mt-1">{formatCurrency(calculateTotalDividends())}</p>
+                                <p className="text-xl md:text-2xl font-bold text-[#4ADE80] mt-1">{formatCurrency(dashboardStats.totalDividends)}</p>
                             </div>
 
                             <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -749,7 +823,7 @@ export default function ClientDashboard() {
                                     <Clock className="w-5 h-5" />
                                 </div>
                                 <p className="text-gray-500 text-xs md:text-sm font-medium">Pending Gains</p>
-                                <p className="text-xl md:text-2xl font-bold text-orange-500 mt-1">{formatCurrency(calculatePendingDividends())}</p>
+                                <p className="text-xl md:text-2xl font-bold text-orange-500 mt-1">{formatCurrency(dashboardStats.pendingGains)}</p>
                             </div>
                         </>
                     )}
@@ -759,7 +833,7 @@ export default function ClientDashboard() {
                             <PieChart className="w-5 h-5" />
                         </div>
                         <p className="text-gray-500 text-xs md:text-sm font-medium">Active Shares</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{filteredInvestments.reduce((sum, inv) => sum + Number(inv.number_of_shares), 0)}</p>
+                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{dashboardStats.activeShares}</p>
                     </div>
                 </div>
 
@@ -885,10 +959,10 @@ export default function ClientDashboard() {
                     {activeTab === 'overview' && (
                         <div className="grid gap-6">
                             {filteredInvestments.length > 0 ? (
-                                filteredInvestments.slice(0, overviewLimit).map((investment, idx) => (
+                                filteredInvestments.map((investment, idx) => (
                                     <div
                                         key={investment.id}
-                                        ref={idx === filteredInvestments.slice(0, overviewLimit).length - 1 ? lastElementRef : null}
+                                        ref={idx === filteredInvestments.length - 1 ? lastElementRef : null}
                                         className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
                                     >
                                         <div className="p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
@@ -1111,7 +1185,7 @@ export default function ClientDashboard() {
                     {activeTab === 'details' && (
                         <div className="space-y-6 animate-fade-in-up">
                             {filteredInvestments.length > 0 ? (
-                                filteredInvestments.slice(0, overviewLimit).map((investment, idx, arr) => {
+                                filteredInvestments.map((investment, idx, arr) => {
                                     const isExpanded = expandedAgreements.has(investment.id);
                                     return (
                                         <div

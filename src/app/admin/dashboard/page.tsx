@@ -132,6 +132,8 @@ export default function AdminDashboard() {
     const [otpLoading, setOtpLoading] = useState(false);
     const [staff, setStaff] = useState<any[]>([]);
     const [staffLoading, setStaffLoading] = useState(false);
+    const [staffPage, setStaffPage] = useState(1);
+    const [hasMoreStaff, setHasMoreStaff] = useState(true);
     const [showStaffModal, setShowStaffModal] = useState(false);
     const [showBulkImportModal, setShowBulkImportModal] = useState(false);
     const [newStaff, setNewStaff] = useState({
@@ -144,6 +146,8 @@ export default function AdminDashboard() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [staffLogs, setStaffLogs] = useState<any[]>([]);
     const [staffLogsLoading, setStaffLogsLoading] = useState(false);
+    const [logsPage, setLogsPage] = useState(1);
+    const [hasMoreLogs, setHasMoreLogs] = useState(true);
 
     // Password Change State
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -332,14 +336,30 @@ export default function AdminDashboard() {
 
     const [referrals, setReferrals] = useState<any[]>([]);
     const [referralsLoading, setReferralsLoading] = useState(false);
+    const [referralsPage, setReferralsPage] = useState(1);
+    const [hasMoreReferrals, setHasMoreReferrals] = useState(true);
 
-    const fetchAdminReferrals = async () => {
+    const fetchAdminReferrals = async (page = 1, reset = false) => {
         try {
             setReferralsLoading(true);
-            const response = await fetch('/api/admin/referrals');
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                limit: '20',
+                search: searchTerm
+            });
+            const response = await fetch(`/api/admin/referrals?${queryParams}`);
             const data = await response.json();
             if (response.ok) {
-                setReferrals(data.referrals);
+                if (reset || page === 1) {
+                    setReferrals(data.referrals || []);
+                } else {
+                    setReferrals(prev => {
+                        const existingIds = new Set(prev.map(r => r.id));
+                        const newItems = (data.referrals || []).filter((r: any) => !existingIds.has(r.id));
+                        return [...prev, ...newItems];
+                    });
+                }
+                setHasMoreReferrals((data.referrals || []).length === 20);
             }
         } catch (error) {
             console.error('Error fetching admin referrals:', error);
@@ -348,13 +368,27 @@ export default function AdminDashboard() {
         }
     };
 
-    const fetchStaff = async () => {
+    const fetchStaff = async (page = 1, reset = false) => {
         try {
             setStaffLoading(true);
-            const response = await fetch('/api/admin/staff');
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                limit: '20',
+                search: searchTerm
+            });
+            const response = await fetch(`/api/admin/staff?${queryParams}`);
             const data = await response.json();
             if (response.ok) {
-                setStaff(data.staff);
+                if (reset || page === 1) {
+                    setStaff(data.staff || []);
+                } else {
+                    setStaff(prev => {
+                        const existingIds = new Set(prev.map(s => s.id));
+                        const newItems = (data.staff || []).filter((s: any) => !existingIds.has(s.id));
+                        return [...prev, ...newItems];
+                    });
+                }
+                setHasMoreStaff((data.staff || []).length === 20);
             }
         } catch (error) {
             console.error('Error fetching staff:', error);
@@ -363,42 +397,69 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchStaffLogs = async (page = 1, reset = false) => {
+        setStaffLogsLoading(true);
+        try {
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                limit: '50',
+                search: searchTerm
+            });
+            const response = await fetch(`/api/admin/logs?${queryParams}`);
+            const data = await response.json();
+            if (data.success) {
+                if (reset || page === 1) {
+                    setStaffLogs(data.logs || []);
+                } else {
+                    setStaffLogs(prev => {
+                        const existingIds = new Set(prev.map(l => l.id));
+                        const newItems = (data.logs || []).filter((l: any) => !existingIds.has(l.id));
+                        return [...prev, ...newItems];
+                    });
+                }
+                setHasMoreLogs((data.logs || []).length === 50);
+            }
+        } catch (error) {
+            console.error('Error fetching logs:', error);
+        } finally {
+            setStaffLogsLoading(false);
+        }
+    };
+
     // Infinite Scroll Observer
     const observer = useRef<IntersectionObserver | null>(null);
     const lastElementRef = useCallback((node: HTMLDivElement | null) => {
-        if (loading || isFetchingInvestments) return;
+        if (loading || isFetchingInvestments || referralsLoading || staffLoading || staffLogsLoading) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting) {
                 if (activeTab === 'investments' && hasMoreInvestments) {
                     setInvestmentPage(prev => prev + 1);
+                } else if (activeTab === 'referrals' && hasMoreReferrals) {
+                    setReferralsPage(prev => prev + 1);
+                } else if (activeTab === 'staff' && hasMoreStaff) {
+                    setStaffPage(prev => prev + 1);
+                } else if (activeTab === 'logs' && hasMoreLogs) {
+                    setLogsPage(prev => prev + 1);
                 } else if (activeTab === 'ledger') {
                     setLedgerLimit(prev => prev + 20);
                 }
             }
         });
         if (node) observer.current.observe(node);
-    }, [loading, isFetchingInvestments, activeTab, hasMoreInvestments]);
-
-    useEffect(() => {
-        let isMounted = true;
-        if (activeTab === 'investments') {
-            setIsInvestmentTabReady(false);
-            const timer = setTimeout(() => {
-                if (isMounted) setIsInvestmentTabReady(true);
-            }, 300); // Give the UI a moment to breathe before rendering the heavy table
-            return () => {
-                isMounted = false;
-                clearTimeout(timer);
-            };
-        }
-    }, [activeTab]);
+    }, [loading, isFetchingInvestments, referralsLoading, staffLoading, staffLogsLoading, activeTab, hasMoreInvestments, hasMoreReferrals, hasMoreStaff, hasMoreLogs]);
 
     useEffect(() => {
         if (activeTab === 'investments' && investmentPage > 1) {
             fetchAllInvestments(investmentPage);
+        } else if (activeTab === 'referrals' && referralsPage > 1) {
+            fetchAdminReferrals(referralsPage);
+        } else if (activeTab === 'staff' && staffPage > 1) {
+            fetchStaff(staffPage);
+        } else if (activeTab === 'logs' && logsPage > 1) {
+            fetchStaffLogs(logsPage);
         }
-    }, [investmentPage]);
+    }, [investmentPage, referralsPage, staffPage, logsPage]);
 
     useEffect(() => {
         if (activeTab === 'investments') {
@@ -407,11 +468,17 @@ export default function AdminDashboard() {
             fetchAllInvestments(1, true);
             fetchDashboardStats();
         } else if (activeTab === 'referrals') {
-            fetchAdminReferrals();
+            setReferralsPage(1);
+            setHasMoreReferrals(true);
+            fetchAdminReferrals(1, true);
         } else if (activeTab === 'staff') {
-            fetchStaff();
+            setStaffPage(1);
+            setHasMoreStaff(true);
+            fetchStaff(1, true);
         } else if (activeTab === 'logs') {
-            fetchStaffLogs();
+            setLogsPage(1);
+            setHasMoreLogs(true);
+            fetchStaffLogs(1, true);
         }
     }, [activeTab, searchTerm, statusFilter, productFilter]);
 
@@ -778,20 +845,7 @@ export default function AdminDashboard() {
         }
     };
 
-    const fetchStaffLogs = async () => {
-        setStaffLogsLoading(true);
-        try {
-            const response = await fetch('/api/admin/logs?limit=100');
-            const data = await response.json();
-            if (data.success) {
-                setStaffLogs(data.logs);
-            }
-        } catch (error) {
-            console.error('Error fetching logs:', error);
-        } finally {
-            setStaffLogsLoading(false);
-        }
-    };
+
 
 
 
@@ -1217,13 +1271,8 @@ export default function AdminDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {staff.filter(m => {
-                                                const isStaff = m.role === 'admin' || m.role === 'manager';
-                                                const matchesSearch = m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                    m.email?.toLowerCase().includes(searchTerm.toLowerCase());
-                                                return isStaff && matchesSearch;
-                                            }).map((member) => (
-                                                <tr key={member.id} className="hover:bg-gray-50/50 transition-colors">
+                                            {staff.map((member, idx) => (
+                                                <tr key={member.id} className="hover:bg-gray-50/50 transition-colors group" ref={idx === staff.length - 1 ? (node => lastElementRef(node as any)) : null}>
                                                     <td className="px-8 py-5">
                                                         <span className="text-sm font-bold text-gray-900">{member.name}</span>
                                                     </td>
@@ -1501,15 +1550,8 @@ export default function AdminDashboard() {
                                                 </td>
                                             </tr>
                                         ) : staffLogs.length > 0 ? (
-                                            staffLogs.filter(log => {
-                                                const matchesSearch = log.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                    log.users?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                    log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                    log.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                    log.user_agent?.toLowerCase().includes(searchTerm.toLowerCase());
-                                                return matchesSearch;
-                                            }).map((log) => (
-                                                <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                            staffLogs.map((log, idx) => (
+                                                <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group" ref={idx === staffLogs.length - 1 ? (node => lastElementRef(node as any)) : null}>
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center">
                                                             <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 mr-3">

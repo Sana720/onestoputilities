@@ -5,6 +5,11 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const email = searchParams.get('email');
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '20');
+
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
 
         if (!email) {
             return NextResponse.json(
@@ -16,11 +21,12 @@ export async function GET(request: NextRequest) {
         const normalizedEmail = (email || '').trim().toLowerCase();
 
         // Fetch investments for the user
-        const { data: investments, error } = await supabaseAdmin
+        const { data: investments, error, count } = await supabaseAdmin
             .from('investments')
-            .select('*, users(kyc_verified)')
+            .select('*, users(kyc_verified)', { count: 'exact' })
             .ilike('email', normalizedEmail)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
         if (error) {
             console.error('Error fetching investments:', error);
@@ -41,6 +47,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             investments: investments || [],
+            total: count || 0,
+            page,
+            limit,
             admin_signature_url: adminData?.signature_url || null
         });
 
