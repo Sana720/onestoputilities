@@ -65,6 +65,35 @@ export async function PATCH(
             );
         }
 
+        // Sync email update with users table and Supabase Auth if it changed
+        const oldEmail = (currentInv.users as any)?.email;
+        const newEmail = data.email;
+        const userId = currentInv.user_id;
+
+        if (newEmail && oldEmail && newEmail !== oldEmail && userId) {
+            console.log(`[ADMIN_INV_UPDATE] Syncing email update for user ${userId}: ${oldEmail} -> ${newEmail}`);
+
+            // 1. Update users table
+            const { error: userTableError } = await supabaseAdmin
+                .from('users')
+                .update({ email: newEmail })
+                .eq('id', userId);
+
+            if (userTableError) {
+                console.error('[ADMIN_INV_UPDATE] Error updating users table:', userTableError);
+            }
+
+            // 2. Update Supabase Auth
+            const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+                userId,
+                { email: newEmail, email_confirm: true }
+            );
+
+            if (authError) {
+                console.error('[ADMIN_INV_UPDATE] Error updating Supabase Auth:', authError);
+            }
+        }
+
         // Check if status changed to approved/active
         const oldStatus = currentInv?.status;
         const newStatus = data.status;

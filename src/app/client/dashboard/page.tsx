@@ -1541,8 +1541,8 @@ export default function ClientDashboard() {
                                                     />
                                                     <p className="text-xs text-gray-500 mt-2 italic px-1">
                                                         {profileData?.client_signature_url
-                                                            ? "To update your signature, please raise a request to the admin."
-                                                            : "Your signature will be used for all agreement documents."}
+                                                            ? "Signature is locked. To update it, please raise a request to the admin."
+                                                            : "One-time upload: Your signature will be used for all agreement documents and cannot be changed once saved."}
                                                     </p>
                                                 </div>
                                             </div>

@@ -16,10 +16,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
-        // Check if user is kyc_verified
+        // Check if user is kyc_verified or already has a signature
         const { data: user, error: fetchError } = await supabase
             .from('users')
-            .select('kyc_verified')
+            .select('kyc_verified, signature_url')
             .eq('email', email)
             .single();
 
@@ -28,6 +28,22 @@ export async function POST(req: Request) {
         }
 
         const isKycVerified = user?.kyc_verified || false;
+        const existingGlobalSignature = user?.signature_url;
+
+        // Fetch existing signature from investments to be sure
+        const { data: investment, error: invFetchError } = await supabase
+            .from('investments')
+            .select('client_signature_url')
+            .eq('email', email)
+            .limit(1)
+            .maybeSingle();
+
+        if (invFetchError) {
+            console.error('Error fetching investment signature:', invFetchError);
+        }
+
+        const existingInvestmentSignature = investment?.client_signature_url;
+        const hasExistingSignature = !!(existingGlobalSignature || existingInvestmentSignature);
 
         // 1. Update the users table (name)
         // Only update name if NOT kyc_verified
@@ -51,9 +67,19 @@ export async function POST(req: Request) {
             permanent_address: profileData.permanent_address,
             contact_number: profileData.contact_number,
             nominee: profileData.nominee,
-            bank_details: profileData.bank_details,
-            client_signature_url: profileData.client_signature_url // Added signature URL
+            bank_details: profileData.bank_details
         };
+
+        // Only allow signature update if NO signature exists yet
+        if (profileData.client_signature_url && !hasExistingSignature) {
+            updateData.client_signature_url = profileData.client_signature_url;
+
+            // Also update the users table signature if it's the first time
+            await supabase
+                .from('users')
+                .update({ signature_url: profileData.client_signature_url })
+                .eq('email', email);
+        }
 
         // Only include kyc-sensitive fields if NOT verified
         if (!isKycVerified) {
