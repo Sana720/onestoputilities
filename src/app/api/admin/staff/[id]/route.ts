@@ -3,9 +3,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
+        const params = await context.params;
         const { password, adminId } = await request.json();
 
         if (!password || !adminId) {
