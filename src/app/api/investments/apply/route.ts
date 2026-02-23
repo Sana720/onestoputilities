@@ -103,10 +103,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Calculate lock-in dates
-        const isUnlisted = data.productName === 'Unlisted Shares';
+        const productName = (data.productName || '').trim().toLowerCase();
+        const isUnlisted = productName === 'unlisted shares' || productName === 'unlisted share';
         const lockInPeriod = isUnlisted ? 3 : 0;
-        const lockInStartDate = new Date(data.paymentDate);
-        const lockInEndDate = new Date(lockInStartDate);
+
+        const pDate = data.paymentDate ? new Date(data.paymentDate) : new Date();
+        const lockInStartDate = new Date(pDate);
+        const lockInEndDate = new Date(pDate);
 
         if (isUnlisted) {
             lockInEndDate.setFullYear(lockInEndDate.getFullYear() + 3);

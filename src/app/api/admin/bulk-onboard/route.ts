@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { calculateDividendsForInvestment } from '@/lib/dividends';
 import { sendEmail, ADMIN_EMAILS, getWelcomeEmailTemplate, getAdminNotificationTemplate, getReferralOnboardedTemplate } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
@@ -99,15 +100,20 @@ export async function POST(request: NextRequest) {
                 }
 
                 // Prepare investment data
-                const isUnlisted = record.productName === 'Unlisted Shares';
+                const productName = (record.productName || '').trim().toLowerCase();
+                const isUnlisted = productName === 'unlisted shares' || productName === 'unlisted share';
                 const lockInPeriod = isUnlisted ? 3 : 0;
-                const lockInStartDate = new Date(record.paymentDate);
-                const lockInEndDate = new Date(lockInStartDate);
+
+                // Ensure payment date is valid
+                const pDate = record.paymentDate ? new Date(record.paymentDate) : new Date();
+                const lockInStartDate = new Date(pDate);
+                const lockInEndDate = new Date(pDate);
+
                 if (isUnlisted) {
                     lockInEndDate.setFullYear(lockInEndDate.getFullYear() + 3);
                 }
 
-                const { error: invError } = await supabaseAdmin
+                const { data: invData, error: invError } = await supabaseAdmin
                     .from('investments')
                     .insert({
                         user_id: userId,
@@ -147,7 +153,7 @@ export async function POST(request: NextRequest) {
                         payment_mode: record.paymentMode || 'NEFT',
                         payment_reference: record.paymentReference || 'BULK_IMPORT',
                         payment_date: record.paymentDate,
-                        product_name: record.productName || 'Unlisted Shares',
+                        product_name: isUnlisted ? 'Unlisted Shares' : record.productName,
                         demat_account: record.dematAccount || null,
                         broker_id: record.brokerId || null,
                         broker_name: record.brokerName || null,
@@ -159,9 +165,22 @@ export async function POST(request: NextRequest) {
                         payment_verified: true, // Bulk imports are assumed verified
                         admin_signed_at: new Date().toISOString(), // Bulk imports are assumed approved
                         dividends: []
-                    });
+                    })
+                    .select()
+                    .single();
 
                 if (invError) throw new Error(`Investment Error: ${invError.message}`);
+
+                // Automatically generate dividends for historical/active investments
+                if (isUnlisted && invData && (invData.status === 'active' || invData.status === 'approved')) {
+                    const dividends = calculateDividendsForInvestment(invData);
+                    if (dividends.length > 0) {
+                        await supabaseAdmin
+                            .from('investments')
+                            .update({ dividends })
+                            .eq('id', invData.id);
+                    }
+                }
 
                 // Send Email Notifications
                 const protocol = request.headers.get('x-forwarded-proto') || 'http';

@@ -128,17 +128,33 @@ export default function AdminDashboard() {
 
     const handleEditChange = (field: string, value: any) => {
         setEditData((prev: any) => {
+            let updated = { ...prev };
+
             if (field.includes('.')) {
                 const [parent, child] = field.split('.');
-                return {
+                updated = {
                     ...prev,
                     [parent]: {
                         ...(prev[parent] || {}),
                         [child]: value
                     }
                 };
+            } else {
+                updated = { ...prev, [field]: value };
             }
-            return { ...prev, [field]: value };
+
+            // Auto-calculate lock-in dates if payment_date changes for Unlisted Shares
+            if (field === 'payment_date' && updated.product_name === 'Unlisted Shares') {
+                const pDate = new Date(value);
+                if (!isNaN(pDate.getTime())) {
+                    updated.lock_in_start_date = value;
+                    const endDate = new Date(pDate);
+                    endDate.setFullYear(endDate.getFullYear() + (updated.lock_in_period || 3));
+                    updated.lock_in_end_date = endDate.toISOString().split('T')[0];
+                }
+            }
+
+            return updated;
         });
     };
 
