@@ -282,9 +282,7 @@ export const InvestmentAgreement = ({ data }: Props) => {
                     <View style={[styles.signatureBox, { borderRightWidth: 0 }]}>
                         <Text>Specimen Signature - First Holder</Text>
                         {data.client_signature_url && (
-                            <View style={{ height: 60, width: 220, marginTop: 5, alignSelf: 'center' }}>
-                                <Image src={data.client_signature_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                            </View>
+                            <Image src={data.client_signature_url} style={{ maxHeight: 60, maxWidth: 220, objectFit: 'contain', marginTop: 5, alignSelf: 'center' }} />
                         )}
                     </View>
                     <View style={styles.signatureBox}>
@@ -419,18 +417,14 @@ export const InvestmentAgreement = ({ data }: Props) => {
                                 <Text>Shareholding Applicant</Text>
                                 <Text style={styles.bold}>{data.full_name?.toUpperCase()}</Text>
                                 {data.client_signature_url && (
-                                    <View style={{ height: 60, width: 220, marginTop: 10 }}>
-                                        <Image src={data.client_signature_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                    </View>
+                                    <Image src={data.client_signature_url} style={{ maxHeight: 60, maxWidth: 220, objectFit: 'contain', marginTop: 10, alignSelf: 'flex-start' }} />
                                 )}
                             </View>
                             <View style={styles.tableCell}>
                                 <Text>For (Director)</Text>
                                 <Text style={styles.bold}>SHREEG EXPERT WEALTH ADVISORY LIMITED</Text>
                                 {data.admin_signature_url && (
-                                    <View style={{ height: 60, width: 220, marginTop: 10 }}>
-                                        <Image src={data.admin_signature_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                    </View>
+                                    <Image src={data.admin_signature_url} style={{ maxHeight: 60, maxWidth: 220, objectFit: 'contain', marginTop: 10, alignSelf: 'flex-start' }} />
                                 )}
                             </View>
                         </View>

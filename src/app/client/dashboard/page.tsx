@@ -30,7 +30,7 @@ import {
     Upload,
     Sparkles
 } from 'lucide-react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
 import { SignatureUpload } from '@/components/SignatureUpload';
 import { supabase } from '@/lib/supabase';
@@ -949,18 +949,29 @@ export default function ClientDashboard() {
                                                     investment.client_signature_url &&
                                                     investment.admin_signed_at &&
                                                     adminSignatureUrl) ? (
-                                                    <PDFDownloadLink
-                                                        document={<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />}
-                                                        fileName={`Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`}
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                const { pdf } = await import('@react-pdf/renderer');
+                                                                const blob = await pdf(<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />).toBlob();
+                                                                const url = URL.createObjectURL(blob);
+                                                                const link = document.createElement('a');
+                                                                link.href = url;
+                                                                link.download = `Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`;
+                                                                document.body.appendChild(link);
+                                                                link.click();
+                                                                document.body.removeChild(link);
+                                                                URL.revokeObjectURL(url);
+                                                            } catch (error) {
+                                                                console.error("PDF generation failed", error);
+                                                                alert("Failed to generate PDF. Please try again.");
+                                                            }
+                                                        }}
                                                         className="inline-flex items-center justify-center bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-100 transition-colors"
                                                     >
-                                                        {({ loading }) => (
-                                                            <>
-                                                                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                                                Agreement
-                                                            </>
-                                                        )}
-                                                    </PDFDownloadLink>
+                                                        <Download className="w-4 h-4 mr-2" />
+                                                        Agreement
+                                                    </button>
                                                 ) : investment.product_name === 'Unlisted Shares' ? (
                                                     <button
                                                         disabled

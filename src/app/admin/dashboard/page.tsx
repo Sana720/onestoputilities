@@ -11,7 +11,7 @@ import {
     Sparkles, Upload, User, Mail, MessageCircle, AlertTriangle,
     ArrowUpRight, Edit, Eye, MoreHorizontal, FileText
 } from 'lucide-react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+
 import { InvestmentAgreement } from '@/components/InvestmentAgreement';
 import { supabase } from '@/lib/supabase';
 import OnboardingModal from '@/components/admin/OnboardingModal';
@@ -1315,7 +1315,9 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <p className="text-sm font-bold text-gray-900 leading-none">{formatCurrency(investment.investment_amount)}</p>
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1.5">{investment.number_of_shares} Units</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-1.5">
+                                                        {investment.number_of_shares || (investment.product_name === 'Unlisted Shares' ? Math.floor(investment.investment_amount / 100) : 0)} Units
+                                                    </p>
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center">
@@ -1367,15 +1369,29 @@ export default function AdminDashboard() {
                                                             investment.client_signature_url &&
                                                             investment.admin_signed_at &&
                                                             adminSignatureUrl) ? (
-                                                            <PDFDownloadLink
-                                                                document={<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />}
-                                                                fileName={`Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`}
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const { pdf } = await import('@react-pdf/renderer');
+                                                                        const blob = await pdf(<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />).toBlob();
+                                                                        const url = URL.createObjectURL(blob);
+                                                                        const link = document.createElement('a');
+                                                                        link.href = url;
+                                                                        link.download = `Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`;
+                                                                        document.body.appendChild(link);
+                                                                        link.click();
+                                                                        document.body.removeChild(link);
+                                                                        URL.revokeObjectURL(url);
+                                                                    } catch (error) {
+                                                                        console.error("PDF generation failed", error);
+                                                                        alert("Failed to generate PDF. Please try again.");
+                                                                    }
+                                                                }}
                                                                 className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                                                                title="Download Agreement"
                                                             >
-                                                                {({ loading }) => (
-                                                                    loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />
-                                                                )}
-                                                            </PDFDownloadLink>
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
                                                         ) : investment.product_name === 'Unlisted Shares' ? (
                                                             <button
                                                                 disabled
@@ -1775,7 +1791,7 @@ export default function AdminDashboard() {
                                                         className="w-full text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2"
                                                     />
                                                 ) : (
-                                                    <p className="text-sm font-bold text-gray-900">{selectedInvestment.number_of_shares}</p>
+                                                    <p className="text-sm font-bold text-gray-900">{selectedInvestment.number_of_shares || Math.floor(selectedInvestment.investment_amount / 100)}</p>
                                                 )}
                                             </div>
                                         )}
