@@ -96,6 +96,21 @@ export default function AdminDashboard() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [productFilter, setProductFilter] = useState('all');
+
+    // Server-Side Pagination States
+    const [investmentPage, setInvestmentPage] = useState(1);
+    const [hasMoreInvestments, setHasMoreInvestments] = useState(true);
+    const [isFetchingInvestments, setIsFetchingInvestments] = useState(false);
+
+    // Server-Side Dashboard Stats
+    const [dashboardStats, setDashboardStats] = useState({
+        totalInvestment: 0,
+        totalClients: 0,
+        activeInvestmentsCount: 0,
+        totalDividendsPaid: 0
+    });
+    const [productsList, setProductsList] = useState<string[]>([]);
+
     const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
     const [showManagementModal, setShowManagementModal] = useState(false);
     const [showDividendModal, setShowDividendModal] = useState(false);
@@ -309,7 +324,6 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<'investments' | 'ledger' | 'pending_dividends' | 'referrals' | 'staff' | 'logs'>('investments');
     const [showTransactionModal, setShowTransactionModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
-    const [investmentLimit, setInvestmentLimit] = useState(20);
     const [ledgerLimit, setLedgerLimit] = useState(20);
     const [isEditingDividend, setIsEditingDividend] = useState(false);
     const [editDividendData, setEditDividendData] = useState<any>(null);
@@ -352,19 +366,19 @@ export default function AdminDashboard() {
     // Infinite Scroll Observer
     const observer = useRef<IntersectionObserver | null>(null);
     const lastElementRef = useCallback((node: HTMLDivElement | null) => {
-        if (loading) return;
+        if (loading || isFetchingInvestments) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting) {
-                if (activeTab === 'investments') {
-                    setInvestmentLimit(prev => prev + 20);
-                } else {
+                if (activeTab === 'investments' && hasMoreInvestments) {
+                    setInvestmentPage(prev => prev + 1);
+                } else if (activeTab === 'ledger') {
                     setLedgerLimit(prev => prev + 20);
                 }
             }
         });
         if (node) observer.current.observe(node);
-    }, [loading, activeTab]);
+    }, [loading, isFetchingInvestments, activeTab, hasMoreInvestments]);
 
     useEffect(() => {
         let isMounted = true;
@@ -381,8 +395,17 @@ export default function AdminDashboard() {
     }, [activeTab]);
 
     useEffect(() => {
+        if (activeTab === 'investments' && investmentPage > 1) {
+            fetchAllInvestments(investmentPage);
+        }
+    }, [investmentPage]);
+
+    useEffect(() => {
         if (activeTab === 'investments') {
-            fetchAllInvestments();
+            setInvestmentPage(1);
+            setHasMoreInvestments(true);
+            fetchAllInvestments(1, true);
+            fetchDashboardStats();
         } else if (activeTab === 'referrals') {
             fetchAdminReferrals();
         } else if (activeTab === 'staff') {
@@ -390,13 +413,12 @@ export default function AdminDashboard() {
         } else if (activeTab === 'logs') {
             fetchStaffLogs();
         }
-    }, [activeTab]);
+    }, [activeTab, searchTerm, statusFilter, productFilter]);
 
     // Reset limits on tab switch or search
     useEffect(() => {
-        setInvestmentLimit(20);
         setLedgerLimit(20);
-    }, [activeTab, searchTerm, statusFilter, productFilter]);
+    }, [activeTab]);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -487,17 +509,53 @@ export default function AdminDashboard() {
         return () => subscription.unsubscribe();
     }, [router]);
 
-    const fetchAllInvestments = async () => {
+    const fetchDashboardStats = async () => {
         try {
-            const response = await fetch('/api/admin/investments');
+            const queryParams = new URLSearchParams({
+                search: searchTerm,
+                status: statusFilter,
+                product: productFilter
+            });
+            const response = await fetch(`/api/admin/stats?${queryParams}`);
+            const data = await response.json();
+            if (data.success) {
+                setDashboardStats(data.stats);
+                setProductsList(data.products);
+            }
+        } catch (error) {
+            console.error('Error fetching dashboard stats:', error);
+        }
+    };
+
+    const fetchAllInvestments = async (page = 1, reset = false) => {
+        try {
+            setIsFetchingInvestments(true);
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                limit: '20',
+                search: searchTerm,
+                status: statusFilter,
+                product: productFilter
+            });
+            const response = await fetch(`/api/admin/investments?${queryParams}`);
             const data = await response.json();
 
             if (response.ok) {
-                setInvestments(data.investments);
+                if (reset || page === 1) {
+                    setInvestments(data.investments || []);
+                } else {
+                    setInvestments(prev => {
+                        const existingIds = new Set(prev.map(inv => inv.id));
+                        const newItems = (data.investments || []).filter((inv: any) => !existingIds.has(inv.id));
+                        return [...prev, ...newItems];
+                    });
+                }
+                setHasMoreInvestments((data.investments || []).length === 20);
             }
         } catch (error) {
             console.error('Error fetching investments:', error);
         } finally {
+            setIsFetchingInvestments(false);
             setLoading(false);
         }
     };
@@ -737,31 +795,7 @@ export default function AdminDashboard() {
 
 
 
-    const products = Array.from(new Set(investments.map(inv => inv.product_name || 'TRADERG ASSET')));
-
-    const filteredInvestments = investments.filter(inv => {
-        const matchesSearch = (inv.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (inv.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (inv.product_name || 'TRADERG ASSET').toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
-        const matchesProduct = productFilter === 'all' || (inv.product_name || 'TRADERG ASSET') === productFilter;
-        return matchesSearch && matchesStatus && matchesProduct;
-    });
-
-    const calculateStats = () => {
-        const totalInvestment = filteredInvestments.reduce((sum, inv) => sum + Number(inv.investment_amount), 0);
-        const totalClients = new Set(filteredInvestments.map(inv => inv.email)).size;
-        const activeInvestmentsCount = filteredInvestments.filter(inv => inv.status === 'active').length;
-        const totalDividendsPaid = filteredInvestments.reduce((sum, inv) => {
-            return sum + (inv.dividends || [])
-                .filter(d => d.status === 'paid')
-                .reduce((dSum, d) => dSum + d.amount, 0);
-        }, 0);
-
-        return { totalInvestment, totalClients, activeInvestmentsCount, totalDividendsPaid };
-    };
-
-    const stats = calculateStats();
+    const products = productsList.length > 0 ? productsList : ['TRADERG ASSET', 'Unlisted Shares'];
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -953,7 +987,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">AUM</span>
                             </div>
-                            <p className="text-2xl md:text-3xl font-black text-gray-900">{formatCurrency(stats.totalInvestment)}</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-900">{formatCurrency(dashboardStats.totalInvestment)}</p>
                             <p className="text-xs text-gray-400 mt-1 font-medium italic">Total Assets Under Management</p>
                         </div>
 
@@ -964,7 +998,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clients</span>
                             </div>
-                            <p className="text-2xl md:text-3xl font-black text-gray-900">{stats.totalClients}</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-900">{dashboardStats.totalClients}</p>
                             <p className="text-xs text-gray-400 mt-1 font-medium italic">Verified Investors</p>
                         </div>
 
@@ -975,7 +1009,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active</span>
                             </div>
-                            <p className="text-2xl md:text-3xl font-black text-gray-900">{stats.activeInvestmentsCount}</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-900">{dashboardStats.activeInvestmentsCount}</p>
                             <p className="text-xs text-gray-400 mt-1 font-medium italic">Active Portfolios</p>
                         </div>
 
@@ -986,7 +1020,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payouts</span>
                             </div>
-                            <p className="text-2xl md:text-3xl font-black text-gray-900">{formatCurrency(stats.totalDividendsPaid)}</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-900">{formatCurrency(dashboardStats.totalDividendsPaid)}</p>
                             <p className="text-xs text-gray-400 mt-1 font-medium italic">Total Dividends Credited</p>
                         </div>
                     </div>
@@ -1323,10 +1357,10 @@ export default function AdminDashboard() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {filteredInvestments.slice(0, investmentLimit).map((investment, idx) => (
+                                                {investments.map((investment, idx) => (
                                                     <tr
                                                         key={investment.id}
-                                                        ref={idx === filteredInvestments.slice(0, investmentLimit).length - 1 ? (node => lastElementRef(node as any)) : null}
+                                                        ref={idx === investments.length - 1 ? (node => lastElementRef(node as any)) : null}
                                                         className="hover:bg-gray-50/50 transition-colors group"
                                                     >
                                                         <td className="px-8 py-6">
@@ -1593,7 +1627,7 @@ export default function AdminDashboard() {
                             <div ref={lastElementRef} className="h-4 w-full" />
                         </div>
 
-                        {(activeTab === 'investments' ? filteredInvestments.length : activeTab === 'referrals' ? referrals.length : activeTab === 'staff' ? staff.length : activeTab === 'logs' ? staffLogs.length : getLedgerData().length) === 0 && (
+                        {(activeTab === 'investments' ? investments.length : activeTab === 'referrals' ? referrals.length : activeTab === 'staff' ? staff.length : activeTab === 'logs' ? staffLogs.length : getLedgerData().length) === 0 && (
                             <div className="p-20 text-center">
                                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Search className="w-8 h-8 text-gray-200" />
