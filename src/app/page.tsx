@@ -31,9 +31,9 @@ export default function HomePage() {
 
       <main className="relative z-10">
         <Hero onGetStarted={handleOpenModal} />
-        <Features />
         <ComparisonMatrix onOpenModal={handleOpenModal} />
         <ResearchPortfolio onOpenModal={handleOpenModal} />
+        <Features />
         <BrokerSection onGetStarted={handleOpenModal} />
         <Testimonials />
 
