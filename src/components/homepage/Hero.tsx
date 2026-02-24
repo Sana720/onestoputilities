@@ -183,7 +183,7 @@ export default function Hero({ onGetStarted }: HeroProps) {
                                 <p className="text-sm font-black text-slate-900">{data.returns}</p>
                             </div>
                             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Capital Req.</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Payment Options</p>
                                 <p className="text-sm font-black text-slate-900">{data.capital}</p>
                             </div>
                         </div>
