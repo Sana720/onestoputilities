@@ -31,7 +31,7 @@ import {
     Sparkles
 } from 'lucide-react';
 
-import { InvestmentAgreement } from '@/components/InvestmentAgreement';
+// import { InvestmentAgreement } from '@/components/InvestmentAgreement';
 import { SignatureUpload } from '@/components/SignatureUpload';
 import { supabase } from '@/lib/supabase';
 
@@ -1017,47 +1017,11 @@ export default function ClientDashboard() {
                                             </div>
 
                                             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-                                                {(investment.product_name === 'Unlisted Shares' &&
-                                                    ['approved', 'active', 'matured', 'bought_back'].includes(investment.status) &&
-                                                    investment.payment_verified &&
-                                                    investment.client_signature_url &&
-                                                    investment.admin_signed_at &&
-                                                    adminSignatureUrl) ? (
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                const { pdf } = await import('@react-pdf/renderer');
-                                                                const blob = await pdf(<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />).toBlob();
-                                                                const url = URL.createObjectURL(blob);
-                                                                const link = document.createElement('a');
-                                                                link.href = url;
-                                                                link.download = `Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`;
-                                                                document.body.appendChild(link);
-                                                                link.click();
-                                                                document.body.removeChild(link);
-                                                                URL.revokeObjectURL(url);
-                                                            } catch (error) {
-                                                                console.error("PDF generation failed", error);
-                                                                alert("Failed to generate PDF. Please try again.");
-                                                            }
-                                                        }}
-                                                        className="inline-flex items-center justify-center bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-100 transition-colors"
-                                                    >
-                                                        <Download className="w-4 h-4 mr-2" />
-                                                        Agreement
-                                                    </button>
-                                                ) : investment.product_name === 'Unlisted Shares' ? (
-                                                    <button
-                                                        disabled
-                                                        className="inline-flex items-center justify-center bg-gray-50 text-gray-400 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold cursor-not-allowed opacity-75"
-                                                        title={!['approved', 'active', 'matured', 'bought_back'].includes(investment.status) ? "Agreement will be available after admin approval" :
-                                                            !investment.payment_verified ? "Pending payment verification" :
-                                                                !investment.client_signature_url ? "Please upload your signature" :
-                                                                    "Admin signature pending"}
-                                                    >
+                                                {investment.product_name === 'Unlisted Shares' ? (
+                                                    <div className="inline-flex items-center justify-center bg-gray-50 text-gray-400 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-bold opacity-75">
                                                         <Lock className="w-4 h-4 mr-2" />
-                                                        Processing
-                                                    </button>
+                                                        Agreement NA
+                                                    </div>
                                                 ) : (
                                                     <div className="flex flex-col gap-2">
                                                         <div className="inline-flex items-center justify-center bg-teal-50 text-[#1B8A9F] px-5 py-2.5 rounded-lg border border-teal-100 text-sm font-bold">

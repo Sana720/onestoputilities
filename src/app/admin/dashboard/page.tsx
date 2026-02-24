@@ -12,7 +12,7 @@ import {
     ArrowUpRight, Edit, Eye, MoreHorizontal, FileText
 } from 'lucide-react';
 
-import { InvestmentAgreement } from '@/components/InvestmentAgreement';
+// import { InvestmentAgreement } from '@/components/InvestmentAgreement';
 import { supabase } from '@/lib/supabase';
 import OnboardingModal from '@/components/admin/OnboardingModal';
 
@@ -1477,46 +1477,10 @@ export default function AdminDashboard() {
                                                                         <MessageCircle className="w-4 h-4" />
                                                                     </a>
                                                                 )}
-                                                                {(investment.product_name === 'Unlisted Shares' &&
-                                                                    (investment.status === 'approved' || investment.status === 'active') &&
-                                                                    investment.payment_verified &&
-                                                                    investment.client_signature_url &&
-                                                                    investment.admin_signed_at &&
-                                                                    adminSignatureUrl) ? (
-                                                                    <button
-                                                                        onClick={async () => {
-                                                                            try {
-                                                                                const { pdf } = await import('@react-pdf/renderer');
-                                                                                const blob = await pdf(<InvestmentAgreement data={{ ...investment, admin_signature_url: adminSignatureUrl }} />).toBlob();
-                                                                                const url = URL.createObjectURL(blob);
-                                                                                const link = document.createElement('a');
-                                                                                link.href = url;
-                                                                                link.download = `Agreement_${investment.full_name.replace(/\s+/g, '_')}.pdf`;
-                                                                                document.body.appendChild(link);
-                                                                                link.click();
-                                                                                document.body.removeChild(link);
-                                                                                URL.revokeObjectURL(url);
-                                                                            } catch (error) {
-                                                                                console.error("PDF generation failed", error);
-                                                                                alert("Failed to generate PDF. Please try again.");
-                                                                            }
-                                                                        }}
-                                                                        className="p-2.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
-                                                                        title="Download Agreement"
-                                                                    >
-                                                                        <Download className="w-4 h-4" />
-                                                                    </button>
-                                                                ) : investment.product_name === 'Unlisted Shares' ? (
-                                                                    <button
-                                                                        disabled
-                                                                        className="p-2.5 bg-gray-50 text-gray-200 rounded-xl cursor-not-allowed"
-                                                                        title={!(investment.status === 'approved' || investment.status === 'active') ? "Application pending approval" :
-                                                                            !investment.payment_verified ? "Pending payment verification" :
-                                                                                !investment.client_signature_url ? "Client signature pending" :
-                                                                                    "Admin signature pending"}
-                                                                    >
+                                                                {investment.product_name === 'Unlisted Shares' ? (
+                                                                    <div className="p-2.5 bg-gray-50 text-gray-400 rounded-xl opacity-50" title="Agreement NA">
                                                                         <Lock className="w-4 h-4" />
-                                                                    </button>
+                                                                    </div>
                                                                 ) : (
                                                                     <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100" title="T&C Agreed">
                                                                         <CheckCircle2 className="w-4 h-4" />
@@ -3135,48 +3099,50 @@ export default function AdminDashboard() {
             />
 
             {/* Change Password Modal */}
-            {showPasswordModal && (
-                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
-                        <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-                            <div>
-                                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">Change Password</h3>
-                                <p className="text-sm text-gray-500 mt-1 font-medium">Enter a new password for the selected staff member.</p>
+            {
+                showPasswordModal && (
+                    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+                            <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-gray-900 tracking-tight">Change Password</h3>
+                                    <p className="text-sm text-gray-500 mt-1 font-medium">Enter a new password for the selected staff member.</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowPasswordModal(false);
+                                        setNewPassword('');
+                                        setSelectedStaffId(null);
+                                    }}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => {
-                                    setShowPasswordModal(false);
-                                    setNewPassword('');
-                                    setSelectedStaffId(null);
-                                }}
-                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-8 space-y-6">
-                            <div>
-                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">New Password</label>
-                                <input
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-teal-100 transition-all font-medium"
-                                    placeholder="Enter new password"
-                                />
+                            <div className="p-8 space-y-6">
+                                <div>
+                                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">New Password</label>
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-teal-100 transition-all font-medium"
+                                        placeholder="Enter new password"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleChangePassword}
+                                    disabled={changingPassword || !newPassword || newPassword.length < 6}
+                                    className="w-full bg-[#1B8A9F] text-white py-4 rounded-2xl font-bold hover:bg-[#156d7d] transition-all disabled:opacity-50 flex justify-center items-center"
+                                >
+                                    {changingPassword && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+                                    Update Password
+                                </button>
                             </div>
-                            <button
-                                onClick={handleChangePassword}
-                                disabled={changingPassword || !newPassword || newPassword.length < 6}
-                                className="w-full bg-[#1B8A9F] text-white py-4 rounded-2xl font-bold hover:bg-[#156d7d] transition-all disabled:opacity-50 flex justify-center items-center"
-                            >
-                                {changingPassword && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-                                Update Password
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 }
