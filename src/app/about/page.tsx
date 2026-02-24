@@ -174,7 +174,7 @@ export default function AboutPage() {
                             </div>
 
                             <p className="text-lg text-gray-500 leading-relaxed font-medium">
-                                TraderG (ShreeG Expert Wealth Advisory Limited) was incorporated in 2016 as a public limited company. Our mission is to bridge the gap between complex market dynamics and sustainable wealth creation through accessible algo-trading.
+                                One Stop Utilities was incorporated to bridge the gap between complex utility dynamics and sustainable infrastructure creation through accessible tech-driven management.
                             </p>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">

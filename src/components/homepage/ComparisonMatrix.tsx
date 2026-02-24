@@ -1,52 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { Target, TrendingUp, ShieldCheck, ArrowRight, Info } from 'lucide-react';
+import { Target, TrendingUp, ShieldCheck, ArrowRight, Info, Headset, Zap, Flame, Sun, Code2, Smartphone, Phone, Truck, Package, Activity, CheckCircle2 } from 'lucide-react';
 
-export default function ComparisonMatrix() {
-    const [investmentAmount, setInvestmentAmount] = useState(500000);
+interface ComparisonMatrixProps {
+    onOpenModal?: () => void;
+}
 
-    // Chart Calculations
-    const maxAmount = 10000000;
-    const chartScale = investmentAmount / maxAmount;
-    const tradergY = 180 - (chartScale * 150);
-    const fdY = 180 - (chartScale * 45);
-    const cpY = 180 - (chartScale * 100);
-
+export default function ComparisonMatrix({ onOpenModal }: ComparisonMatrixProps) {
     const comparisonData = [
         {
-            criteria: 'Monthly Returns',
-            fd: `₹${((investmentAmount * 0.071) / 12 / 1000).toFixed(1)}K`,
-            traderg: `₹${((investmentAmount * 0.18) / 12 / 1000).toFixed(1)}K`,
-            summary: 'Average monthly yield',
+            criteria: 'Utility Management',
+            standard: 'Multiple Vendors',
+            onestop: 'Unified Concierge',
+            summary: 'Number of relationships to maintain',
             highlight: true
         },
         {
-            criteria: 'Annual Returns',
-            fd: `₹${((investmentAmount * 0.071) / 100000).toFixed(2)}L`,
-            traderg: `₹${((investmentAmount * 0.18) / 100000).toFixed(2)}L`,
-            summary: 'Net Annualized returns',
+            criteria: 'Support Protocol',
+            standard: 'Automated Queues',
+            onestop: 'Private Client Hub',
+            summary: 'Communication and resolution path',
             highlight: false
         },
         {
-            criteria: 'Minimum Investment',
-            fd: '₹1,000/-',
-            traderg: '₹5,00,000/-',
-            summary: 'Entry barrier for investors',
+            criteria: 'Live Monitoring',
+            standard: 'None (Reactive)',
+            onestop: 'AI-Led (Proactive)',
+            summary: 'System health and performance tracking',
             highlight: false
         },
         {
-            criteria: 'Capital Security',
-            fd: 'Very High',
-            traderg: 'High',
-            summary: 'Risk assessment profile',
+            criteria: 'Billing Structure',
+            standard: 'Fragmented Streams',
+            onestop: 'Single Consolidated',
+            summary: 'Payment and administrative overhead',
             highlight: false
         },
         {
-            criteria: 'Taxation (TDS)',
-            fd: '10%',
-            traderg: '10%',
-            summary: 'Applicable tax on gains',
+            criteria: 'Optimization',
+            standard: 'Manual Audits',
+            onestop: 'Proactive Tuning',
+            summary: 'Efficiency and cost reduction updates',
             highlight: false
         },
     ];
@@ -61,18 +56,18 @@ export default function ComparisonMatrix() {
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-12">
                     <div className="max-w-2xl">
                         <div className="flex items-center space-x-3 mb-6">
-                            <div className="h-px w-12 bg-[#1B8A9F]"></div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1B8A9F]">Arbitrage Advantage</span>
+                            <div className="h-px w-12 bg-[#1D6FB5]"></div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1D6FB5]">The Management Metric</span>
                         </div>
                         <h2 className="text-4xl md:text-6xl font-black text-gray-900 leading-[0.95] tracking-tighter uppercase">
-                            Structural <br />
-                            Inefficiency <br />
-                            <span className="text-[#1B8A9F]">Corrected.</span>
+                            Utility <br />
+                            Operations <br />
+                            <span className="text-[#1D6FB5]">Redefined.</span>
                         </h2>
                     </div>
                     <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-xl max-w-sm">
                         <p className="text-gray-500 font-medium leading-relaxed italic">
-                            "Tradition often masks underperformance. We provide the structural bridge to institutional yields that were previously inaccessible."
+                            "Modern utilities require more than just a connection. We provide the operational intelligence and human-led concierge that previously didn't exist."
                         </p>
                     </div>
                 </div>
@@ -84,134 +79,112 @@ export default function ComparisonMatrix() {
                         {/* Table Header */}
                         <div className="hidden md:grid grid-cols-12 gap-6 px-12 mb-2">
                             <div className="md:col-span-6">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Comparison Factor</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Operational Factor</span>
                             </div>
                             <div className="md:col-span-3">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Standard FD</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Traditional Model</span>
                             </div>
                             <div className="md:col-span-3 text-center">
-                                <span className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-[0.3em]">SHREE G WEALTH</span>
+                                <span className="text-[10px] font-black text-[#1D6FB5] uppercase tracking-[0.3em]">ONE STOP EXCELLENCE</span>
                             </div>
                         </div>
 
                         {comparisonData.map((row, i) => (
-                            <div key={i} className={`group relative bg-white rounded-[32px] p-6 border transition-all duration-500 hover:shadow-2xl hover:shadow-gray-200/50 overflow-hidden ${row.highlight ? 'border-[#1B8A9F]/30 ring-1 ring-[#1B8A9F]/10' : 'border-gray-100'}`}>
-                                <div className={`absolute inset-y-0 left-0 w-1 bg-[#1B8A9F] transition-opacity ${row.highlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}></div>
+                            <div key={i} className={`group relative bg-white rounded-[32px] p-6 border transition-all duration-500 hover:shadow-2xl hover:shadow-gray-200/50 overflow-hidden ${row.highlight ? 'border-[#1D6FB5]/30 ring-1 ring-[#1D6FB5]/10' : 'border-gray-100'}`}>
+                                <div className={`absolute inset-y-0 left-0 w-1 bg-[#1D6FB5] transition-opacity ${row.highlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}></div>
                                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                                     <div className="md:col-span-6">
                                         <p className="text-lg font-black text-gray-900 uppercase tracking-tight leading-none mb-1">{row.criteria}</p>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{row.summary}</p>
                                     </div>
                                     <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
-                                        <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest md:hidden">Standard FD</span>
-                                        <span className="text-lg font-black text-gray-400">{row.fd}</span>
+                                        <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest md:hidden">Traditional Model</span>
+                                        <span className="text-lg font-black text-gray-400">{row.standard}</span>
                                     </div>
                                     <div className="md:col-span-3 flex md:flex-col justify-between items-center md:items-start border-t md:border-t-0 border-gray-50 pt-4 md:pt-0">
-                                        <span className="text-[10px] font-black text-[#1B8A9F]/40 uppercase tracking-widest md:hidden">SHREE G WEALTH</span>
-                                        <span className="text-lg font-black text-gray-900 group-hover:text-[#1B8A9F] transition-colors">{row.traderg}</span>
+                                        <span className="text-[10px] font-black text-[#1D6FB5]/40 uppercase tracking-widest md:hidden">ONE STOP EXCELLENCE</span>
+                                        <span className="text-lg font-black text-gray-900 group-hover:text-[#1D6FB5] transition-colors">{row.onestop}</span>
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Interactive Projections */}
+                    {/* Concierge Support Hub - NEW SECTION */}
                     <div className="lg:col-span-12 xl:col-span-5 h-full">
-                        <div className="bg-gray-900 rounded-[48px] p-8 h-full relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#1B8A9F]/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+                        <div className="bg-gray-900 rounded-[48px] p-8 h-full relative overflow-hidden group shadow-2xl">
+                            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#1D6FB5]/20 rounded-full blur-[100px] -mr-32 -mt-32"></div>
 
                             <div className="relative z-10 flex flex-col h-full">
-                                <div className="flex justify-between items-start mb-8">
+                                <div className="flex justify-between items-start mb-10">
                                     <div>
-                                        <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Yield Compass</h3>
-                                        <p className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest mt-1">Institutional Forecast</p>
+                                        <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Concierge Hub</h3>
+                                        <p className="text-[10px] font-black text-[#1D6FB5] uppercase tracking-widest mt-1">24/7 Managed Excellence</p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Active Capital</p>
-                                        <p className="text-3xl font-black text-white">₹{(investmentAmount / 100000).toFixed(0)}<span className="text-[#1B8A9F]">L</span></p>
+                                    <div className="bg-[#1D6FB5] p-4 rounded-2xl shadow-lg shadow-[#1D6FB5]/20">
+                                        <Headset className="w-6 h-6 text-white" />
                                     </div>
                                 </div>
 
-                                {/* Slider Component */}
-                                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/5 mb-8 group/slider transition-all hover:bg-white/10">
+                                {/* Active Service Grid */}
+                                <div className="grid grid-cols-2 gap-3 mb-10">
+                                    {[
+                                        { icon: Zap, label: 'Electricity' },
+                                        { icon: Flame, label: 'Gas' },
+                                        { icon: Sun, label: 'Solar' },
+                                        { icon: Code2, label: 'IT Solutions' },
+                                        { icon: Smartphone, label: 'Mobile' },
+                                        { icon: Phone, label: 'Fixed Phone' },
+                                        { icon: Truck, label: 'Moving' },
+                                        { icon: Package, label: 'Distribution' }
+                                    ].map((service, idx) => (
+                                        <div key={idx} className="bg-white/5 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex items-center space-x-3 transition-all hover:bg-white/10">
+                                            <service.icon className="w-4 h-4 text-[#1D6FB5]" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-black text-white/90 uppercase tracking-tight">{service.label}</span>
+                                                <div className="flex items-center space-x-1">
+                                                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                    <span className="text-[8px] font-bold text-emerald-500 uppercase">Active</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Network Status */}
+                                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 mb-10">
                                     <div className="flex justify-between items-center mb-4">
-                                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Adjust Allocation</span>
                                         <div className="flex items-center space-x-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                                            <span className="text-[9px] font-black text-blue-400 uppercase">Live Engine</span>
+                                            <Activity className="w-4 h-4 text-[#1D6FB5]" />
+                                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Network Operations</span>
+                                        </div>
+                                        <div className="px-2 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">Healthy</span>
                                         </div>
                                     </div>
-                                    <input
-                                        type="range"
-                                        min="500000"
-                                        max="10000000"
-                                        step="500000"
-                                        value={investmentAmount}
-                                        onChange={(e) => setInvestmentAmount(Number(e.target.value))}
-                                        className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#1B8A9F]"
-                                    />
-                                    <div className="flex justify-between mt-3">
-                                        <span className="text-[9px] font-bold text-white/20">MIN 5L</span>
-                                        <span className="text-[9px] font-bold text-white/20">MAX 1CR</span>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-[20px] font-black text-white tracking-tighter">Live Support</span>
+                                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Awaiting Your Call</span>
+                                        </div>
+                                        <div className="flex -space-x-2">
+                                            {[1, 2, 3].map(i => (
+                                                <div key={i} className="w-8 h-8 rounded-full border-2 border-gray-900 bg-gray-800 flex items-center justify-center">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Visualization */}
-                                <div className="h-40 relative mb-8">
-                                    <svg className="w-full h-full overflow-visible" viewBox="0 0 400 200">
-                                        {/* Value Labels */}
-                                        <g className="transition-all duration-700">
-                                            {/* Bank FD Label */}
-                                            <text
-                                                x="395"
-                                                y={fdY - 12}
-                                                textAnchor="end"
-                                                className="text-[10px] font-black fill-white/40 uppercase tracking-tighter"
-                                            >
-                                                FD ~₹{(investmentAmount * 1.7 / 10000000).toFixed(2)}Cr
-                                            </text>
-
-                                            {/* TraderG Label */}
-                                            <text
-                                                x="395"
-                                                y={tradergY - 25}
-                                                textAnchor="end"
-                                                className="text-[14px] font-black fill-[#3DD2E5] tracking-tight uppercase"
-                                            >
-                                                SHREE G WEALTH ₹{(investmentAmount * 2.8 / 10000000).toFixed(2)}Cr
-                                            </text>
-                                        </g>
-                                        <path
-                                            d={`M 0 180 L 400 ${fdY}`}
-                                            fill="none"
-                                            stroke="white"
-                                            strokeWidth="2"
-                                            strokeDasharray="10 6"
-                                            className="opacity-20 transition-all duration-700"
-                                        />
-                                        <path
-                                            d={`M 0 180 Q 200 ${cpY} 400 ${tradergY}`}
-                                            fill="none"
-                                            stroke="#1B8A9F"
-                                            strokeWidth="5"
-                                            className="transition-all duration-700"
-                                        />
-                                        <g transform={`translate(400, ${tradergY})`}>
-                                            <circle r="8" fill="#1B8A9F" className="animate-pulse" />
-                                            <circle r="16" fill="#1B8A9F" className="animate-ping opacity-20" />
-                                        </g>
-                                    </svg>
-                                </div>
-
-                                <div className="mt-auto grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
-                                    <div>
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Growth Index</p>
-                                        <p className="text-3xl font-black text-white">₹{(investmentAmount * 2.8 / 10000000).toFixed(1)}Cr</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest mb-1">Yield Delta</p>
-                                        <p className="text-3xl font-black text-[#1B8A9F]">2.8<span className="text-white/40">X</span></p>
-                                    </div>
+                                <div className="mt-auto">
+                                    <button
+                                        onClick={onOpenModal}
+                                        className="w-full bg-[#1D6FB5] hover:bg-[#1F6BC0] text-white py-5 rounded-[24px] font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center transition-all active:scale-95 shadow-xl shadow-blue-500/20 group"
+                                    >
+                                        Initiate Your Transition
+                                        <ArrowRight className="ml-3 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -220,22 +193,20 @@ export default function ComparisonMatrix() {
                 </div>
 
                 <div className="mt-24 pt-12 border-t border-gray-100 flex flex-wrap justify-center gap-16 opacity-30 grayscale filter">
-                    {/* Simplified placeholder for institutional icons */}
-                    <div className="flex items-center space-x-3">
-                        <Target className="w-8 h-8" />
-                        <span className="text-xl font-black tracking-tighter uppercase">FII Linked</span>
+                    <div className="flex items-center space-x-3 group">
+                        <Target className="w-8 h-8 text-amber-500 transition-colors group-hover:grayscale-0" />
+                        <span className="text-xl font-black tracking-tighter uppercase">Clean Energy</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <ShieldCheck className="w-8 h-8" />
-                        <span className="text-xl font-black tracking-tighter uppercase">Audit Clear</span>
+                    <div className="flex items-center space-x-3 group">
+                        <ShieldCheck className="w-8 h-8 text-emerald-500 transition-colors group-hover:grayscale-0" />
+                        <span className="text-xl font-black tracking-tighter uppercase">CEC Approved</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <TrendingUp className="w-8 h-8" />
-                        <span className="text-xl font-black tracking-tighter uppercase">Alpha Model</span>
+                    <div className="flex items-center space-x-3 group">
+                        <TrendingUp className="w-8 h-8 text-indigo-500 transition-colors group-hover:grayscale-0" />
+                        <span className="text-xl font-black tracking-tighter uppercase">Grid Modern</span>
                     </div>
                 </div>
             </div>
         </section>
     );
 }
-

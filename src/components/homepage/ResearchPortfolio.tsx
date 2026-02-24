@@ -2,12 +2,12 @@
 
 import React from 'react';
 import {
-    Search,
-    TrendingUp,
+    MapPin,
+    Settings,
     ShieldCheck,
     Activity,
     Layers,
-    BarChart3,
+    Cpu,
     Target,
     PieChart,
     ChevronRight,
@@ -16,7 +16,19 @@ import {
     Zap,
     Briefcase,
     Gem,
-    PieChart as PieChartIcon
+    Battery,
+    Wind,
+    Droplets,
+    Home,
+    Building2,
+    PieChart as PieChartIcon,
+    Phone,
+    Smartphone,
+    Flame,
+    Sun,
+    Truck,
+    Package,
+    Code2
 } from 'lucide-react';
 import {
     PieChart as RePieChart,
@@ -26,58 +38,65 @@ import {
     Tooltip
 } from 'recharts';
 
-const sectorData = [
-    { name: 'Large Cap Stocks', value: 49.5, color: '#0ea5e9' },
-    { name: 'Bluechip Dividend', value: 19.8, color: '#2dd4bf' },
-    { name: 'Index ETF', value: 14.9, color: '#6366f1' },
-    { name: 'Gold ETF', value: 9.9, color: '#f59e0b' },
-    { name: 'Liquid Fund', value: 5.0, color: '#94a3b8' },
+const serviceData = [
+    { name: 'Electricity', value: 25.0, color: '#1D6FB5' },
+    { name: 'Gas', value: 15.0, color: '#155083' },
+    { name: 'Solar', value: 20.0, color: '#3189d2' },
+    { name: 'IT Solution', value: 15.0, color: '#60a5fa' },
+    { name: 'Mobile', value: 10.0, color: '#10b981' },
+    { name: 'Fixed Phone', value: 5.0, color: '#f59e0b' },
+    { name: 'Moving', value: 5.0, color: '#ec4899' },
+    { name: 'Distribution', value: 5.0, color: '#8b5cf6' },
 ];
 
-const fundData = [
-    { name: 'Banking & Financials', value: 22.2, color: '#3b82f6' },
-    { name: 'IT & Technology', value: 16.7, color: '#06b6d4' },
-    { name: 'Auto', value: 16.7, color: '#ec4899' },
-    { name: 'Energy', value: 11.1, color: '#8b5cf6' },
-    { name: 'Infra/Capital', value: 11.1, color: '#6366f1' },
-    { name: 'Pharma', value: 11.1, color: '#10b981' },
-    { name: 'FMCG', value: 11.1, color: '#f43f5e' },
+const partnerData = [
+    { name: 'Jinko Solar PV', value: 30.0, color: '#1D6FB5' },
+    { name: 'LG Lithium Storage', value: 20.0, color: '#155083' },
+    { name: 'Daikin Climate', value: 15.0, color: '#3189d2' },
+    { name: 'Cisco Networking', value: 15.0, color: '#4d9be2' },
+    { name: 'Sungrow Inverters', value: 10.0, color: '#bfdbfe' },
+    { name: 'Enphase Energy', value: 10.0, color: '#dbeafe' },
 ];
 
 const analysisPillars = [
-    { title: 'Trend Analysis', icon: TrendingUp, color: '#8b5cf6', desc: 'Predicting momentum' },
-    { title: 'Support & Resistance', icon: Activity, color: '#3b82f6', desc: 'Price action zones' },
-    { title: 'Risk Control', icon: ShieldCheck, color: '#ef4444', desc: 'Capital preservation' },
-    { title: 'Portfolio Construction', icon: Layers, color: '#f59e0b', desc: 'Balanced allocation' },
-    { title: 'Valuation Check', icon: BarChart3, color: '#10b981', desc: 'Intrinsic value' },
-    { title: 'Stock Picking', icon: Target, color: '#ec4899', desc: 'Alpha selection' },
-    { title: 'Sector Selection', icon: PieChart, color: '#06b6d4', desc: 'Weightage optimization' },
+    { title: 'Electricity', icon: Zap, color: '#1D6FB5', desc: 'Grid Connectivity' },
+    { title: 'Gas', icon: Flame, color: '#f59e0b', desc: 'Secure Supply' },
+    { title: 'Solar', icon: Sun, color: '#10b981', desc: 'Clean Generation' },
+    { title: 'IT Solution', icon: Code2, color: '#06b6d4', desc: 'Edge Engineering' },
+    { title: 'Mobile', icon: Smartphone, color: '#6366f1', desc: 'Wireless Stack' },
+    { title: 'Fixed Phone', icon: Phone, color: '#ec4899', desc: 'Legacy Sync' },
+    { title: 'Moving', icon: Truck, color: '#8b5cf6', desc: 'Logistics Control' },
+    { title: 'Distribution', icon: Package, color: '#f43f5e', desc: 'Supply Chain' },
 ];
 
-export default function ResearchPortfolio() {
+interface ResearchPortfolioProps {
+    onOpenModal?: () => void;
+}
+
+export default function ResearchPortfolio({ onOpenModal }: ResearchPortfolioProps) {
     return (
         <section id="research" className="py-32 relative bg-[#FDFDFF] overflow-hidden">
             {/* Elegant Grain Texture & Gradients */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]"></div>
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/30 rounded-full blur-[120px] -mr-64 -mt-32"></div>
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[120px] -ml-64 -mb-32"></div>
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-50/30 rounded-full blur-[120px] -ml-64 -mb-32"></div>
 
             <div className="max-w-7xl mx-auto px-6 relative z-10">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-8">
                     <div className="max-w-xl">
                         <div className="flex items-center space-x-2 mb-4">
-                            <span className="h-px w-8 bg-[#1B8A9F]"></span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1B8A9F]">Institutional Research</span>
+                            <span className="h-px w-8 bg-[#1D6FB5]"></span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1D6FB5]">Expert Engineering</span>
                         </div>
                         <h2 className="text-5xl md:text-6xl font-black text-gray-900 leading-[1.1] mb-6 tracking-tight">
                             The Science of <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1B8A9F] to-[#4ADE80]">Wealth Strategy</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1D6FB5] to-sky-400">Utility Services</span>
                         </h2>
                     </div>
                     <div className="bg-white/50 backdrop-blur-md p-6 rounded-3xl border border-gray-100 shadow-sm max-w-sm">
                         <p className="text-gray-500 text-sm leading-relaxed font-medium italic">
-                            "Precision is not an option; it is our foundation. We combine quantitative data with qualitative insights to build resilient portfolios."
+                            "Efficiency is not an option; it is our foundation. We combine precision engineering with sustainable design to build resilient utility systems."
                         </p>
                     </div>
                 </div>
@@ -100,24 +119,24 @@ export default function ResearchPortfolio() {
                             />
                             <defs>
                                 <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stopColor="#8b5cf6" />
-                                    <stop offset="50%" stopColor="#1B8A9F" />
-                                    <stop offset="100%" stopColor="#06b6d4" />
+                                    <stop offset="0%" stopColor="#1D6FB5" />
+                                    <stop offset="50%" stopColor="#1F6BC0" />
+                                    <stop offset="100%" stopColor="#60a5fa" />
                                 </linearGradient>
                             </defs>
                         </svg>
 
                         {/* Central Intelligence Hub */}
                         <div className="relative z-20 group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#1B8A9F]/20 to-[#4ADE80]/20 rounded-full blur-[40px] group-hover:blur-[60px] transition-all"></div>
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#1D6FB5]/20 to-sky-400/20 rounded-full blur-[40px] group-hover:blur-[60px] transition-all"></div>
                             <div className="w-64 h-64 md:w-80 md:h-80 bg-white rounded-full shadow-[0_40px_100px_rgba(0,0,0,0.1)] border border-gray-50 flex flex-col items-center justify-center p-10 text-center relative overflow-hidden transition-transform duration-700 hover:scale-105">
-                                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#1B8A9F] to-[#4ADE80]"></div>
-                                <div className="p-4 bg-teal-50 rounded-2xl mb-4 group-hover:rotate-[360deg] transition-transform duration-1000">
-                                    <Globe className="w-8 h-8 text-[#1B8A9F]" />
+                                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#1D6FB5] to-sky-400"></div>
+                                <div className="p-4 bg-blue-50 rounded-2xl mb-4 group-hover:rotate-[360deg] transition-transform duration-1000">
+                                    <Globe className="w-8 h-8 text-[#1D6FB5]" />
                                 </div>
-                                <h4 className="text-2xl font-black text-gray-900 leading-tight mb-2 uppercase tracking-tighter">Market Research Analysis</h4>
+                                <h4 className="text-2xl font-black text-gray-900 leading-tight mb-2 uppercase tracking-tighter">Utility Service Integration</h4>
                                 <div className="w-12 h-1 bg-gray-100 rounded-full mb-4"></div>
-                                <p className="text-[10px] font-black text-[#1B8A9F] uppercase tracking-[0.2em] animate-pulse">Core Intelligence Unit</p>
+                                <p className="text-[10px] font-black text-[#1D6FB5] uppercase tracking-[0.2em] animate-pulse">Core Engineering Unit</p>
                             </div>
                         </div>
 
@@ -138,7 +157,7 @@ export default function ResearchPortfolio() {
                                     }}
                                 >
                                     <div className="group relative flex flex-col items-center">
-                                        <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center border border-gray-50 transition-all duration-500 group-hover:-translate-y-4 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)] group-hover:border-[#1B8A9F]/30 relative z-10 overflow-hidden">
+                                        <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center border border-gray-50 transition-all duration-500 group-hover:-translate-y-4 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)] group-hover:border-[#1D6FB5]/30 relative z-10 overflow-hidden">
                                             <div className="absolute inset-0 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                             <pillar.icon className="w-8 h-8 relative z-20" style={{ color: pillar.color }} />
                                             <div className="absolute bottom-0 left-0 w-full h-1 transition-all duration-500" style={{ backgroundColor: pillar.color }}></div>
@@ -174,15 +193,15 @@ export default function ResearchPortfolio() {
                 {/* REDESIGNED PORTFOLIO DIVERSIFICATION */}
                 <div className="space-y-16">
                     <div className="text-center max-w-2xl mx-auto">
-                        <h3 className="text-4xl font-black text-gray-900 uppercase tracking-tight mb-4">Portfolio Diversification</h3>
-                        <p className="text-gray-500 font-medium italic">Strategic allocation across multiple asset classes and economic sectors to ensure maximum capital protection and growth.</p>
+                        <h3 className="text-4xl font-black text-gray-900 uppercase tracking-tight mb-4">Service Deployment</h3>
+                        <p className="text-gray-500 font-medium italic">Strategic allocation across residential, commercial, and technical sectors to ensure maximum energy efficiency and business continuity.</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
 
                         {/* LEFT: Sector Card - Large & Modern */}
                         <div className="lg:col-span-12 xl:col-span-7 group">
-                            <div className="bg-white rounded-[48px] p-5 md:p-12 border border-gray-100 shadow-2xl shadow-gray-200/50 h-full relative overflow-hidden transition-all duration-500 hover:shadow-teal-100/30">
+                            <div className="bg-white rounded-[48px] p-5 md:p-12 border border-gray-100 shadow-2xl shadow-gray-200/50 h-full relative overflow-hidden transition-all duration-500 hover:shadow-blue-100/30">
                                 {/* Decorative elements */}
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full blur-3xl -mr-32 -mt-32"></div>
 
@@ -190,15 +209,15 @@ export default function ResearchPortfolio() {
                                     <div className="w-full md:w-1/2 flex flex-col justify-center">
                                         <div className="flex items-center space-x-3 mb-6">
                                             <div className="p-3 bg-blue-50 rounded-2xl">
-                                                <PieChartIcon className="w-6 h-6 text-blue-500" />
+                                                <PieChartIcon className="w-6 h-6 text-[#1D6FB5]" />
                                             </div>
-                                            <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Shree G Wealth fund - Sectors Diversification</h4>
+                                            <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Total Service Coverage Matrix</h4>
                                         </div>
                                         <p className="text-gray-400 text-sm font-medium mb-8 leading-relaxed">
-                                            Our sector allocation is data-driven, prioritizing high-liquidity large-cap stocks while maintaining exposure to blue-chip dividends and defensive ETFs.
+                                            Our deployment strategy is data-driven, prioritizing high-efficiency solar systems while maintaining specialized IT and climate control divisions.
                                         </p>
                                         <div className="space-y-3">
-                                            {sectorData.map((item, idx) => (
+                                            {serviceData.map((item, idx) => (
                                                 <div key={idx} className="flex flex-col">
                                                     <div className="flex justify-between items-center mb-1.5 flex-wrap gap-2">
                                                         <span className="text-[11px] font-black text-gray-700 uppercase tracking-wide">{item.name}</span>
@@ -220,7 +239,7 @@ export default function ResearchPortfolio() {
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <RePieChart>
                                                     <Pie
-                                                        data={sectorData}
+                                                        data={serviceData}
                                                         cx="50%"
                                                         cy="50%"
                                                         innerRadius="65%"
@@ -229,7 +248,7 @@ export default function ResearchPortfolio() {
                                                         dataKey="value"
                                                         stroke="none"
                                                     >
-                                                        {sectorData.map((entry, index) => (
+                                                        {serviceData.map((entry, index) => (
                                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                                         ))}
                                                     </Pie>
@@ -242,7 +261,7 @@ export default function ResearchPortfolio() {
                                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                                             <div className="text-center">
                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Target</p>
-                                                <p className="text-4xl font-black text-gray-900">100<span className="text-blue-500">%</span></p>
+                                                <p className="text-4xl font-black text-gray-900">100<span className="text-[#1D6FB5]">%</span></p>
                                             </div>
                                         </div>
                                     </div>
@@ -253,34 +272,34 @@ export default function ResearchPortfolio() {
                         {/* RIGHT: Fund Card - Elegant & Stacked */}
                         <div className="lg:col-span-12 xl:col-span-5 flex flex-col gap-8">
 
-                            <div className="bg-gradient-to-br from-gray-900 to-[#1B2A2E] rounded-[48px] p-10 text-white relative overflow-hidden flex-1 shadow-2xl">
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/20 rounded-full blur-3xl -mr-24 -mt-24"></div>
+                            <div className="bg-gradient-to-br from-gray-900 to-[#1e293b] rounded-[48px] p-10 text-white relative overflow-hidden flex-1 shadow-2xl">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-[#1D6FB5]/20 rounded-full blur-3xl -mr-24 -mt-24"></div>
                                 <div className="relative z-10">
                                     <div className="flex items-center space-x-3 mb-8">
                                         <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
-                                            <Briefcase className="w-6 h-6 text-[#4ADE80]" />
+                                            <Briefcase className="w-6 h-6 text-[#1D6FB5]" />
                                         </div>
-                                        <h4 className="text-2xl font-black uppercase tracking-tighter">SHREE G WEALTH FUND</h4>
+                                        <h4 className="text-2xl font-black uppercase tracking-tighter">HARDWARE PARTNERS</h4>
                                     </div>
 
                                     <div className="space-y-4">
-                                        {fundData.slice(0, 4).map((item, idx) => (
+                                        {partnerData.slice(0, 4).map((item, idx) => (
                                             <div key={idx} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 transition-all hover:bg-white/10">
                                                 <div className="flex items-center space-x-3">
                                                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
                                                     <span className="text-[11px] font-bold uppercase tracking-wide opacity-80">{item.name}</span>
                                                 </div>
-                                                <span className="text-sm font-black text-[#4ADE80]">{item.value}%</span>
+                                                <span className="text-sm font-black text-[#1D6FB5]">{item.value}%</span>
                                             </div>
                                         ))}
                                     </div>
 
                                     <div className="mt-8 pt-8 border-t border-white/10 flex items-center justify-between">
                                         <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Total Active Funds</p>
-                                            <p className="text-xl font-black">7 Distinct Pillars</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Total Active Partners</p>
+                                            <p className="text-xl font-black">Tier-1 Supply Chain</p>
                                         </div>
-                                        <div className="p-4 bg-[#4ADE80] rounded-2xl text-black">
+                                        <div className="p-4 bg-[#1D6FB5] rounded-2xl text-white">
                                             <ArrowUpRight className="w-6 h-6" />
                                         </div>
                                     </div>
@@ -290,15 +309,15 @@ export default function ResearchPortfolio() {
                             {/* Small Highlight Card */}
                             <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-xl flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
-                                    <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center">
-                                        <Gem className="w-7 h-7 text-[#1B8A9F]" />
+                                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                        <Gem className="w-7 h-7 text-[#1D6FB5]" />
                                     </div>
                                     <div>
-                                        <h5 className="text-lg font-black text-gray-900 leading-tight uppercase tracking-tight">Alpha Strategy</h5>
-                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Multi-cycle Resilient</p>
+                                        <h5 className="text-lg font-black text-gray-900 leading-tight uppercase tracking-tight">System Audit</h5>
+                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Efficiency Certified</p>
                                     </div>
                                 </div>
-                                <div className="px-4 py-2 bg-teal-50 rounded-full text-[10px] font-black text-[#1B8A9F] uppercase tracking-widest border border-teal-100">
+                                <div className="px-4 py-2 bg-blue-50 rounded-full text-[10px] font-black text-[#1D6FB5] uppercase tracking-widest border border-blue-100">
                                     Live Data
                                 </div>
                             </div>
@@ -307,16 +326,17 @@ export default function ResearchPortfolio() {
                     </div>
                 </div>
 
-                {/* Bottom CTA Overlay */}
                 <div className="mt-40 text-center relative">
                     <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-100 -z-10"></div>
-                    <a href="/apply" className="inline-flex items-center bg-gray-900 text-white px-10 py-5 rounded-full font-black uppercase tracking-widest hover:bg-[#1B8A9F] hover:scale-105 transition-all shadow-2cl">
-                        Optimize Your Portfolio Now
+                    <button
+                        onClick={onOpenModal}
+                        className="inline-flex items-center bg-gray-900 text-white px-10 py-5 rounded-full font-black uppercase tracking-widest hover:bg-[#1D6FB5] hover:scale-105 transition-all shadow-2xl"
+                    >
+                        Upgrade Your Utilities Now
                         <ChevronRight className="ml-3 w-5 h-5" />
-                    </a>
+                    </button>
                 </div>
             </div>
         </section>
     );
 }
-

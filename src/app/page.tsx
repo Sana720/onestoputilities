@@ -8,30 +8,40 @@ import Footer from '@/components/homepage/Footer';
 
 import ResearchPortfolio from '@/components/homepage/ResearchPortfolio';
 import BrokerSection from '@/components/homepage/BrokerSection';
+import Testimonials from '@/components/homepage/Testimonials';
+import QuoteModal from '@/components/homepage/QuoteModal';
+
+import { useState } from 'react';
 
 export default function HomePage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
+
   return (
     <div className="min-h-screen bg-white selection:bg-[#1B8A9F] selection:text-white overflow-x-hidden">
 
-      {/* BACKGROUND OVERLAYS - Data & Texture */}
-      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.12]">
-        <div className="absolute inset-0 w-full h-full -top-40 scale-110">
-          <img src="/images/graphs/candlestick_hero.png" alt="Market Overlay" className="w-full h-full object-contain opacity-50" />
-        </div>
+      {/* BACKGROUND OVERLAYS - Utility Texture */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03]">
+        <div className="absolute inset-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] opacity-50"></div>
       </div>
 
-      <Navbar />
+      <Navbar onGetStarted={handleOpenModal} />
 
       <main className="relative z-10">
-        <Hero />
-        <ComparisonMatrix />
-        <ResearchPortfolio />
-        <BrokerSection />
+        <Hero onGetStarted={handleOpenModal} />
+        <ComparisonMatrix onOpenModal={handleOpenModal} />
+        <ResearchPortfolio onOpenModal={handleOpenModal} />
+        <BrokerSection onGetStarted={handleOpenModal} />
+        <Testimonials />
         <Features />
 
       </main>
 
       <Footer />
+
+      <QuoteModal isOpen={isModalOpen} onClose={handleCloseModal} />
     </div>
   );
 }

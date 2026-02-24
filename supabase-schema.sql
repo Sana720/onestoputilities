@@ -314,3 +314,32 @@ CREATE POLICY "Anyone can insert logs"
 
 GRANT SELECT, INSERT ON public.staff_activity_logs TO authenticated, anon;
 GRANT ALL ON public.staff_activity_logs TO service_role;
+-- Create leads table
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  postcode TEXT,
+  services JSONB DEFAULT '[]'::jsonb,
+  status TEXT DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'converted', 'closed')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
+CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can insert leads" ON leads FOR INSERT WITH CHECK (true);
+CREATE POLICY "Staff can view leads" ON leads FOR SELECT USING (is_staff());
+CREATE POLICY "Staff can update leads" ON leads FOR UPDATE USING (is_staff());
+
+-- Add trigger for leads updated_at
+CREATE TRIGGER update_leads_updated_at
+  BEFORE UPDATE ON leads
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+GRANT ALL ON leads TO anon, authenticated, service_role;

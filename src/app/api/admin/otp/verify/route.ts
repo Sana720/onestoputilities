@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Investment ID and OTP are required' }, { status: 400 });
         }
 
-        const adminEmail = process.env.COMPANY_EMAIL || 'info@shreeg.com';
+        const adminEmail = process.env.COMPANY_EMAIL || 'info@onestoputilities.com.au';
 
         // Check if OTP is valid and not expired
         const { data: otpData, error: otpError } = await supabaseAdmin

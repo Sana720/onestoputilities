@@ -9,16 +9,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://tradergwealth.com'),
+  metadataBase: new URL('https://onestoputilities.com.au'),
   title: {
-    default: "TraderG Wealth Investment Portal - Preference Bond Shareholding",
-    template: "%s | TraderG Wealth"
+    default: "One Stop Utilities - Premium Solar, Battery & Managed IT Services",
+    template: "%s | One Stop Utilities"
   },
-  description: "Securely manage your preference bond investments with TRADERG WEALTH ADVISORY LIMITED. Track dividends, view real-time portfolio data, and access investment agreements.",
-  keywords: ["investment", "preference bonds", "shareholding", "dividends", "wealth management", "TraderG Wealth", "unlisted equity", "asset management"],
-  authors: [{ name: "TRADERG WEALTH ADVISORY LIMITED" }],
-  creator: "TRADERG WEALTH ADVISORY LIMITED",
-  publisher: "TRADERG WEALTH ADVISORY LIMITED",
+  description: "One Stop Utilities provides premium end-to-end solutions for Solar PV, Battery Storage, Energy-Efficient Climate Control, and Managed IT Services across Australia.",
+  keywords: ["solar", "battery storage", "air conditioning", "managed IT", "energy efficiency", "One Stop Utilities", "sustainable energy", "utility services"],
+  authors: [{ name: "One Stop Utilities" }],
+  creator: "One Stop Utilities",
+  publisher: "One Stop Utilities",
   formatDetection: {
     email: false,
     address: false,
@@ -28,26 +28,26 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "TraderG Wealth Investment Portal",
-    description: "Securely manage your preference bond investments and track your portfolio with TraderG Wealth.",
-    url: 'https://tradergwealth.com',
-    siteName: 'TraderG Wealth',
+    title: "One Stop Utilities - Sustainable Utility Solutions",
+    description: "Expert engineering for Solar, Battery, Climate Control, and Managed IT. Powering properties across Australia with precision.",
+    url: 'https://onestoputilities.com.au',
+    siteName: 'One Stop Utilities',
     images: [
       {
-        url: '/logo.png',
+        url: '/onestop-logo.png',
         width: 800,
         height: 600,
-        alt: 'TraderG Wealth Logo',
+        alt: 'One Stop Utilities Logo',
       },
     ],
-    locale: 'en_IN',
+    locale: 'en_AU',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TraderG Wealth Investment Portal',
-    description: 'Securely manage your preference bond investments and track your portfolio.',
-    images: ['/logo.png'],
+    title: 'One Stop Utilities - Premium Utility Services',
+    description: 'Expert engineering for Solar, Battery, Climate Control, and Managed IT. Sustainable solutions for modern properties.',
+    images: ['/onestop-logo.png'],
   },
   icons: {
     icon: '/icon.png',
@@ -80,19 +80,24 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "name": "TraderG Wealth Advisory Limited",
-              "url": "https://tradergwealth.com",
-              "logo": "https://tradergwealth.com/logo.png",
+              "name": "One Stop Utilities",
+              "url": "https://onestoputilities.com.au",
+              "logo": "https://onestoputilities.com.au/onestop-logo.png",
               "contactPoint": {
                 "@type": "ContactPoint",
-                "email": "connect@tradergwealth.com",
+                "email": "connect@onestoputilities.com.au",
+                "telephone": "1300178678",
                 "contactType": "customer service"
               },
-              "description": "Securely manage your preference bond investments with TraderG Wealth. Track dividends and view real-time portfolio data.",
-              "sameAs": [
-                "https://twitter.com/tradergwealth",
-                "https://linkedin.com/company/tradergwealth"
-              ]
+              "description": "One Stop Utilities provides premium end-to-end solutions for Solar PV, Battery Storage, Energy-Efficient Climate Control, and Managed IT Services.",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "1/13-15 Penelope Cres",
+                "addressLocality": "Arndell Park",
+                "addressRegion": "NSW",
+                "postalCode": "2148",
+                "addressCountry": "AU"
+              }
             })
           }}
         />

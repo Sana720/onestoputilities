@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes from now
 
-        const adminEmail = process.env.COMPANY_EMAIL || 'info@shreeg.com';
+        const adminEmail = process.env.COMPANY_EMAIL || 'info@onestoputilities.com.au';
 
         // Store OTP in database
         const { error: dbError } = await supabaseAdmin
