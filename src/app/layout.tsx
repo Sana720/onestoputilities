@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://onestoputilities.com.au'),
+  metadataBase: new URL('https://onestoputilities-r8f5.vercel.app'),
   title: {
     default: "One Stop Utilities - Premium Solar, Battery & Managed IT Services",
     template: "%s | One Stop Utilities"
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "One Stop Utilities - Sustainable Utility Solutions",
     description: "Expert engineering for Solar, Battery, Climate Control, and Managed IT. Powering properties across Australia with precision.",
-    url: 'https://onestoputilities.com.au',
+    url: 'https://onestoputilities-r8f5.vercel.app',
     siteName: 'One Stop Utilities',
     images: [
       {
-        url: '/onestop-logo.png',
-        width: 800,
-        height: 600,
-        alt: 'One Stop Utilities Logo',
+        url: 'https://onestoputilities-r8f5.vercel.app/onestop-logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'One Stop Utilities',
       },
     ],
     locale: 'en_AU',
@@ -47,11 +47,11 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'One Stop Utilities - Premium Utility Services',
     description: 'Expert engineering for Solar, Battery, Climate Control, and Managed IT. Sustainable solutions for modern properties.',
-    images: ['/onestop-logo.png'],
+    images: ['https://onestoputilities-r8f5.vercel.app/onestop-logo.png'],
   },
   icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
+    icon: '/onestop-logo.png',
+    apple: '/onestop-logo.png',
   },
   robots: {
     index: true,
